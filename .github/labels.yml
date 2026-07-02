@@ -1,0 +1,72 @@
+- name: layer:L0-lab-os
+  color: "6f42c1"
+  description: Repository operating system, templates, labels, and review policy.
+- name: layer:L1-architecture
+  color: "0366d6"
+  description: Architecture framing, boundaries, and decision structure.
+- name: layer:L2-engineering-case
+  color: "28a745"
+  description: Focused thermal engineering case work.
+- name: layer:L3-validation
+  color: "fbca04"
+  description: Measurement, validation planning, and evidence workflow.
+- name: layer:L4-specification
+  color: "d73a4a"
+  description: Reviewed public-safe specifications and acceptance criteria.
+- name: type:problem-intake
+  color: "bfdadc"
+  description: Incomplete thermal problem intake.
+- name: type:decision-board
+  color: "bfdadc"
+  description: Decision framing and next action selection.
+- name: type:architecture-comparison
+  color: "bfdadc"
+  description: Comparison of architecture routes.
+- name: type:validation-plan
+  color: "bfdadc"
+  description: Validation plan or feedback.
+- name: type:supplier-spec
+  color: "bfdadc"
+  description: Supplier-facing specification work.
+- name: type:customer-memo
+  color: "bfdadc"
+  description: Customer-facing memo or response.
+- name: type:claim-ledger
+  color: "bfdadc"
+  description: Claim safety and evidence tracking.
+- name: status:triage
+  color: "ededed"
+  description: Needs initial review.
+- name: status:ready-for-review
+  color: "0e8a16"
+  description: Ready for technical and confidentiality review.
+- name: status:blocked
+  color: "b60205"
+  description: Blocked by missing input or unresolved risk.
+- name: status:needs-confidentiality-review
+  color: "d93f0b"
+  description: Requires confidentiality review before merge or sharing.
+- name: domain:thermal
+  color: "1d76db"
+  description: Thermal architecture and heat flow.
+- name: domain:materials
+  color: "1d76db"
+  description: Materials, substrates, spreaders, and interfaces.
+- name: domain:device-integration
+  color: "1d76db"
+  description: Device, package, and integration constraints.
+- name: domain:simulation
+  color: "1d76db"
+  description: Simulation setup, assumptions, or interpretation.
+- name: domain:measurement
+  color: "1d76db"
+  description: Measurement and validation planning.
+- name: priority:P0
+  color: "b60205"
+  description: Urgent or blocking.
+- name: priority:P1
+  color: "fbca04"
+  description: Important next work.
+- name: priority:P2
+  color: "cfd3d7"
+  description: Useful but not urgent.

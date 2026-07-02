@@ -1,0 +1,42 @@
+name: Supplier Specification Request
+description: Request a supplier-facing specification draft or update.
+title: "[Supplier Spec]: "
+labels: ["type:supplier-spec", "status:triage", "domain:materials"]
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: Specification scope
+      description: What supplier deliverable, interface, or requirement needs definition?
+    validations:
+      required: true
+  - type: textarea
+    id: case_link
+    attributes:
+      label: Related case or decision artifact
+      description: Link the case folder, decision board, validation plan, or issue.
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Candidate requirements
+      description: Mark each requirement as assumed, validated, or needs review.
+  - type: dropdown
+    id: confidentiality
+    attributes:
+      label: Confidentiality level
+      options:
+        - public
+        - internal
+        - customer-confidential
+        - restricted
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: Supplier pricing or contract details are not included.
+          required: true
+        - label: Requirements are evidence-backed or marked provisional.
+          required: true

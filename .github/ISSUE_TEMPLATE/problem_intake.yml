@@ -1,0 +1,51 @@
+name: Thermal Problem Intake
+description: Capture an incomplete semiconductor thermal management problem.
+title: "[Intake]: "
+labels: ["type:problem-intake", "status:triage", "domain:thermal"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: Describe the thermal issue without confidential details.
+    validations:
+      required: true
+  - type: textarea
+    id: device
+    attributes:
+      label: Device and application
+      description: Device type, application, and known package context.
+    validations:
+      required: true
+  - type: textarea
+    id: knowns
+    attributes:
+      label: Known inputs
+      description: List known stack, heat source, power, boundary, and target information.
+  - type: textarea
+    id: unknowns
+    attributes:
+      label: Unknowns and uncertainties
+      description: List missing geometry, interface resistance, cooling boundary, validation data, or constraints.
+    validations:
+      required: true
+  - type: dropdown
+    id: confidentiality
+    attributes:
+      label: Confidentiality level
+      options:
+        - public
+        - internal
+        - customer-confidential
+        - restricted
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: No proprietary process details are included.
+          required: true
+        - label: No unreviewed validation data or performance claims are included.
+          required: true

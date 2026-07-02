@@ -1,0 +1,44 @@
+name: Validation Feedback
+description: Capture validation findings or missing validation needs.
+title: "[Validation]: "
+labels: ["type:validation-plan", "status:triage", "domain:measurement"]
+body:
+  - type: textarea
+    id: artifact
+    attributes:
+      label: Related artifact
+      description: Link the case, validation plan, claim, or supplier specification.
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Feedback
+      description: Describe validation feedback using public-safe language.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Decision impact
+      description: Which decision, claim, or next action changes?
+  - type: dropdown
+    id: confidentiality
+    attributes:
+      label: Confidentiality level
+      options:
+        - public
+        - internal
+        - customer-confidential
+        - restricted
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: No raw restricted data is included.
+          required: true
+        - label: Any measured result is cleared or summarized by sanitized identifier.
+          required: true

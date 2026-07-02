@@ -1,0 +1,42 @@
+name: Customer Question
+description: Convert a customer question into a safe engineering response path.
+title: "[Customer Question]: "
+labels: ["type:customer-memo", "status:triage", "domain:thermal"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Customer question
+      description: Use a sanitized version if the original is confidential.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Known application, device, package, target, and constraints.
+  - type: textarea
+    id: response_need
+    attributes:
+      label: Needed response
+      description: What decision, memo, or next action is needed?
+  - type: dropdown
+    id: confidentiality
+    attributes:
+      label: Confidentiality level
+      options:
+        - public
+        - internal
+        - customer-confidential
+        - restricted
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: Customer identity and confidential details are removed or approved.
+          required: true
+        - label: No conclusion is presented as validated unless evidence exists.
+          required: true
