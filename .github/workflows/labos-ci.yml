@@ -1,0 +1,74 @@
+name: Lab OS CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  no-api-checks:
+    name: Local no-API checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check required repository structure
+        run: |
+          required_paths=(
+            "labos/schemas/"
+            "scripts/labos_check_case.py"
+            "cases/example-incomplete-gan-rf-pa/00_problem_intake.yml"
+            "cases/example-incomplete-gan-rf-pa/10_claim_ledger.yml"
+            "docs/SCHEMA_GUIDE.md"
+            "docs/CASE_FILE_NAMING_STANDARD.md"
+          )
+
+          for path in "${required_paths[@]}"; do
+            if [ ! -e "$path" ]; then
+              echo "Missing required path: $path"
+              exit 2
+            fi
+          done
+
+      - name: Run example case checker
+        run: python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/
+
+      - name: Run strict checker without failing on expected WARN
+        run: |
+          # The public example case is intentionally incomplete, so strict mode may
+          # return 1 for WARN. CI should continue on WARN and fail only on FAIL.
+          set +e
+          python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
+          strict_status=$?
+          set -e
+
+          if [ "$strict_status" -eq 2 ]; then
+            echo "Strict checker returned FAIL."
+            exit 2
+          fi
+
+          if [ "$strict_status" -eq 1 ]; then
+            echo "Strict checker returned WARN, which is expected for the incomplete example case."
+            exit 0
+          fi
+
+          if [ "$strict_status" -ne 0 ]; then
+            echo "Strict checker returned unexpected exit code: $strict_status"
+            exit "$strict_status"
+          fi
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests

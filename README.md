@@ -39,6 +39,10 @@ python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
 
 The checker screens for missing files, missing thermal inputs, unsafe claims, confidentiality markers, and common thermal architecture red flags. It does not validate a design or replace engineering judgment.
 
+## Continuous Integration
+
+CI runs local no-API repository checks on pull requests to `main` and pushes to `main`. It does not use the OpenAI API, does not require API keys, and does not run paid AI automation. The workflow checks required repository structure, runs the example case checker, allows the intentionally incomplete example case to produce a strict-mode WARN, and runs the standard-library unit tests.
+
 ## How To Use
 
 1. Open a GitHub issue using the closest issue template: thermal problem intake, supplier specification request, validation feedback, or customer question.
