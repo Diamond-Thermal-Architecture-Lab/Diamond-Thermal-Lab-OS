@@ -49,3 +49,14 @@ Existing unnumbered Markdown files may remain when they contain useful review co
 - Recommend validation before expensive simulation when boundaries are unclear.
 - Keep customer memo language conservative.
 - Update memory only with reviewed and reusable lessons.
+
+## Local Case Check
+
+Run the local no-API checker before pull request review:
+
+```bash
+python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/
+python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
+```
+
+The checker reports missing artifacts, missing critical thermal fields, claim-safety issues, confidentiality markers, and common thermal red flags. Its output is a screening aid only; it is not validation.

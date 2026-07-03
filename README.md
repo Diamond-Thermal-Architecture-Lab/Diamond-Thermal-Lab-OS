@@ -28,6 +28,17 @@ Each loop should leave behind a reusable engineering memory entry so later work 
 
 API usage is not required for the MVP. Default operation is no-API. Use ChatGPT Plus manually for strategy, prompt design, review, and customer language when needed. Use Codex for repository edits, templates, workflow files, and consistency checks. Do not add paid automation or API-calling GitHub Actions for the MVP.
 
+## Local Case Checker
+
+Run the local no-API case checker before review:
+
+```bash
+python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/
+python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
+```
+
+The checker screens for missing files, missing thermal inputs, unsafe claims, confidentiality markers, and common thermal architecture red flags. It does not validate a design or replace engineering judgment.
+
 ## How To Use
 
 1. Open a GitHub issue using the closest issue template: thermal problem intake, supplier specification request, validation feedback, or customer question.
