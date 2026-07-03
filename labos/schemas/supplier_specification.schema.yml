@@ -1,0 +1,38 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Supplier Specification
+type: object
+additionalProperties: false
+required:
+  - supplier_request_id
+  - item_or_service
+  - required_data
+  - required_format
+  - acceptance_criteria
+  - incoming_inspection
+  - red_flags_for_supplier_claims
+  - confidentiality_level
+properties:
+  supplier_request_id:
+    type: string
+  item_or_service:
+    type: string
+  required_data:
+    type: array
+    items:
+      type: string
+  required_format:
+    type: string
+  acceptance_criteria:
+    type: array
+    items:
+      type: string
+  incoming_inspection:
+    type: array
+    items:
+      type: string
+  red_flags_for_supplier_claims:
+    type: array
+    items:
+      type: string
+  confidentiality_level:
+    enum: [public, internal, customer-confidential, restricted]

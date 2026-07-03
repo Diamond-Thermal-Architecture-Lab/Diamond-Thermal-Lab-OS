@@ -1,0 +1,129 @@
+architectures:
+  - route_id: R-001
+    route_name: conventional package improvement
+    heat_source: GaN RF PA active region; geometry incomplete
+    substrate: existing GaN substrate assumed, likely SiC or conventional package context
+    bonding_interface: existing die attach or package attach, unknown
+    heat_spreader: conventional package spreader or baseplate
+    package_path: improve die attach, package stack, TIM, or heat sink contact
+    cooling_boundary: existing heat sink boundary must be defined
+    manufacturing_route: package-level update
+    validation_method: thermal resistance partition and package sensitivity check
+    risk_profile:
+      - May not address die-near bottleneck.
+      - Requires package stack data.
+    maturity_level: candidate
+    when_to_use: Use when package or boundary resistance may dominate.
+    when_not_to_use: Do not rely on it if die-near resistance is proven dominant.
+  - route_id: R-002
+    route_name: diamond heat spreader
+    heat_source: localized GaN RF PA heat source
+    substrate: existing device substrate
+    bonding_interface: spreader attach interface, unknown
+    heat_spreader: diamond heat spreader
+    package_path: package-level or near-package heat spreading path
+    cooling_boundary: package-to-heat-sink boundary remains important
+    manufacturing_route: attach diamond spreader into package path
+    validation_method: spreading model with interface sensitivity
+    risk_profile:
+      - Interface resistance may erase benefit.
+      - Heat source geometry may change expected value.
+    maturity_level: candidate
+    when_to_use: Use when lateral spreading near the package path is limiting.
+    when_not_to_use: Do not use when cooling boundary dominates and spreader interface is poor.
+  - route_id: R-003
+    route_name: diamond submount
+    heat_source: GaN RF PA die
+    substrate: existing die on submount
+    bonding_interface: die-to-submount attach, unknown
+    heat_spreader: diamond submount
+    package_path: die to submount to package base
+    cooling_boundary: heat sink boundary still needs definition
+    manufacturing_route: replace or evaluate submount material
+    validation_method: attach resistance and stress-informed thermal comparison
+    risk_profile:
+      - Attach resistance uncertainty.
+      - Mechanical integration risk.
+    maturity_level: candidate
+    when_to_use: Use when moving high-conductivity material closer to die may help.
+    when_not_to_use: Do not use before mechanical and attach constraints are bounded.
+  - route_id: R-004
+    route_name: GaN bonded to diamond
+    heat_source: GaN active region
+    substrate: GaN device bonded to diamond
+    bonding_interface: GaN-to-diamond bond interface
+    heat_spreader: diamond substrate or carrier
+    package_path: die-near thermal path to package base
+    cooling_boundary: package and heat sink remain relevant
+    manufacturing_route: bonding route
+    validation_method: bond interface characterization and die-level thermal model
+    risk_profile:
+      - Bond quality uncertainty.
+      - Process compatibility risk.
+    maturity_level: concept
+    when_to_use: Use when package-level routes are insufficient and die-near path dominates.
+    when_not_to_use: Do not use as first recommendation without evidence.
+  - route_id: R-005
+    route_name: direct GaN-on-Diamond
+    heat_source: GaN active region directly integrated with diamond route
+    substrate: diamond-based substrate route
+    bonding_interface: process-dependent interface, not specified
+    heat_spreader: diamond substrate
+    package_path: die-near to package and cooling system
+    cooling_boundary: still must be defined
+    manufacturing_route: direct GaN-on-Diamond process route
+    validation_method: process feasibility, interface review, and thermal validation
+    risk_profile:
+      - Highest process and schedule burden in this example.
+      - Should not be selected before simpler routes are ruled out.
+    maturity_level: concept
+    when_to_use: Use only when evidence supports die-near diamond integration.
+    when_not_to_use: Do not use as a default response to overheating.
+  - route_id: R-006
+    route_name: Cu-diamond composite
+    heat_source: package-level heat input
+    substrate: existing device substrate
+    bonding_interface: package attach interface
+    heat_spreader: Cu-diamond composite spreader or baseplate
+    package_path: package base or heat spreader route
+    cooling_boundary: heat sink and mounting boundary
+    manufacturing_route: supplier-provided composite package element
+    validation_method: supplier data review and package-level thermal model
+    risk_profile:
+      - Supplier claims require evidence.
+      - Composite properties and interfaces may vary.
+    maturity_level: candidate
+    when_to_use: Use when package/baseplate spreading is plausible.
+    when_not_to_use: Do not use without property and interface data.
+  - route_id: R-007
+    route_name: double-side cooling
+    heat_source: GaN RF PA active region
+    substrate: existing or modified stack
+    bonding_interface: top-side and bottom-side interfaces
+    heat_spreader: package-dependent
+    package_path: parallel top and bottom heat paths
+    cooling_boundary: both cooling surfaces must be defined
+    manufacturing_route: package and assembly redesign
+    validation_method: package feasibility and boundary-condition model
+    risk_profile:
+      - RF access constraints.
+      - Mechanical complexity.
+    maturity_level: concept
+    when_to_use: Use when package layout allows a second heat path.
+    when_not_to_use: Do not use if RF or mechanical constraints block access.
+  - route_id: R-008
+    route_name: microchannel hybrid
+    heat_source: package or module-level heat load
+    substrate: existing or modified package
+    bonding_interface: coolant fixture and package interface
+    heat_spreader: microchannel cold plate or integrated cooler
+    package_path: package to liquid cooling boundary
+    cooling_boundary: active liquid cooling boundary
+    manufacturing_route: system cooling integration
+    validation_method: system-level thermal and reliability review
+    risk_profile:
+      - Fluidic complexity.
+      - Reliability and maintenance burden.
+    maturity_level: concept
+    when_to_use: Use when boundary condition is dominant and system complexity is acceptable.
+    when_not_to_use: Do not use before confirming system-level constraints.

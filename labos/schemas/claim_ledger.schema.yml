@@ -1,0 +1,49 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Claim Ledger
+type: object
+additionalProperties: false
+required:
+  - claims
+properties:
+  claims:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - claim_id
+        - claim
+        - claim_type
+        - basis
+        - assumptions
+        - confidence
+        - validation_required
+        - status
+        - public_release
+        - confidentiality_level
+        - reviewer
+      properties:
+        claim_id:
+          type: string
+        claim:
+          type: string
+        claim_type:
+          enum: [fact, assumption, hypothesis, decision, customer-facing]
+        basis:
+          type: string
+        assumptions:
+          type: array
+          items:
+            type: string
+        confidence:
+          enum: [low, medium, high]
+        validation_required:
+          type: string
+        status:
+          enum: [proposed, under-review, validated, rejected, retired]
+        public_release:
+          enum: [yes, no, needs-review]
+        confidentiality_level:
+          enum: [public, internal, customer-confidential, restricted]
+        reviewer:
+          type: string

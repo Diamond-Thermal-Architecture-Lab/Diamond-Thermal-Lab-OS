@@ -1,0 +1,38 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Next Best Action
+type: object
+additionalProperties: false
+required:
+  - action_id
+  - action
+  - purpose
+  - owner_role
+  - priority
+  - required_inputs
+  - expected_output
+  - decision_enabled
+  - estimated_effort
+  - status
+properties:
+  action_id:
+    type: string
+  action:
+    type: string
+  purpose:
+    type: string
+  owner_role:
+    type: string
+  priority:
+    enum: [P0, P1, P2]
+  required_inputs:
+    type: array
+    items:
+      type: string
+  expected_output:
+    type: string
+  decision_enabled:
+    type: string
+  estimated_effort:
+    type: string
+  status:
+    enum: [proposed, approved, in-progress, complete, blocked]

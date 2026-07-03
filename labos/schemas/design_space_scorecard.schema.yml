@@ -1,0 +1,58 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Design Space Scorecard
+type: object
+additionalProperties: false
+required:
+  - route_id
+  - scores
+  - scoring_notes
+properties:
+  route_id:
+    type: string
+  scores:
+    type: object
+    additionalProperties: false
+    required:
+      - thermal_potential
+      - manufacturability
+      - integration_risk
+      - validation_difficulty
+      - cost_pressure
+      - supply_chain_readiness
+      - time_to_demonstration
+      - customer_fit
+    properties:
+      thermal_potential:
+        type: integer
+        minimum: 1
+        maximum: 5
+      manufacturability:
+        type: integer
+        minimum: 1
+        maximum: 5
+      integration_risk:
+        type: integer
+        minimum: 1
+        maximum: 5
+      validation_difficulty:
+        type: integer
+        minimum: 1
+        maximum: 5
+      cost_pressure:
+        type: integer
+        minimum: 1
+        maximum: 5
+      supply_chain_readiness:
+        type: integer
+        minimum: 1
+        maximum: 5
+      time_to_demonstration:
+        type: integer
+        minimum: 1
+        maximum: 5
+      customer_fit:
+        type: integer
+        minimum: 1
+        maximum: 5
+  scoring_notes:
+    type: string

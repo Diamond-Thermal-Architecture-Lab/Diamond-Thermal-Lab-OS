@@ -1,0 +1,44 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Thermal Design Passport
+type: object
+additionalProperties: false
+required:
+  - case_id
+  - likely_bottleneck
+  - bottleneck_classification
+  - architecture_candidates
+  - constraints
+  - assumptions
+  - confidence_level
+  - recommended_near_term_route
+  - recommended_long_term_route
+  - next_best_action
+properties:
+  case_id:
+    type: string
+  likely_bottleneck:
+    type: string
+  bottleneck_classification:
+    type: array
+    items:
+      enum: [die-level, interface-limited, package-limited, cooling-boundary-limited, unknown]
+  architecture_candidates:
+    type: array
+    items:
+      type: string
+  constraints:
+    type: array
+    items:
+      type: string
+  assumptions:
+    type: array
+    items:
+      type: string
+  confidence_level:
+    enum: [low, medium, high]
+  recommended_near_term_route:
+    type: string
+  recommended_long_term_route:
+    type: string
+  next_best_action:
+    type: string

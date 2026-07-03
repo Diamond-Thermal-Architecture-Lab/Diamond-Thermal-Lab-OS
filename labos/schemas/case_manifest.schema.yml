@@ -1,0 +1,49 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Case Manifest
+type: object
+additionalProperties: false
+required:
+  - case_id
+  - title
+  - owner
+  - status
+  - confidentiality_level
+  - artifacts
+  - reviewers
+  - last_updated
+  - open_questions
+properties:
+  case_id:
+    type: string
+  title:
+    type: string
+  owner:
+    type: string
+  status:
+    enum: [draft, ready-for-review, approved, blocked, closed]
+  confidentiality_level:
+    enum: [public, internal, customer-confidential, restricted]
+  artifacts:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [path, schema, status]
+      properties:
+        path:
+          type: string
+        schema:
+          type: string
+        status:
+          enum: [draft, ready-for-review, approved, not-applicable]
+  reviewers:
+    type: array
+    items:
+      type: string
+  last_updated:
+    type: string
+    format: date
+  open_questions:
+    type: array
+    items:
+      type: string

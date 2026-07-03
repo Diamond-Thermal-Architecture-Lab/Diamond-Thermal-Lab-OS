@@ -1,0 +1,27 @@
+case_id: example-incomplete-gan-rf-pa
+title: Incomplete GaN RF PA Thermal Architecture Question
+application: high-power RF / radar-like module
+device_type: GaN RF power amplifier
+customer_question: >
+  Our GaN RF power amplifier module is overheating. We are considering
+  diamond, but we do not know whether we need a diamond heat spreader,
+  diamond submount, GaN-on-Diamond, Cu-diamond composite, or conventional
+  package improvement.
+heat_source_geometry: incomplete; bounded dimensions are required before detailed simulation
+power_or_power_density: high but uncertain; no reviewed numeric value available
+current_material_stack: likely GaN-on-SiC or GaN device in a conventional package
+cooling_boundary: package-to-heat-sink boundary is uncertain
+target_temperature_or_margin: reduce junction temperature and increase thermal margin
+known_data:
+  - Device type is GaN RF PA.
+  - Application is high-power RF.
+  - Current package is believed to be conventional or GaN-on-SiC based.
+  - Customer is considering both diamond and non-diamond thermal routes.
+missing_data:
+  - Heat source geometry or heat map.
+  - Power density and duty condition.
+  - Die attach and interface thermal resistance.
+  - Package-to-heat-sink boundary condition.
+  - Mechanical, RF, cost, and schedule constraints.
+  - Validation data for the present package.
+confidentiality_level: public

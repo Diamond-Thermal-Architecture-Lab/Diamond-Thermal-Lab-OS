@@ -1,0 +1,29 @@
+case_id: example-incomplete-gan-rf-pa
+likely_bottleneck: unknown; interface thermal resistance and cooling boundary are top candidates
+bottleneck_classification:
+  - interface-limited
+  - package-limited
+  - cooling-boundary-limited
+  - unknown
+architecture_candidates:
+  - conventional package improvement
+  - diamond heat spreader
+  - diamond submount
+  - GaN bonded to diamond
+  - direct GaN-on-Diamond
+  - Cu-diamond composite
+  - double-side cooling
+  - microchannel hybrid
+constraints:
+  - RF performance and layout constraints are unknown.
+  - Mechanical stack and attachment constraints are unknown.
+  - Cost and schedule tolerance are unknown.
+  - Supplier availability is not yet evaluated.
+assumptions:
+  - The device has high local heat flux, but no validated power density is available.
+  - A simpler package or boundary improvement may be sufficient.
+  - Direct GaN-on-Diamond should remain a later candidate until simpler routes are bounded.
+confidence_level: low
+recommended_near_term_route: bound heat source, interface, and cooling assumptions before detailed simulation
+recommended_long_term_route: keep die-near diamond routes available if package and cooling improvements are insufficient
+next_best_action: collect bounded thermal assumptions and run a route-screening comparison
