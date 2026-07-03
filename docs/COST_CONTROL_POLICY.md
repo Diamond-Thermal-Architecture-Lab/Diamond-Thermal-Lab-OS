@@ -14,6 +14,10 @@ Codex is used for repository edits, templates, tests, workflow files, and consis
 
 API is reserved only for optional future decision-gate tasks. API must not be used for long-form report generation in the MVP. API must be disabled by default.
 
+## GitHub Actions CI
+
+GitHub Actions CI is allowed only for local deterministic checks, such as repository structure checks, the local case checker, and standard-library tests. CI must not call paid AI APIs, must not require API keys, and must not run an API decision gate automatically. Any future API decision gate must remain disabled by default.
+
 ## Forbidden Cost Patterns In MVP
 
 - API-generated long reports.
