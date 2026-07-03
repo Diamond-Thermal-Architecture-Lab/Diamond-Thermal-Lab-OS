@@ -1,0 +1,33 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Engineering Memory Entry
+type: object
+additionalProperties: false
+required:
+  - memory_id
+  - case_id
+  - lesson
+  - source_artifact
+  - reusable_pattern
+  - failed_assumption
+  - validated_assumption
+  - future_use
+  - confidentiality_level
+properties:
+  memory_id:
+    type: string
+  case_id:
+    type: string
+  lesson:
+    type: string
+  source_artifact:
+    type: string
+  reusable_pattern:
+    type: string
+  failed_assumption:
+    type: string
+  validated_assumption:
+    type: string
+  future_use:
+    type: string
+  confidentiality_level:
+    enum: [public, internal, customer-confidential, restricted]

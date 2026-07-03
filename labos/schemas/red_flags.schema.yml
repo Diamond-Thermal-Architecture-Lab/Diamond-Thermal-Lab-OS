@@ -1,0 +1,38 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Red Flags
+type: object
+additionalProperties: false
+required:
+  - flags
+properties:
+  flags:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - flag_id
+        - flag_type
+        - severity
+        - description
+        - why_it_matters
+        - affected_decision
+        - required_data_or_action
+        - status
+      properties:
+        flag_id:
+          type: string
+        flag_type:
+          type: string
+        severity:
+          enum: [low, medium, high, blocking]
+        description:
+          type: string
+        why_it_matters:
+          type: string
+        affected_decision:
+          type: string
+        required_data_or_action:
+          type: string
+        status:
+          enum: [open, monitoring, mitigated, closed]

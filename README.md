@@ -33,7 +33,7 @@ API usage is not required for the MVP. Default operation is no-API. Use ChatGPT 
 1. Open a GitHub issue using the closest issue template: thermal problem intake, supplier specification request, validation feedback, or customer question.
 2. Create a case folder under `cases/<case_id>/`.
 3. Copy the needed templates from `templates/` into the case folder.
-4. Complete the case artifacts in the order described in `docs/CASE_WORKFLOW.md`.
+4. Complete the case artifacts in the order described in `docs/CASE_WORKFLOW.md` and `docs/CASE_FILE_NAMING_STANDARD.md`.
 5. Open a pull request and complete the PR confidentiality, claim safety, and API-use checks.
 
 ## Main Docs
@@ -43,10 +43,13 @@ API usage is not required for the MVP. Default operation is no-API. Use ChatGPT 
 - [Contributing](CONTRIBUTING.md)
 - [MVP Execution Plan](docs/MVP_EXECUTION_PLAN.md)
 - [Case Workflow](docs/CASE_WORKFLOW.md)
+- [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
+- [Schema Guide](docs/SCHEMA_GUIDE.md)
 - [Cost Control Policy](docs/COST_CONTROL_POLICY.md)
 - [API Usage Policy](docs/API_USAGE_POLICY.md)
 - [Confidentiality Guide](docs/CONFIDENTIALITY_GUIDE.md)
 - [Claim Ledger Guide](docs/CLAIM_LEDGER_GUIDE.md)
+- [Structured Lab OS Layer](labos/README.md)
 
 ## Example Case
 

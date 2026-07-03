@@ -1,0 +1,49 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Thermal Problem
+type: object
+additionalProperties: false
+required:
+  - case_id
+  - title
+  - application
+  - device_type
+  - customer_question
+  - heat_source_geometry
+  - power_or_power_density
+  - current_material_stack
+  - cooling_boundary
+  - target_temperature_or_margin
+  - known_data
+  - missing_data
+  - confidentiality_level
+properties:
+  case_id:
+    type: string
+  title:
+    type: string
+  application:
+    type: string
+  device_type:
+    type: string
+  customer_question:
+    type: string
+  heat_source_geometry:
+    type: string
+  power_or_power_density:
+    type: string
+  current_material_stack:
+    type: string
+  cooling_boundary:
+    type: string
+  target_temperature_or_margin:
+    type: string
+  known_data:
+    type: array
+    items:
+      type: string
+  missing_data:
+    type: array
+    items:
+      type: string
+  confidentiality_level:
+    enum: [public, internal, customer-confidential, restricted]

@@ -1,0 +1,46 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Customer Memo
+type: object
+additionalProperties: false
+required:
+  - memo_id
+  - audience
+  - decision_summary
+  - what_is_known
+  - what_is_unknown
+  - recommended_next_step
+  - claims_allowed
+  - claims_not_allowed
+  - validation_needed
+  - confidentiality_level
+properties:
+  memo_id:
+    type: string
+  audience:
+    type: string
+  decision_summary:
+    type: string
+  what_is_known:
+    type: array
+    items:
+      type: string
+  what_is_unknown:
+    type: array
+    items:
+      type: string
+  recommended_next_step:
+    type: string
+  claims_allowed:
+    type: array
+    items:
+      type: string
+  claims_not_allowed:
+    type: array
+    items:
+      type: string
+  validation_needed:
+    type: array
+    items:
+      type: string
+  confidentiality_level:
+    enum: [public, internal, customer-confidential, restricted]

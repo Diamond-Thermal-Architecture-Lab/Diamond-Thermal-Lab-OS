@@ -1,0 +1,43 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: Validation Plan
+type: object
+additionalProperties: false
+required:
+  - validations
+properties:
+  validations:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - validation_id
+        - validation_question
+        - method
+        - parameter_to_measure
+        - sample_or_fixture
+        - success_criteria
+        - falsification_criteria
+        - required_equipment
+        - risk_if_not_done
+      properties:
+        validation_id:
+          type: string
+        validation_question:
+          type: string
+        method:
+          type: string
+        parameter_to_measure:
+          type: string
+        sample_or_fixture:
+          type: string
+        success_criteria:
+          type: string
+        falsification_criteria:
+          type: string
+        required_equipment:
+          type: array
+          items:
+            type: string
+        risk_if_not_done:
+          type: string

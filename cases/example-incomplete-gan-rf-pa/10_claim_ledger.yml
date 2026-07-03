@@ -1,0 +1,61 @@
+claims:
+  - claim_id: CLM-001
+    claim: The case is under-specified for selecting a final architecture.
+    claim_type: decision
+    basis: Intake review
+    assumptions:
+      - Heat source, interface, and cooling boundary inputs are incomplete.
+    confidence: high
+    validation_required: Confirm missing input list with customer-safe data.
+    status: proposed
+    public_release: yes
+    confidentiality_level: public
+    reviewer: pending
+  - claim_id: CLM-002
+    claim: Interface thermal resistance is a top uncertainty.
+    claim_type: hypothesis
+    basis: Thermal path reasoning
+    assumptions:
+      - Multiple interfaces are present and not yet characterized.
+    confidence: medium
+    validation_required: Bound interface stack and run sensitivity analysis.
+    status: proposed
+    public_release: yes
+    confidentiality_level: public
+    reviewer: pending
+  - claim_id: CLM-003
+    claim: Package-to-heat-sink boundary may change route ranking.
+    claim_type: hypothesis
+    basis: Thermal resistance reasoning
+    assumptions:
+      - Cooling boundary is currently unknown.
+    confidence: medium
+    validation_required: Define cooling boundary and compare route sensitivity.
+    status: proposed
+    public_release: yes
+    confidentiality_level: public
+    reviewer: pending
+  - claim_id: CLM-004
+    claim: Direct GaN-on-Diamond should not be the default first recommendation.
+    claim_type: decision
+    basis: Architecture risk review
+    assumptions:
+      - Simpler package, spreading, and cooling-boundary routes have not been ruled out.
+    confidence: medium
+    validation_required: Compare routes under bounded assumptions.
+    status: proposed
+    public_release: yes
+    confidentiality_level: public
+    reviewer: pending
+  - claim_id: CLM-005
+    claim: Diamond and non-diamond routes are plausible candidates at this stage.
+    claim_type: assumption
+    basis: Option screening
+    assumptions:
+      - Integration constraints and measured thermal data are not yet available.
+    confidence: low
+    validation_required: Screen routes against constraints and validation plan.
+    status: proposed
+    public_release: yes
+    confidentiality_level: public
+    reviewer: pending
