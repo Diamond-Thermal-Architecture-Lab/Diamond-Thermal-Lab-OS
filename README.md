@@ -39,6 +39,18 @@ python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
 
 The checker screens for missing files, missing thermal inputs, unsafe claims, confidentiality markers, and common thermal architecture red flags. It does not validate a design or replace engineering judgment.
 
+## Create A New Case
+
+Use the local no-API case generator to create a complete numbered case folder:
+
+```bash
+python scripts/labos_case.py new --case-id example-new-case --title "Example new thermal case"
+python scripts/labos_case.py check cases/example-new-case/
+python scripts/labos_case.py list
+```
+
+The generator creates conservative draft placeholders only. It does not generate final conclusions, measured results, customer claims, or API output.
+
 ## Continuous Integration
 
 CI runs local no-API repository checks on pull requests to `main` and pushes to `main`. It does not use the OpenAI API, does not require API keys, and does not run paid AI automation. The workflow checks required repository structure, runs the example case checker, allows the intentionally incomplete example case to produce a strict-mode WARN, and runs the standard-library unit tests.
@@ -58,6 +70,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Contributing](CONTRIBUTING.md)
 - [MVP Execution Plan](docs/MVP_EXECUTION_PLAN.md)
 - [Case Workflow](docs/CASE_WORKFLOW.md)
+- [Case Generator Guide](docs/CASE_GENERATOR_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
 - [Cost Control Policy](docs/COST_CONTROL_POLICY.md)

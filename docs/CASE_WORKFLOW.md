@@ -20,7 +20,11 @@ problem intake
 
 ## Folder Shape
 
-New MVP cases should use the numbered canonical structure:
+New MVP cases should use the numbered canonical structure. The preferred way to start a canonical case folder is the local no-API generator:
+
+```bash
+python scripts/labos_case.py new --case-id example-new-case --title "Example new thermal case"
+```
 
 ```text
 cases/<case_id>/
