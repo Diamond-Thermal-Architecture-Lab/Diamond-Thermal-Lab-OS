@@ -49,7 +49,19 @@ python scripts/labos_case.py check cases/example-new-case/
 python scripts/labos_case.py list
 ```
 
-The generator creates conservative draft placeholders only. It does not generate final conclusions, measured results, customer claims, or API output.
+List approved patterns and initialize a screening-only route comparison with exact aliases from the local index:
+
+```bash
+python scripts/labos_case.py list-patterns
+
+python scripts/labos_case.py new \
+  --case-id gan-pa-route-comparison \
+  --title "GaN PA route comparison" \
+  --pattern PAT-CONVENTIONAL-PACKAGE-UPGRADE \
+  --pattern PAT-DIAMOND-SUBMOUNT
+```
+
+The generator resolves aliases to stable compact canonical IDs, so generated case files store `PAT-CONV-PKG-001` and `PAT-DIA-SUBMOUNT-001`. It creates conservative draft placeholders only. Pattern selection creates screening candidates, not validated recommendations. It does not generate final conclusions, measured results, customer claims, or API output.
 
 ## Continuous Integration
 

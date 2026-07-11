@@ -26,7 +26,7 @@ Case-specific architecture genomes may reference pattern IDs, then add case-spec
 
 Use `patterns/pattern_index.yml` to scan available patterns by route type, maturity level, typical use case, primary risks, required validation, public-safe status, and related case artifacts.
 
-Every pattern ID used in a case must match an entry in `patterns/pattern_index.yml`. The local checker reports known references, warns about unknown internal references, and fails when a customer memo relies on an unknown ID.
+Every persisted pattern ID in a case must use the compact canonical ID from `patterns/pattern_index.yml`. The index also lists exact aliases for CLI input convenience. The local checker reports known references, warns when a persisted alias should be replaced with its canonical ID, warns about unknown internal references, and fails when a customer memo relies on an unknown ID.
 
 ## Referencing Patterns In Case Files
 
@@ -42,6 +42,17 @@ Add pattern IDs to:
 Pattern references should clarify why a route is being considered. They do not turn screening assumptions into validated claims.
 
 When a pattern supports a claim, record the claim as `pattern_based`, `screening`, or `architecture_screening` where appropriate. Keep assumptions, confidence, validation status, evidence, reviewer, and public-release state explicit. A pattern is decision context, not validation evidence.
+
+## Generator Integration
+
+The local generator can initialize a case with approved, exact pattern IDs from `patterns/pattern_index.yml`:
+
+```bash
+python scripts/labos_case.py list-patterns
+python scripts/labos_case.py new --case-id example-pattern-case --title "Example pattern case" --pattern PAT-CONV-PKG-001
+```
+
+This creates screening scaffolding only: candidate architecture entries, assumption TODOs, generic risk placeholders, validation and supplier-data TODOs, and low-confidence draft pattern-based claims. Aliases are resolved before generation, so generated case files contain canonical IDs only. It does not validate a route, select a final architecture, or establish customer-facing performance.
 
 ## Avoiding Overclaiming
 

@@ -6,12 +6,11 @@ from pathlib import Path
 
 from .case_file_checker import iter_case_files
 from .report import CaseCheckReport
+from labos.patterns.index import DEFAULT_PATTERN_INDEX, load_known_pattern_ids, resolve_pattern_id
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-PATTERN_INDEX = REPO_ROOT / "patterns" / "pattern_index.yml"
+PATTERN_INDEX = DEFAULT_PATTERN_INDEX
 PATTERN_ID_RE = re.compile(r"\bPAT-[A-Z0-9]+(?:-[A-Z0-9]+)+\b", re.IGNORECASE)
-INDEX_ID_RE = re.compile(r"^\s*(?:-\s*)?pattern_id:\s*['\"]?([A-Z0-9_-]+)", re.IGNORECASE | re.MULTILINE)
 CLAIM_START_RE = re.compile(r"^\s*-\s*claim_id:\s*(.*?)\s*$", re.IGNORECASE)
 CLAIM_FIELD_RE = re.compile(r"^\s{2,}([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$")
 
@@ -52,18 +51,11 @@ class ClaimRecord:
         return self.fields.get(field, "").strip().strip("'\"").lower()
 
 
-def load_known_pattern_ids(index_path: Path = PATTERN_INDEX) -> set[str]:
-    if not index_path.is_file():
-        return set()
-    text = index_path.read_text(encoding="utf-8")
-    return {match.group(1).upper() for match in INDEX_ID_RE.finditer(text)}
-
-
 def find_pattern_references(case_path: Path) -> dict[str, set[str]]:
     references: dict[str, set[str]] = {}
     for path in iter_case_files(case_path):
         for match in PATTERN_ID_RE.finditer(path.read_text(encoding="utf-8")):
-            references.setdefault(match.group(0).upper(), set()).add(path.name)
+            references.setdefault(match.group(0), set()).add(path.name)
     return references
 
 
@@ -181,8 +173,17 @@ def check_pattern_references(case_path: Path, report: CaseCheckReport) -> None:
 
     for pattern_id, filenames in sorted(references.items()):
         locations = ", ".join(sorted(filenames))
-        if pattern_id in known_ids:
+        canonical_id = resolve_pattern_id(pattern_id)
+        if canonical_id == pattern_id:
             report.add("INFO", "Pattern references", f"Known pattern reference: {pattern_id}", locations)
+            continue
+        if canonical_id:
+            report.add(
+                "WARN",
+                "Pattern references",
+                f"Recognized pattern alias used in persisted case; replace with canonical ID: {canonical_id}",
+                locations,
+            )
             continue
 
         customer_facing = any("customer_memo" in filename.lower() for filename in filenames)
