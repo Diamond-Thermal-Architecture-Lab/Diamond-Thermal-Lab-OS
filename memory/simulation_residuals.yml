@@ -1,0 +1,21 @@
+residuals:
+  - residual_id: SIM-001
+    source: heat_source_geometry
+    description: Heat source area, location, and duty cycle uncertainty can change spreading benefit.
+    mitigation: Bound geometry before detailed FEM.
+  - residual_id: SIM-002
+    source: interface_TBR
+    description: Interface thermal resistance can dominate material comparisons.
+    mitigation: Run sensitivity and seek measurement or supplier basis.
+  - residual_id: SIM-003
+    source: cooling_boundary
+    description: Heat sink, coolant, airflow, or fixture boundary can reverse route ranking.
+    mitigation: Define boundary before customer-facing conclusions.
+  - residual_id: SIM-004
+    source: material_property_range
+    description: Screening properties may not match supplier lot or process.
+    mitigation: Replace screening ranges with reviewed data when available.
+  - residual_id: SIM-005
+    source: calibration_gap
+    description: Model may not match measured response without calibration.
+    mitigation: Use measurement to calibrate or frame results as assumption-based.

@@ -59,3 +59,16 @@ claims:
     public_release: yes
     confidentiality_level: public
     reviewer: pending
+  - claim_id: CLM-006
+    claim: Pattern references are used only for screening structure in this case.
+    claim_type: process
+    basis: Pattern library references in architecture genomes, scorecard, and red flags
+    assumptions:
+      - Pattern IDs do not represent measured case results.
+      - Pattern-based route framing still needs case evidence or review before customer-facing use.
+    confidence: high
+    validation_required: Tie any future pattern-based claim to case evidence, supplier data review, or measurement.
+    status: proposed
+    public_release: yes
+    confidentiality_level: public
+    reviewer: pending

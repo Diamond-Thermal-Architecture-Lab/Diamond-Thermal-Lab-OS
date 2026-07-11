@@ -1,0 +1,31 @@
+failure_modes:
+  - failure_mode: ideal contact assumption
+    description: Model assumes perfect contact where real interfaces may dominate.
+    mitigation: Add interface TBR bounds and sensitivity.
+  - failure_mode: missing boundary condition
+    description: Heat sink, coolant, airflow, or ambient reference is undefined.
+    mitigation: Define boundary before ranking architectures.
+  - failure_mode: unbounded interface thermal resistance
+    description: Interface resistance is omitted or treated as a fixed guess.
+    mitigation: Measure, request supplier data, or use bounded sensitivity.
+  - failure_mode: thermal expansion mismatch
+    description: Materials improve conduction but create stress or reliability risk.
+    mitigation: Include CTE and assembly review.
+  - failure_mode: delamination
+    description: Bonded or attached layers may separate under stress, cycling, or process variation.
+    mitigation: Add inspection and reliability screening.
+  - failure_mode: voiding
+    description: Attach or solder voids increase effective resistance and local heating.
+    mitigation: Specify void inspection and acceptance criteria.
+  - failure_mode: overclaiming bulk thermal conductivity
+    description: Bulk material value is presented as stack or device performance.
+    mitigation: Use stack-level claims only after validation.
+  - failure_mode: simulation without calibration
+    description: FEM output is treated as evidence before inputs or validation are available.
+    mitigation: Calibrate or bound model with measured or reviewed data.
+  - failure_mode: supplier data ambiguity
+    description: Supplier values lack test method, geometry, temperature, or interface details.
+    mitigation: Request basis, format, and acceptance criteria.
+  - failure_mode: customer-facing unvalidated claim
+    description: A preliminary route is described as a proven improvement.
+    mitigation: Route statements through the claim ledger and public release review.

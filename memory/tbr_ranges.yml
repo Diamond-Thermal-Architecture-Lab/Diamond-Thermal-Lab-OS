@@ -1,0 +1,33 @@
+note: "TBR is highly process-dependent and must be measured or bounded before architecture commitment."
+interfaces:
+  GaN/diamond interface:
+    screening_range: qualitative_placeholder_process_dependent
+    units: m2-K/W
+    notes:
+      - Central uncertainty for GaN-on-Diamond and bonded GaN-to-diamond routes.
+      - Treat bonding quality and transition layers as decision-critical.
+  diamond/metal interface:
+    screening_range: qualitative_placeholder_metallization_dependent
+    units: m2-K/W
+    notes:
+      - Metallization, surface finish, and attach process can control effective stack resistance.
+  soldered interface:
+    screening_range: qualitative_placeholder_alloy_void_thickness_dependent
+    units: m2-K/W
+    notes:
+      - Void fraction, bondline thickness, and wetting require inspection or bounds.
+  TIM interface:
+    screening_range: qualitative_placeholder_pressure_thickness_dependent
+    units: m2-K/W
+    notes:
+      - Mounting pressure, surface flatness, and aging can dominate package-to-heat-sink resistance.
+  bonded substrate interface:
+    screening_range: qualitative_placeholder_bond_process_dependent
+    units: m2-K/W
+    notes:
+      - Bond layers can erase material-property gains if left unbounded.
+  package-to-heat-sink interface:
+    screening_range: qualitative_placeholder_mounting_dependent
+    units: m2-K/W
+    notes:
+      - Boundary condition and mounting quality must be defined before ranking architectures.

@@ -73,11 +73,15 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Case Generator Guide](docs/CASE_GENERATOR_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
+- [Pattern Library Guide](docs/PATTERN_LIBRARY_GUIDE.md)
+- [Memory Policy](docs/MEMORY_POLICY.md)
 - [Cost Control Policy](docs/COST_CONTROL_POLICY.md)
 - [API Usage Policy](docs/API_USAGE_POLICY.md)
 - [Confidentiality Guide](docs/CONFIDENTIALITY_GUIDE.md)
 - [Claim Ledger Guide](docs/CLAIM_LEDGER_GUIDE.md)
 - [Structured Lab OS Layer](labos/README.md)
+- [Pattern Library](patterns/README.md)
+- [Engineering Memory](memory/README.md)
 
 ## Example Case
 
