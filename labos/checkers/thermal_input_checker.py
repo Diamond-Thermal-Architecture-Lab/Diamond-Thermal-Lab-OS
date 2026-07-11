@@ -37,11 +37,20 @@ def check_critical_thermal_inputs(case_path: Path, report: CaseCheckReport) -> N
             report.add("WARN", "Thermal input warnings", message, intake_path.name)
 
     combined = _combined_case_text(case_path)
-    if "interface thermal resistance" not in combined and "interface resistance" not in combined:
+    interface_discussed = any(
+        term in combined
+        for term in (
+            "interface thermal resistance",
+            "interface resistance",
+            "thermal boundary resistance",
+            "contact resistance",
+            "bonding quality",
+        )
+    ) or re.search(r"\btbr\b", combined) is not None
+    if not interface_discussed:
         report.add(
             "WARN",
             "Thermal input warnings",
             "Interface thermal resistance is not clearly discussed.",
             "case folder",
         )
-

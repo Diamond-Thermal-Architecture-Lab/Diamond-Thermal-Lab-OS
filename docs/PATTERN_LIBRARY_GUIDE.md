@@ -26,6 +26,8 @@ Case-specific architecture genomes may reference pattern IDs, then add case-spec
 
 Use `patterns/pattern_index.yml` to scan available patterns by route type, maturity level, typical use case, primary risks, required validation, public-safe status, and related case artifacts.
 
+Every pattern ID used in a case must match an entry in `patterns/pattern_index.yml`. The local checker reports known references, warns about unknown internal references, and fails when a customer memo relies on an unknown ID.
+
 ## Referencing Patterns In Case Files
 
 Add pattern IDs to:
@@ -38,6 +40,8 @@ Add pattern IDs to:
 - `10_claim_ledger.yml`
 
 Pattern references should clarify why a route is being considered. They do not turn screening assumptions into validated claims.
+
+When a pattern supports a claim, record the claim as `pattern_based`, `screening`, or `architecture_screening` where appropriate. Keep assumptions, confidence, validation status, evidence, reviewer, and public-release state explicit. A pattern is decision context, not validation evidence.
 
 ## Avoiding Overclaiming
 
