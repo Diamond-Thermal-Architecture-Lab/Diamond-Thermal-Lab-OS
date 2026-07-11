@@ -1,0 +1,13 @@
+observations:
+  - observation_id: SUP-001
+    observation: Supplier thermal property values must include test method, temperature, sample geometry, and material grade.
+    claim_safety: Do not use supplier values as customer performance claims without case validation.
+  - observation_id: SUP-002
+    observation: Composite and TIM data are often condition-dependent.
+    claim_safety: Require bondline, pressure, flatness, and aging context.
+  - observation_id: SUP-003
+    observation: Diamond route data must include interface and bonding assumptions.
+    claim_safety: Do not compare diamond bulk conductivity to full package resistance.
+  - observation_id: SUP-004
+    observation: Incoming inspection should be defined before relying on supplier sample performance.
+    claim_safety: Treat sample data as preliminary until acceptance criteria are reviewed.

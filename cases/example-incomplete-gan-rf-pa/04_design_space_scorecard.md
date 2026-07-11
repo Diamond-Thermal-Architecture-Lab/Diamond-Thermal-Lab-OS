@@ -13,6 +13,16 @@ Scores use 1 to 5, where 5 is more favorable for the case. Scores are provisiona
 | Double-side cooling | 4 | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
 | Microchannel hybrid | 4 | 2 | 1 | 2 | 1 | 2 | 1 | 2 |
 
+## Pattern References
+
+- Conventional package improvement: `PAT-CONV-PKG-001`
+- Diamond heat spreader: `PAT-DIA-SPREADER-001`
+- Diamond submount: `PAT-DIA-SUBMOUNT-001`
+- GaN bonded to diamond / direct GaN-on-Diamond: `PAT-GAN-DIA-001`
+- Cu-diamond composite: `PAT-CUDIA-001`
+- Double-side cooling: `PAT-DOUBLE-COOL-001`
+- Microchannel hybrid: `PAT-MICRO-DIA-001`
+
 ## Interpretation
 
 The scorecard does not select a final winner. It shows why package and boundary-condition clarification should come before expensive die-near diamond routes. Direct GaN-on-Diamond has high possible thermal potential, but low near-term readiness in this under-specified case.

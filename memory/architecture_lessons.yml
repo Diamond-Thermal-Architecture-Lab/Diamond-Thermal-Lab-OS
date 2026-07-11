@@ -1,0 +1,32 @@
+lessons:
+  - lesson_id: LESSON-001
+    lesson: Do not optimize diamond thickness before bounding interface resistance.
+    reusable_pattern:
+      - PAT-DIA-SPREADER-001
+      - PAT-DIA-SUBMOUNT-001
+      - PAT-GAN-DIA-001
+    status: screening_memory
+  - lesson_id: LESSON-002
+    lesson: Do not start detailed FEM before heat source and boundary conditions are defined.
+    reusable_pattern:
+      - PAT-CONV-PKG-001
+      - PAT-DOUBLE-COOL-001
+      - PAT-MICRO-DIA-001
+    status: screening_memory
+  - lesson_id: LESSON-003
+    lesson: Do not treat diamond as automatically superior when package boundary dominates.
+    reusable_pattern:
+      - PAT-DIA-SPREADER-001
+      - PAT-CONV-PKG-001
+      - PAT-VAPOR-PKG-001
+    status: screening_memory
+  - lesson_id: LESSON-004
+    lesson: Customer-facing claims require validation status and confidence.
+    reusable_pattern:
+      - all_patterns
+    status: claim_safety_memory
+  - lesson_id: LESSON-005
+    lesson: Conventional package improvements may be the best near-term action.
+    reusable_pattern:
+      - PAT-CONV-PKG-001
+    status: screening_memory

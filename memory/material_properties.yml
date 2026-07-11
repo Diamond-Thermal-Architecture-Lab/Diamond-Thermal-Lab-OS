@@ -1,0 +1,68 @@
+note: "Screening range only. Verify against supplier data, literature, and measurement before customer-facing use."
+materials:
+  diamond:
+    thermal_conductivity:
+      screening_range: supplier_and_grade_dependent
+      units: W/m-K
+    notes:
+      - Very high potential conductivity, but stack benefit depends on interface TBR, geometry, and bonding quality.
+  GaN:
+    thermal_conductivity:
+      screening_range: orientation_and_quality_dependent
+      units: W/m-K
+    notes:
+      - Use device-specific or literature-supported values for modeling.
+  SiC:
+    thermal_conductivity:
+      screening_range: grade_and_orientation_dependent
+      units: W/m-K
+    notes:
+      - Common high-performance substrate route; interfaces may dominate.
+  AlN:
+    thermal_conductivity:
+      screening_range: grade_dependent
+      units: W/m-K
+    notes:
+      - Often relevant for carriers or substrates; verify supplier grade.
+  copper:
+    thermal_conductivity:
+      screening_range: alloy_and_temperature_dependent
+      units: W/m-K
+    notes:
+      - High conductivity but CTE and mass may matter.
+  CuW:
+    thermal_conductivity:
+      screening_range: composition_dependent
+      units: W/m-K
+    notes:
+      - Often used for CTE balancing; supplier composition matters.
+  CuMo:
+    thermal_conductivity:
+      screening_range: composition_dependent
+      units: W/m-K
+    notes:
+      - Treat as supplier-specific composite or alloy family.
+  Cu-diamond composite:
+    thermal_conductivity:
+      screening_range: composition_and_process_dependent
+      units: W/m-K
+    notes:
+      - Do not use generic values without supplier basis and interface review.
+  graphite:
+    thermal_conductivity:
+      screening_range: highly_anisotropic
+      units: W/m-K
+    notes:
+      - Directionality is central; through-plane value can differ strongly from in-plane value.
+  solder:
+    thermal_conductivity:
+      screening_range: alloy_and_void_dependent
+      units: W/m-K
+    notes:
+      - Voids, thickness, and wetting often matter more than nominal bulk value.
+  TIM:
+    thermal_conductivity:
+      screening_range: formulation_thickness_pressure_dependent
+      units: W/m-K
+    notes:
+      - Use bondline thickness, pressure, aging, and contact data where possible.

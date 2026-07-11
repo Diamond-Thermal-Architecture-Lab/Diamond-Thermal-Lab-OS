@@ -1,0 +1,65 @@
+validation_methods:
+  - method: TDTR
+    what_it_measures: Thin-film or near-surface thermal properties and interface-related response under suitable structures.
+    what_it_cannot_prove: Full package performance or long-term reliability by itself.
+    required_sample_or_fixture: Representative film/interface coupon with known stack.
+    decision_enabled: Bound interface or material parameters for model input.
+    red_flags:
+      - Coupon stack differs from product stack.
+      - Result used as full device validation.
+  - method: Raman thermometry
+    what_it_measures: Temperature response in optically accessible semiconductor regions under defined conditions.
+    what_it_cannot_prove: Hidden interface quality or package-level boundary without supporting data.
+    required_sample_or_fixture: Optically accessible powered device or test structure.
+    decision_enabled: Compare local thermal response or calibrate model.
+    red_flags:
+      - Optical access changes package state.
+      - Power and emissivity assumptions are unclear.
+  - method: IR thermal imaging
+    what_it_measures: Surface temperature distribution under defined emissivity and boundary conditions.
+    what_it_cannot_prove: Junction temperature or buried interface TBR alone.
+    required_sample_or_fixture: Powered package or module with emissivity control.
+    decision_enabled: Identify hot spots and compare package-level changes.
+    red_flags:
+      - Emissivity not controlled.
+      - Surface result treated as junction result.
+  - method: transient thermal testing
+    what_it_measures: Dynamic thermal response and effective thermal resistance path features.
+    what_it_cannot_prove: Exact material property without model and fixture support.
+    required_sample_or_fixture: Powered device or module with controlled boundary.
+    decision_enabled: Compare stack or package changes.
+    red_flags:
+      - Boundary condition not repeatable.
+      - Power step not characterized.
+  - method: power cycling
+    what_it_measures: Reliability response under repeated thermal/electrical stress.
+    what_it_cannot_prove: Initial thermal performance without companion measurement.
+    required_sample_or_fixture: Representative package and cycling profile.
+    decision_enabled: Screen attach, interface, or package reliability risk.
+    red_flags:
+      - Cycle profile does not match use case.
+      - No pre/post inspection.
+  - method: cross-section / void inspection
+    what_it_measures: Physical attach quality, voiding, bondline thickness, and layer condition.
+    what_it_cannot_prove: Thermal performance alone.
+    required_sample_or_fixture: Coupon or package sample prepared for inspection.
+    decision_enabled: Accept or reject attach/process quality assumptions.
+    red_flags:
+      - Destructive sample not representative.
+      - No acceptance criteria.
+  - method: thermal stack resistance measurement
+    what_it_measures: Effective resistance across a stack or fixture under defined boundary conditions.
+    what_it_cannot_prove: Individual layer values without model separation.
+    required_sample_or_fixture: Stack coupon or package fixture.
+    decision_enabled: Compare candidate interfaces or materials.
+    red_flags:
+      - Fixture resistance not subtracted or bounded.
+      - Pressure or boundary omitted.
+  - method: incoming inspection
+    what_it_measures: Supplier part conformance to dimensions, finish, flatness, void criteria, or supplied data.
+    what_it_cannot_prove: Final device performance.
+    required_sample_or_fixture: Received material, coupon, or package component.
+    decision_enabled: Accept supplier lot for evaluation.
+    red_flags:
+      - Inspection criteria missing.
+      - Supplier certificate lacks test basis.

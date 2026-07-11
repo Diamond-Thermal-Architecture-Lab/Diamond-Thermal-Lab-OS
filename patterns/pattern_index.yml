@@ -1,0 +1,151 @@
+patterns:
+  - pattern_id: PAT-CONV-PKG-001
+    file: conventional_package_upgrade.md
+    route_type: package-level improvement
+    maturity_level: established
+    typical_use_case: Near-term reduction of package, attach, TIM, or heat-sink boundary resistance.
+    primary_risks:
+      - Die-near bottleneck may remain.
+      - Stack data may be incomplete.
+    required_validation:
+      - Thermal resistance partition.
+      - Boundary-condition sensitivity check.
+    public_safe: true
+    related_case_artifacts:
+      - 03_architecture_genomes.yml
+      - 04_design_space_scorecard.md
+      - 07_validation_plan.md
+  - pattern_id: PAT-DIA-SPREADER-001
+    file: diamond_heat_spreader.md
+    route_type: high-conductivity heat spreader
+    maturity_level: candidate
+    typical_use_case: Lateral spreading near a localized heat source when interfaces are bounded.
+    primary_risks:
+      - Interface thermal resistance.
+      - Bonding quality.
+      - Geometry mismatch.
+    required_validation:
+      - Interface sensitivity.
+      - Attach quality inspection.
+    public_safe: true
+    related_case_artifacts:
+      - 03_architecture_genomes.yml
+      - 05_red_flags.md
+      - 08_supplier_specification.md
+  - pattern_id: PAT-DIA-SUBMOUNT-001
+    file: diamond_submount.md
+    route_type: die-near submount
+    maturity_level: candidate
+    typical_use_case: Moving high-conductivity material closer to the die after attach and stress risks are bounded.
+    primary_risks:
+      - Die attach thermal resistance.
+      - Bonding quality.
+      - Thermomechanical integration.
+    required_validation:
+      - Attach resistance estimate.
+      - Mechanical compatibility review.
+    public_safe: true
+    related_case_artifacts:
+      - 03_architecture_genomes.yml
+      - 07_validation_plan.md
+      - 10_claim_ledger.yml
+  - pattern_id: PAT-GAN-DIA-001
+    file: gan_on_diamond.md
+    route_type: die-near diamond integration
+    maturity_level: high-potential concept
+    typical_use_case: Later-stage route when die-near thermal path dominates and integration risk is acceptable.
+    primary_risks:
+      - GaN/diamond interface TBR.
+      - Bonding quality.
+      - Process compatibility.
+      - Schedule and qualification risk.
+    required_validation:
+      - Interface characterization.
+      - Die-level thermal validation.
+      - Reliability screening.
+    public_safe: true
+    related_case_artifacts:
+      - 03_architecture_genomes.yml
+      - 05_red_flags.md
+      - 10_claim_ledger.yml
+  - pattern_id: PAT-CUDIA-001
+    file: cu_diamond_composite.md
+    route_type: composite spreader or baseplate
+    maturity_level: candidate
+    typical_use_case: Package/baseplate spreading when supplier data and interfaces are reviewable.
+    primary_risks:
+      - Supplier property ambiguity.
+      - Interface stack uncertainty.
+      - CTE mismatch.
+    required_validation:
+      - Supplier data review.
+      - Incoming inspection.
+      - Package model sensitivity.
+    public_safe: true
+    related_case_artifacts:
+      - 04_design_space_scorecard.md
+      - 08_supplier_specification.md
+  - pattern_id: PAT-DOUBLE-COOL-001
+    file: double_side_cooling.md
+    route_type: package architecture
+    maturity_level: concept to candidate
+    typical_use_case: Cases where a second heat path is mechanically and electrically feasible.
+    primary_risks:
+      - RF or electrical access constraints.
+      - Assembly complexity.
+      - Boundary definition on both sides.
+    required_validation:
+      - Package feasibility review.
+      - Dual-boundary thermal model.
+    public_safe: true
+    related_case_artifacts:
+      - 03_architecture_genomes.yml
+      - 07_validation_plan.md
+  - pattern_id: PAT-MICRO-DIA-001
+    file: microchannel_diamond_hybrid.md
+    route_type: active cooling hybrid
+    maturity_level: concept
+    typical_use_case: High heat load cases where system-level liquid cooling complexity is acceptable.
+    primary_risks:
+      - Fluidic reliability.
+      - Package/coolant interface.
+      - Maintenance burden.
+    required_validation:
+      - Flow and pressure-drop review.
+      - Leak and reliability plan.
+    public_safe: true
+    related_case_artifacts:
+      - 05_red_flags.md
+      - 07_validation_plan.md
+  - pattern_id: PAT-SIC-ALN-001
+    file: sic_aln_substrate_upgrade.md
+    route_type: substrate or carrier upgrade
+    maturity_level: established to candidate
+    typical_use_case: Neutral non-diamond route for substrate, carrier, or package material improvement.
+    primary_risks:
+      - Interface remains dominant.
+      - Thermal expansion constraints.
+      - Supplier property variation.
+    required_validation:
+      - Stack resistance comparison.
+      - Mechanical compatibility check.
+    public_safe: true
+    related_case_artifacts:
+      - 04_design_space_scorecard.md
+      - 08_supplier_specification.md
+  - pattern_id: PAT-VAPOR-PKG-001
+    file: vapor_chamber_package_upgrade.md
+    route_type: package-level spreading and boundary improvement
+    maturity_level: established to candidate
+    typical_use_case: Package or module cases with boundary or baseplate spreading limitations.
+    primary_risks:
+      - Orientation and heat flux limits.
+      - Integration volume.
+      - Supplier data ambiguity.
+    required_validation:
+      - Operating envelope review.
+      - Package-level thermal test.
+    public_safe: true
+    related_case_artifacts:
+      - 04_design_space_scorecard.md
+      - 07_validation_plan.md

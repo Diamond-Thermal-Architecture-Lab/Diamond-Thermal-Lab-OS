@@ -1,0 +1,21 @@
+assumptions:
+  - assumption_id: ASM-001
+    assumption: Screening ranges are placeholders until supplier data, literature, or measurement is reviewed.
+    status: unvalidated
+    evidence: none_for_specific_case
+    public_release: not_allowed_until_review
+  - assumption_id: ASM-002
+    assumption: Interface TBR can control route ranking in diamond and non-diamond stacks.
+    status: reviewed_principle
+    evidence: general thermal architecture reasoning
+    public_release: needs_case_context
+  - assumption_id: ASM-003
+    assumption: Conventional package improvements may be the best near-term action in under-specified cases.
+    status: reviewed_principle
+    evidence: reusable decision lesson
+    public_release: needs_case_context
+  - assumption_id: ASM-004
+    assumption: Direct GaN-on-Diamond is not a default first step without evidence.
+    status: reviewed_principle
+    evidence: risk and integration review pattern
+    public_release: needs_case_context

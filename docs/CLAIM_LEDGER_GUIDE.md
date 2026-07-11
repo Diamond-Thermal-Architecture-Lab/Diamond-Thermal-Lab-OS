@@ -27,3 +27,5 @@ The claim ledger prevents unsupported conclusions from entering architecture dec
 ## Review Rule
 
 Do not use a claim in a customer memo unless its status, basis, confidence, validation need, and public release status are clear.
+
+Pattern-based claims are not validated claims unless they are tied to measured or reviewed evidence for the specific case. A pattern ID may support screening structure, but it does not prove performance, manufacturability, reliability, or customer suitability by itself.

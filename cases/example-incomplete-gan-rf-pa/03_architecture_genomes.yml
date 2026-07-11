@@ -1,6 +1,7 @@
 architectures:
   - route_id: R-001
     route_name: conventional package improvement
+    pattern_id: PAT-CONV-PKG-001
     heat_source: GaN RF PA active region; geometry incomplete
     substrate: existing GaN substrate assumed, likely SiC or conventional package context
     bonding_interface: existing die attach or package attach, unknown
@@ -17,6 +18,7 @@ architectures:
     when_not_to_use: Do not rely on it if die-near resistance is proven dominant.
   - route_id: R-002
     route_name: diamond heat spreader
+    pattern_id: PAT-DIA-SPREADER-001
     heat_source: localized GaN RF PA heat source
     substrate: existing device substrate
     bonding_interface: spreader attach interface, unknown
@@ -33,6 +35,7 @@ architectures:
     when_not_to_use: Do not use when cooling boundary dominates and spreader interface is poor.
   - route_id: R-003
     route_name: diamond submount
+    pattern_id: PAT-DIA-SUBMOUNT-001
     heat_source: GaN RF PA die
     substrate: existing die on submount
     bonding_interface: die-to-submount attach, unknown
@@ -49,6 +52,7 @@ architectures:
     when_not_to_use: Do not use before mechanical and attach constraints are bounded.
   - route_id: R-004
     route_name: GaN bonded to diamond
+    pattern_id: PAT-GAN-DIA-001
     heat_source: GaN active region
     substrate: GaN device bonded to diamond
     bonding_interface: GaN-to-diamond bond interface
@@ -65,6 +69,7 @@ architectures:
     when_not_to_use: Do not use as first recommendation without evidence.
   - route_id: R-005
     route_name: direct GaN-on-Diamond
+    pattern_id: PAT-GAN-DIA-001
     heat_source: GaN active region directly integrated with diamond route
     substrate: diamond-based substrate route
     bonding_interface: process-dependent interface, not specified
@@ -81,6 +86,7 @@ architectures:
     when_not_to_use: Do not use as a default response to overheating.
   - route_id: R-006
     route_name: Cu-diamond composite
+    pattern_id: PAT-CUDIA-001
     heat_source: package-level heat input
     substrate: existing device substrate
     bonding_interface: package attach interface
@@ -97,6 +103,7 @@ architectures:
     when_not_to_use: Do not use without property and interface data.
   - route_id: R-007
     route_name: double-side cooling
+    pattern_id: PAT-DOUBLE-COOL-001
     heat_source: GaN RF PA active region
     substrate: existing or modified stack
     bonding_interface: top-side and bottom-side interfaces
@@ -113,6 +120,7 @@ architectures:
     when_not_to_use: Do not use if RF or mechanical constraints block access.
   - route_id: R-008
     route_name: microchannel hybrid
+    pattern_id: PAT-MICRO-DIA-001
     heat_source: package or module-level heat load
     substrate: existing or modified package
     bonding_interface: coolant fixture and package interface

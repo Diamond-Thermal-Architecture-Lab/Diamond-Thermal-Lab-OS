@@ -49,6 +49,7 @@ Existing unnumbered Markdown files may remain when they contain useful review co
 - Start with missing information, not preferred solutions.
 - Compare diamond and non-diamond routes neutrally.
 - Separate assumptions from facts.
+- Add pattern references during architecture genome and scorecard creation when reusable routes apply.
 - Identify red flags before making supplier requests.
 - Recommend validation before expensive simulation when boundaries are unclear.
 - Keep customer memo language conservative.
