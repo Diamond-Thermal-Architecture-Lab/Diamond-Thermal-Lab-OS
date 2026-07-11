@@ -49,7 +49,8 @@ Existing unnumbered Markdown files may remain when they contain useful review co
 - Start with missing information, not preferred solutions.
 - Compare diamond and non-diamond routes neutrally.
 - Separate assumptions from facts.
-- Add pattern references during architecture genome and scorecard creation when reusable routes apply.
+- Add pattern references during architecture genome and scorecard creation when reusable routes apply, and verify every ID against `patterns/pattern_index.yml`.
+- Treat pattern references as decision support, not validation; pattern-based claims still require assumptions, confidence, validation status, and claim-ledger review.
 - Identify red flags before making supplier requests.
 - Recommend validation before expensive simulation when boundaries are unclear.
 - Keep customer memo language conservative.
@@ -64,4 +65,4 @@ python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/
 python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
 ```
 
-The checker reports missing artifacts, missing critical thermal fields, claim-safety issues, confidentiality markers, and common thermal red flags. Its output is a screening aid only; it is not validation.
+The checker reports missing artifacts, missing critical thermal fields, known and unknown pattern references, unsafe pattern-based claim states, confidentiality markers, and common thermal red flags. Its output is a screening aid only; it is not validation.

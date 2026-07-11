@@ -79,17 +79,3 @@ def check_claim_safety(case_path: Path, report: CaseCheckReport) -> None:
                     f"Potentially unsafe claim language found: {label}",
                     f"{path.name}:{line_number}",
                 )
-
-            lower = line.lower()
-            if (
-                "direct gan-on-diamond" in lower
-                and any(term in lower for term in ["first step", "best", "recommended", "default"])
-                and not any(term in lower for term in ["not", "do not", "should not"])
-            ):
-                severity = "FAIL" if _is_customer_facing(path) else "WARN"
-                report.add(
-                    severity,
-                    "Claim safety warnings",
-                    "Direct GaN-on-Diamond first-step language lacks safety guardrails.",
-                    f"{path.name}:{line_number}",
-                )

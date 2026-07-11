@@ -165,6 +165,184 @@ class LabOsCaseCheckerTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertIn("Restricted marker found", result.stdout)
 
+    def test_known_pattern_reference_is_reported_without_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            (case_path / "03_architecture_genomes.yml").write_text(
+                "architectures:\n  - pattern_id: PAT-DIA-SPREADER-001\n",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("Known pattern reference: PAT-DIA-SPREADER-001", result.stdout)
+
+    def test_unknown_pattern_reference_causes_warn(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            (case_path / "03_architecture_genomes.yml").write_text(
+                "architectures:\n  - pattern_id: PAT-NOT-IN-INDEX\n",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Unknown pattern reference: PAT-NOT-IN-INDEX", result.stdout)
+
+    def test_unknown_pattern_reference_in_customer_memo_causes_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(
+                case_path,
+                customer_memo=(
+                    "# Customer Memo\n\nConfidentiality level: public\n"
+                    "The recommendation relies on PAT-NOT-IN-INDEX.\n"
+                ),
+            )
+            result = run_checker(case_path)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Unknown pattern reference: PAT-NOT-IN-INDEX", result.stdout)
+
+    def test_pattern_based_claim_with_high_confidence_without_validation_warns(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            (case_path / "10_claim_ledger.yml").write_text(
+                """claims:
+  - claim_id: CLM-PAT-001
+    claim: A referenced pattern is suitable for screening.
+    claim_type: pattern_based
+    basis: Pattern library
+    assumptions:
+      - Case inputs remain incomplete.
+    confidence: high
+    validation_required: true
+    status: proposed
+    public_release: not_allowed_until_review
+    confidentiality_level: public
+    reviewer: pending
+""",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("has high confidence without validation support", result.stdout)
+
+    def test_pattern_based_claim_marked_validated_without_evidence_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            (case_path / "10_claim_ledger.yml").write_text(
+                """claims:
+  - claim_id: CLM-PAT-002
+    claim: A pattern proves the selected architecture.
+    claim_type: architecture_screening
+    basis: Pattern library
+    evidence: Pattern library reference only
+    assumptions:
+      - No case measurement is available.
+    confidence: medium
+    validation_required: true
+    status: validated
+    public_release: no
+    confidentiality_level: public
+    reviewer: pending
+""",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("is marked validated without evidence", result.stdout)
+
+    def test_pattern_based_claim_public_release_without_review_warns(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            (case_path / "10_claim_ledger.yml").write_text(
+                """claims:
+  - claim_id: CLM-PAT-003
+    claim: A referenced pattern is a screening candidate.
+    claim_type: screening
+    basis: Pattern library
+    assumptions:
+      - Case evidence is not yet available.
+    confidence: low
+    validation_required: true
+    status: proposed
+    public_release: yes
+    confidentiality_level: public
+    reviewer: thermal lead
+""",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("allows public release without evidence or completed review", result.stdout)
+
+    def test_diamond_with_interface_risk_elsewhere_avoids_generic_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            (case_path / "02_decision_board.md").write_text(
+                "# Decision Board\n\nA diamond heat spreader is recommended for screening.\n",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 0)
+            self.assertNotIn("Diamond is referenced without interface-risk discussion", result.stdout)
+
+    def test_diamond_with_tbr_discussed_elsewhere_avoids_generic_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            for path in case_path.iterdir():
+                path.write_text(
+                    path.read_text(encoding="utf-8")
+                    .replace("interface thermal resistance", "TBR")
+                    .replace("Interface thermal resistance", "TBR"),
+                    encoding="utf-8",
+                )
+            (case_path / "02_decision_board.md").write_text(
+                "# Decision Board\n\nA diamond heat spreader is recommended for screening.\n",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 0)
+            self.assertNotIn("Diamond is referenced without interface-risk discussion", result.stdout)
+
+    def test_diamond_without_interface_discussion_causes_warn(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            for path in case_path.iterdir():
+                path.write_text(
+                    path.read_text(encoding="utf-8")
+                    .replace("interface thermal resistance", "thermal path")
+                    .replace("Interface thermal resistance", "Thermal path"),
+                    encoding="utf-8",
+                )
+            (case_path / "02_decision_board.md").write_text(
+                "# Decision Board\n\nA diamond heat spreader is recommended for screening.\n",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Diamond is referenced without interface-risk discussion", result.stdout)
+
+    def test_direct_gan_on_diamond_first_step_in_customer_memo_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(
+                case_path,
+                customer_memo=(
+                    "# Customer Memo\n\nConfidentiality level: public\n"
+                    "We recommend direct GaN-on-Diamond as the immediate first step.\n"
+                ),
+            )
+            result = run_checker(case_path)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Direct GaN-on-Diamond first-step recommendation lacks", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

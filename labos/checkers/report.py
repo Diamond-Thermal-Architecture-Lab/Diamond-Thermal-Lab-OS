@@ -55,6 +55,11 @@ class CaseCheckReport:
             actions.append("Resolve or explicitly justify thermal assumptions before stronger decisions.")
         if self.section_findings("Claim safety warnings"):
             actions.append("Rewrite overconfident claims and connect customer-facing statements to validation paths.")
+        if any(
+            finding.severity in {"WARN", "FAIL"}
+            for finding in self.section_findings("Pattern references")
+        ):
+            actions.append("Resolve unknown pattern IDs and review pattern-based claims against case evidence.")
         if self.section_findings("Confidentiality warnings"):
             actions.append("Remove restricted markers or move sensitive content to approved private handling.")
         return actions
@@ -65,6 +70,7 @@ class CaseCheckReport:
             "Required fields",
             "Thermal input warnings",
             "Red flags",
+            "Pattern references",
             "Claim safety warnings",
             "Confidentiality warnings",
         ]
@@ -88,4 +94,3 @@ class CaseCheckReport:
         for action in self.recommended_actions():
             lines.append(f"  - {action}")
         return "\n".join(lines)
-
