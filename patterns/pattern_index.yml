@@ -1,5 +1,7 @@
 patterns:
   - pattern_id: PAT-CONV-PKG-001
+    aliases:
+      - PAT-CONVENTIONAL-PACKAGE-UPGRADE
     file: conventional_package_upgrade.md
     route_type: package-level improvement
     maturity_level: established
@@ -16,6 +18,8 @@ patterns:
       - 04_design_space_scorecard.md
       - 07_validation_plan.md
   - pattern_id: PAT-DIA-SPREADER-001
+    aliases:
+      - PAT-DIAMOND-HEAT-SPREADER
     file: diamond_heat_spreader.md
     route_type: high-conductivity heat spreader
     maturity_level: candidate
@@ -33,6 +37,8 @@ patterns:
       - 05_red_flags.md
       - 08_supplier_specification.md
   - pattern_id: PAT-DIA-SUBMOUNT-001
+    aliases:
+      - PAT-DIAMOND-SUBMOUNT
     file: diamond_submount.md
     route_type: die-near submount
     maturity_level: candidate
@@ -50,6 +56,8 @@ patterns:
       - 07_validation_plan.md
       - 10_claim_ledger.yml
   - pattern_id: PAT-GAN-DIA-001
+    aliases:
+      - PAT-GAN-ON-DIAMOND
     file: gan_on_diamond.md
     route_type: die-near diamond integration
     maturity_level: high-potential concept
@@ -69,6 +77,8 @@ patterns:
       - 05_red_flags.md
       - 10_claim_ledger.yml
   - pattern_id: PAT-CUDIA-001
+    aliases:
+      - PAT-CU-DIAMOND-COMPOSITE
     file: cu_diamond_composite.md
     route_type: composite spreader or baseplate
     maturity_level: candidate
@@ -86,6 +96,8 @@ patterns:
       - 04_design_space_scorecard.md
       - 08_supplier_specification.md
   - pattern_id: PAT-DOUBLE-COOL-001
+    aliases:
+      - PAT-DOUBLE-SIDE-COOLING
     file: double_side_cooling.md
     route_type: package architecture
     maturity_level: concept to candidate
@@ -102,6 +114,8 @@ patterns:
       - 03_architecture_genomes.yml
       - 07_validation_plan.md
   - pattern_id: PAT-MICRO-DIA-001
+    aliases:
+      - PAT-MICROCHANNEL-DIAMOND-HYBRID
     file: microchannel_diamond_hybrid.md
     route_type: active cooling hybrid
     maturity_level: concept
@@ -118,6 +132,8 @@ patterns:
       - 05_red_flags.md
       - 07_validation_plan.md
   - pattern_id: PAT-SIC-ALN-001
+    aliases:
+      - PAT-SIC-ALN-SUBSTRATE-UPGRADE
     file: sic_aln_substrate_upgrade.md
     route_type: substrate or carrier upgrade
     maturity_level: established to candidate
@@ -134,6 +150,8 @@ patterns:
       - 04_design_space_scorecard.md
       - 08_supplier_specification.md
   - pattern_id: PAT-VAPOR-PKG-001
+    aliases:
+      - PAT-VAPOR-CHAMBER-PACKAGE-UPGRADE
     file: vapor_chamber_package_upgrade.md
     route_type: package-level spreading and boundary improvement
     maturity_level: established to candidate

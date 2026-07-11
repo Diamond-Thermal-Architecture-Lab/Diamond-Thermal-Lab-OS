@@ -189,6 +189,20 @@ class LabOsCaseCheckerTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("Unknown pattern reference: PAT-NOT-IN-INDEX", result.stdout)
 
+    def test_recognized_persisted_alias_causes_warn_with_canonical_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case_path = Path(tmp) / "case"
+            write_complete_case(case_path)
+            (case_path / "03_architecture_genomes.yml").write_text(
+                "architectures:\n  - pattern_id: PAT-DIAMOND-SUBMOUNT\n",
+                encoding="utf-8",
+            )
+            result = run_checker(case_path, "--strict")
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Recognized pattern alias used in persisted case", result.stdout)
+            self.assertIn("PAT-DIA-SUBMOUNT-001", result.stdout)
+            self.assertNotIn("Unknown pattern reference", result.stdout)
+
     def test_unknown_pattern_reference_in_customer_memo_causes_fail(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             case_path = Path(tmp) / "case"

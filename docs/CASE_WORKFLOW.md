@@ -26,6 +26,12 @@ New MVP cases should use the numbered canonical structure. The preferred way to 
 python scripts/labos_case.py new --case-id example-new-case --title "Example new thermal case"
 ```
 
+When reusable route candidates are already known, initialize up to five approved patterns during case creation:
+
+```bash
+python scripts/labos_case.py new --case-id example-pattern-case --title "Example pattern case" --pattern PAT-CONVENTIONAL-PACKAGE-UPGRADE --pattern PAT-DIAMOND-SUBMOUNT
+```
+
 ```text
 cases/<case_id>/
   00_problem_intake.yml
@@ -49,7 +55,8 @@ Existing unnumbered Markdown files may remain when they contain useful review co
 - Start with missing information, not preferred solutions.
 - Compare diamond and non-diamond routes neutrally.
 - Separate assumptions from facts.
-- Add pattern references during architecture genome and scorecard creation when reusable routes apply, and verify every ID against `patterns/pattern_index.yml`.
+- Add pattern references during architecture genome and scorecard creation when reusable routes apply, and verify every persisted ID against `patterns/pattern_index.yml`. CLI aliases are resolved to compact canonical IDs before case files are written.
+- Pattern selection during case initialization creates screening scaffolding only. Keep all selected routes as candidates until case evidence and review support a stronger decision.
 - Treat pattern references as decision support, not validation; pattern-based claims still require assumptions, confidence, validation status, and claim-ledger review.
 - Identify red flags before making supplier requests.
 - Recommend validation before expensive simulation when boundaries are unclear.
