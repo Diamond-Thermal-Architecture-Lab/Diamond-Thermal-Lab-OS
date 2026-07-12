@@ -6,15 +6,17 @@ The case workflow turns an incomplete thermal management problem into a reviewab
 
 ## Workflow
 
-problem intake
+case initialization
+-> intake completion
 -> deterministic triage
+-> Decision Board preview
 -> human review
 -> thermal design passport
--> decision board
 -> architecture comparison
+-> approved Decision Board
+-> validation planning
 -> red flags
 -> next best action
--> validation plan
 -> supplier specification
 -> customer memo
 -> claim ledger
@@ -38,6 +40,13 @@ Run deterministic triage after completing the initial intake and before human ro
 
 ```bash
 python scripts/labos_case.py triage cases/example-incomplete-gan-rf-pa/
+```
+
+Use the Decision Board preview after triage to combine the current evidence, candidate patterns, hold points, and next actions. It is also read-only; a separate reviewed workflow is required before editing `02_decision_board.md`:
+
+```bash
+python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/
+python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/ --json
 ```
 
 ```text
@@ -66,6 +75,7 @@ Existing unnumbered Markdown files may remain when they contain useful review co
 - Add pattern references during architecture genome and scorecard creation when reusable routes apply, and verify every persisted ID against `patterns/pattern_index.yml`. CLI aliases are resolved to compact canonical IDs before case files are written.
 - Pattern selection during case initialization creates screening scaffolding only. Keep all selected routes as candidates until case evidence and review support a stronger decision.
 - Treat pattern references as decision support, not validation; pattern-based claims still require assumptions, confidence, validation status, and claim-ledger review.
+- Treat the Decision Board preview as a screening aid, not an approved Decision Board. Keep route selection deferred until evidence and human review support it.
 - Identify red flags before making supplier requests.
 - Recommend validation before expensive simulation when boundaries are unclear.
 - Keep customer memo language conservative.

@@ -18,6 +18,10 @@ Rules use stable `TRIAGE-<FAMILY>-<NUMBER>` IDs. Each triggered rule records its
 
 Canonical and recognized alias pattern references are normalized through the shared pattern index. Patterns are screening context only: diamond routes require interface-risk consideration, direct GaN-on-Diamond remains a higher-integration-risk candidate, and conventional package improvement remains a legitimate candidate. The command reads existing canonical case files and does not write reports, scorecards, or other case artifacts.
 
+## Decision Board Preview Input
+
+Triage provides the structured input for the read-only Decision Board preview. The preview reuses the `TriageResult` directly, retaining its classifications, next-best action, confidence, and triggered rule IDs. It adds decision status, candidate-route framing, hold points, and claim guardrails without rerunning or duplicating triage rules. See [Decision Board Guide](DECISION_BOARD_GUIDE.md).
+
 ## Usage
 
 ```bash
