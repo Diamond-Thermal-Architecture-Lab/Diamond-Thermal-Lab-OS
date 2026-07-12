@@ -10,13 +10,15 @@ from .report import CaseCheckReport
 UNCERTAIN_RE = re.compile(r"\b(incomplete|unknown|uncertain|missing|not specified|tbd|to be defined)\b", re.IGNORECASE)
 
 
-def _field_value(text: str, field: str) -> str:
+def field_value(text: str, field: str) -> str:
+    """Read one top-level scalar field from an MVP case intake without PyYAML."""
     pattern = re.compile(rf"^{re.escape(field)}:\s*(.*)$", re.MULTILINE)
     match = pattern.search(text)
     return match.group(1).strip() if match else ""
 
 
-def _combined_case_text(case_path: Path) -> str:
+def combined_case_text(case_path: Path) -> str:
+    """Return public-safe case text for local deterministic screening checks."""
     return "\n".join(read_text(path) for path in iter_case_files(case_path)).lower()
 
 
@@ -32,11 +34,11 @@ def check_critical_thermal_inputs(case_path: Path, report: CaseCheckReport) -> N
         "cooling_boundary": "Cooling boundary is missing, incomplete, or uncertain.",
     }
     for field, message in checks.items():
-        value = _field_value(intake, field)
+        value = field_value(intake, field)
         if not value or UNCERTAIN_RE.search(value):
             report.add("WARN", "Thermal input warnings", message, intake_path.name)
 
-    combined = _combined_case_text(case_path)
+    combined = combined_case_text(case_path)
     interface_discussed = any(
         term in combined
         for term in (

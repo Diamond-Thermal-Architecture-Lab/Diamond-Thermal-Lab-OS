@@ -7,6 +7,8 @@ The case workflow turns an incomplete thermal management problem into a reviewab
 ## Workflow
 
 problem intake
+-> deterministic triage
+-> human review
 -> thermal design passport
 -> decision board
 -> architecture comparison
@@ -30,6 +32,12 @@ When reusable route candidates are already known, initialize up to five approved
 
 ```bash
 python scripts/labos_case.py new --case-id example-pattern-case --title "Example pattern case" --pattern PAT-CONVENTIONAL-PACKAGE-UPGRADE --pattern PAT-DIAMOND-SUBMOUNT
+```
+
+Run deterministic triage after completing the initial intake and before human route review. It reads the case only and cannot replace the validation plan:
+
+```bash
+python scripts/labos_case.py triage cases/example-incomplete-gan-rf-pa/
 ```
 
 ```text

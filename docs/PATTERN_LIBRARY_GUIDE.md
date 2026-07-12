@@ -54,6 +54,10 @@ python scripts/labos_case.py new --case-id example-pattern-case --title "Example
 
 This creates screening scaffolding only: candidate architecture entries, assumption TODOs, generic risk placeholders, validation and supplier-data TODOs, and low-confidence draft pattern-based claims. Aliases are resolved before generation, so generated case files contain canonical IDs only. It does not validate a route, select a final architecture, or establish customer-facing performance.
 
+## Triage Interaction
+
+Deterministic triage recognizes canonical IDs and approved aliases through the same local pattern index. It uses patterns as screening context only: diamond-related routes prompt interface-risk consideration, direct GaN-on-Diamond remains a higher-integration-risk candidate, and conventional package improvement remains a legitimate candidate. Pattern presence does not prove a bottleneck, validate a route, or select a recommendation.
+
 ## Avoiding Overclaiming
 
 - Do not cite a pattern as proof of performance.
