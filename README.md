@@ -39,6 +39,15 @@ python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
 
 The checker screens for missing files, missing thermal inputs, unsafe claims, confidentiality markers, and common thermal architecture red flags. It does not validate a design or replace engineering judgment.
 
+## Deterministic Triage
+
+```bash
+python scripts/labos_case.py triage cases/example-incomplete-gan-rf-pa/
+python scripts/labos_case.py triage cases/example-incomplete-gan-rf-pa/ --json
+```
+
+Triage is read-only, deterministic screening. It identifies missing data, candidate bottlenecks, rule traces, and a conservative next action; it is not validation.
+
 ## Create A New Case
 
 Use the local no-API case generator to create a complete numbered case folder:
@@ -83,6 +92,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [MVP Execution Plan](docs/MVP_EXECUTION_PLAN.md)
 - [Case Workflow](docs/CASE_WORKFLOW.md)
 - [Case Generator Guide](docs/CASE_GENERATOR_GUIDE.md)
+- [Triage Engine Guide](docs/TRIAGE_ENGINE_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
 - [Pattern Library Guide](docs/PATTERN_LIBRARY_GUIDE.md)

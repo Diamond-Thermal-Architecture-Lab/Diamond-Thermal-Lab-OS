@@ -15,6 +15,8 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from labos.checkers.case_file_checker import REQUIRED_CASE_FILES
 from labos.patterns.index import PatternIndexEntry, load_pattern_index, patterns_by_id, resolve_pattern_id
+from labos.triage.engine import triage_case
+from labos.triage.report import render as render_triage
 from labos_check_case import run_case_check
 
 
@@ -578,6 +580,10 @@ def build_parser() -> argparse.ArgumentParser:
     check_parser.add_argument("case_path", type=Path, help="Path to a case folder.")
     check_parser.add_argument("--strict", action="store_true", help="Return exit code 1 for WARN.")
 
+    triage_parser = subparsers.add_parser("triage", help="Run read-only deterministic thermal triage.")
+    triage_parser.add_argument("case_path", type=Path, help="Path to a case folder.")
+    triage_parser.add_argument("--json", action="store_true", help="Print JSON only.")
+
     list_parser = subparsers.add_parser("list", help="List case folders and canonical file status.")
     _add_common_parser_options(list_parser)
 
@@ -616,6 +622,15 @@ def main(argv: list[str] | None = None) -> int:
         report = run_case_check(args.case_path, strict=args.strict)
         print(report.render())
         return report.exit_code(strict=args.strict)
+
+    if args.command == "triage":
+        try:
+            result = triage_case(args.case_path)
+        except (OSError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_triage(result, as_json=args.json))
+        return 0
 
     if args.command == "list":
         rows = list_cases(args.cases_root)
