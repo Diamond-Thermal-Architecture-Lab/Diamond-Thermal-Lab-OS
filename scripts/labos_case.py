@@ -14,6 +14,8 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from labos.checkers.case_file_checker import REQUIRED_CASE_FILES
+from labos.decision_board.builder import build_decision_board
+from labos.decision_board.report import render as render_decision_board
 from labos.patterns.index import PatternIndexEntry, load_pattern_index, patterns_by_id, resolve_pattern_id
 from labos.triage.engine import triage_case
 from labos.triage.report import render as render_triage
@@ -584,6 +586,12 @@ def build_parser() -> argparse.ArgumentParser:
     triage_parser.add_argument("case_path", type=Path, help="Path to a case folder.")
     triage_parser.add_argument("--json", action="store_true", help="Print JSON only.")
 
+    decision_board_parser = subparsers.add_parser(
+        "decision-board", help="Build a read-only deterministic Decision Board preview."
+    )
+    decision_board_parser.add_argument("case_path", type=Path, help="Path to a case folder.")
+    decision_board_parser.add_argument("--json", action="store_true", help="Print JSON only.")
+
     list_parser = subparsers.add_parser("list", help="List case folders and canonical file status.")
     _add_common_parser_options(list_parser)
 
@@ -630,6 +638,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: {exc}", file=sys.stderr)
             return 2
         print(render_triage(result, as_json=args.json))
+        return 0
+
+    if args.command == "decision-board":
+        try:
+            result = build_decision_board(args.case_path)
+        except (OSError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_decision_board(result, as_json=args.json))
         return 0
 
     if args.command == "list":

@@ -48,6 +48,15 @@ python scripts/labos_case.py triage cases/example-incomplete-gan-rf-pa/ --json
 
 Triage is read-only, deterministic screening. It identifies missing data, candidate bottlenecks, rule traces, and a conservative next action; it is not validation.
 
+## Decision Board Preview
+
+```bash
+python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/
+python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/ --json
+```
+
+The Decision Board preview combines deterministic triage, selected pattern candidates, missing data, hold points, and claim guardrails into one read-only decision view. It does not edit `02_decision_board.md`, select a winning route, or turn a pattern into a recommendation.
+
 ## Create A New Case
 
 Use the local no-API case generator to create a complete numbered case folder:
@@ -93,6 +102,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Case Workflow](docs/CASE_WORKFLOW.md)
 - [Case Generator Guide](docs/CASE_GENERATOR_GUIDE.md)
 - [Triage Engine Guide](docs/TRIAGE_ENGINE_GUIDE.md)
+- [Decision Board Guide](docs/DECISION_BOARD_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
 - [Pattern Library Guide](docs/PATTERN_LIBRARY_GUIDE.md)

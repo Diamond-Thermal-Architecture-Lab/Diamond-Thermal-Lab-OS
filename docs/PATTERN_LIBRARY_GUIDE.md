@@ -58,6 +58,8 @@ This creates screening scaffolding only: candidate architecture entries, assumpt
 
 Deterministic triage recognizes canonical IDs and approved aliases through the same local pattern index. It uses patterns as screening context only: diamond-related routes prompt interface-risk consideration, direct GaN-on-Diamond remains a higher-integration-risk candidate, and conventional package improvement remains a legitimate candidate. Pattern presence does not prove a bottleneck, validate a route, or select a recommendation.
 
+The read-only Decision Board preview uses the same normalized canonical IDs. It presents referenced patterns as `screening_candidate` routes and can defer a route when data, interface evidence, measurement, or integration review is incomplete. Deferral is not rejection, and the preview never promotes a pattern reference into a validated recommendation.
+
 ## Avoiding Overclaiming
 
 - Do not cite a pattern as proof of performance.
