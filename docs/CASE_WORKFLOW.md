@@ -10,6 +10,7 @@ case initialization
 -> intake completion
 -> deterministic triage
 -> Decision Board preview
+-> Decision Review Package
 -> human review
 -> thermal design passport
 -> architecture comparison
@@ -49,6 +50,12 @@ python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/
 python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/ --json
 ```
 
+Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:
+
+```bash
+python scripts/labos_case.py export-decision-review cases/example-incomplete-gan-rf-pa/ --output-dir exports/example-incomplete-gan-rf-pa-review
+```
+
 ```text
 cases/<case_id>/
   00_problem_intake.yml
@@ -76,6 +83,7 @@ Existing unnumbered Markdown files may remain when they contain useful review co
 - Pattern selection during case initialization creates screening scaffolding only. Keep all selected routes as candidates until case evidence and review support a stronger decision.
 - Treat pattern references as decision support, not validation; pattern-based claims still require assumptions, confidence, validation status, and claim-ledger review.
 - Treat the Decision Board preview as a screening aid, not an approved Decision Board. Keep route selection deferred until evidence and human review support it.
+- Treat the Decision Review Package as review evidence only. It exports preview content and hashes, but it does not approve a route or write `02_decision_board.md`.
 - Identify red flags before making supplier requests.
 - Recommend validation before expensive simulation when boundaries are unclear.
 - Keep customer memo language conservative.

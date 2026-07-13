@@ -40,6 +40,18 @@ python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/ 
 
 `--json` prints valid JSON only and is deterministic for an unchanged case. A valid preview, including a HOLD state, exits with code `0`; invalid or unreadable case input exits with code `2`.
 
+## Review Package Export
+
+The preview can be exported into a separate Decision Review Package for human inspection:
+
+```bash
+python scripts/labos_case.py export-decision-review \
+  cases/example-incomplete-gan-rf-pa/ \
+  --output-dir exports/example-incomplete-gan-rf-pa-review
+```
+
+The exporter uses the structured preview result directly. It writes package artifacts outside the canonical case folder and does not modify `02_decision_board.md`.
+
 ## Adding A Board Rule
 
 Add a focused, deterministic rule only for logic beyond triage. Give it a stable `BOARD-<FAMILY>-<NUMBER>` ID, preserve triage rule IDs instead of restating them, add a unit test, and document any new decision consequence. Keep the rule conservative: it may frame a hold or a next action, but it must not fabricate validation or select a winning architecture.
