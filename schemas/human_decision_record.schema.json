@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-thermal-lab-os.local/schemas/human_decision_record.schema.json",
+  "title": "Diamond Thermal Lab OS Human Decision Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_format_version",
+    "record_status",
+    "case_id",
+    "review_package_binding",
+    "reviewer",
+    "decision_owner",
+    "review_outcome",
+    "approved_route_ids",
+    "rejected_route_ids",
+    "deferred_route_ids",
+    "decision_rationale",
+    "approval_conditions",
+    "required_additional_evidence",
+    "evidence_references",
+    "customer_release_status",
+    "customer_release_basis",
+    "risk_acceptance",
+    "acknowledgements",
+    "human_attestation",
+    "validation_note"
+  ],
+  "properties": {
+    "record_format_version": { "type": "string" },
+    "record_status": { "type": "string", "enum": ["draft", "final"] },
+    "case_id": { "type": "string" },
+    "review_package_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_manifest_file",
+        "review_manifest_sha256",
+        "package_format_version",
+        "board_status",
+        "decision_state",
+        "decision_board_ruleset_version",
+        "triage_ruleset_version",
+        "source_case_sha256"
+      ],
+      "properties": {
+        "review_manifest_file": { "type": "string" },
+        "review_manifest_sha256": { "type": "string" },
+        "package_format_version": { "type": "string" },
+        "board_status": { "type": "string" },
+        "decision_state": { "type": "string" },
+        "decision_board_ruleset_version": { "type": "string" },
+        "triage_ruleset_version": { "type": "string" },
+        "source_case_sha256": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "reviewer": { "$ref": "#/$defs/person" },
+    "decision_owner": { "$ref": "#/$defs/person" },
+    "review_outcome": {
+      "type": "string",
+      "enum": ["pending", "approved", "deferred", "rejected", "more_evidence_required"]
+    },
+    "approved_route_ids": { "$ref": "#/$defs/string_list" },
+    "rejected_route_ids": { "$ref": "#/$defs/string_list" },
+    "deferred_route_ids": { "$ref": "#/$defs/string_list" },
+    "decision_rationale": { "type": "string" },
+    "approval_conditions": { "$ref": "#/$defs/string_list" },
+    "required_additional_evidence": { "$ref": "#/$defs/string_list" },
+    "evidence_references": { "$ref": "#/$defs/string_list" },
+    "customer_release_status": { "type": "string", "enum": ["not_requested", "blocked", "approved"] },
+    "customer_release_basis": { "$ref": "#/$defs/string_list" },
+    "risk_acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted", "accepted_risks", "rationale"],
+      "properties": {
+        "accepted": { "type": "boolean" },
+        "accepted_risks": { "$ref": "#/$defs/string_list" },
+        "rationale": { "type": "string" }
+      }
+    },
+    "acknowledgements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_package_is_not_an_approved_decision",
+        "pattern_selection_is_not_validation",
+        "measured_simulated_supplier_and_pattern_evidence_are_distinct",
+        "canonical_case_is_not_modified_automatically"
+      ],
+      "properties": {
+        "review_package_is_not_an_approved_decision": { "type": "boolean" },
+        "pattern_selection_is_not_validation": { "type": "boolean" },
+        "measured_simulated_supplier_and_pattern_evidence_are_distinct": { "type": "boolean" },
+        "canonical_case_is_not_modified_automatically": { "type": "boolean" }
+      }
+    },
+    "human_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_attested", "decision_owner_attested", "attestation_note"],
+      "properties": {
+        "reviewer_attested": { "type": "boolean" },
+        "decision_owner_attested": { "type": "boolean" },
+        "attestation_note": { "type": "string" }
+      }
+    },
+    "validation_note": { "type": "string" }
+  },
+  "$defs": {
+    "person": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "role", "organization"],
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "organization": { "type": "string" }
+      }
+    },
+    "string_list": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

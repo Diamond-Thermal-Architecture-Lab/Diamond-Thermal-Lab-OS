@@ -67,6 +67,20 @@ python scripts/labos_case.py export-decision-review \
 
 The exporter writes a deterministic review package outside the canonical case folder. It includes the Decision Board preview, structured JSON, source/artifact hashes, and a blank human review checklist. It does not approve a decision or edit `02_decision_board.md`.
 
+## Human Decision Record
+
+```bash
+python scripts/labos_case.py new-decision-record \
+  exports/example-incomplete-gan-rf-pa-review \
+  --output decisions/example-incomplete-gan-rf-pa-decision.json
+
+python scripts/labos_case.py validate-decision-record \
+  exports/example-incomplete-gan-rf-pa-review \
+  decisions/example-incomplete-gan-rf-pa-decision.json
+```
+
+The Human Decision Record binds a human-entered decision to one review package manifest. The template is blank and pending by default, and validation checks structure, binding, route IDs, customer-release guardrails, and attestations. It does not verify identity, create a cryptographic signature, or update canonical case files.
+
 ## Create A New Case
 
 Use the local no-API case generator to create a complete numbered case folder:
@@ -114,6 +128,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Triage Engine Guide](docs/TRIAGE_ENGINE_GUIDE.md)
 - [Decision Board Guide](docs/DECISION_BOARD_GUIDE.md)
 - [Decision Review Package Guide](docs/DECISION_REVIEW_PACKAGE_GUIDE.md)
+- [Human Decision Record Guide](docs/HUMAN_DECISION_RECORD_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
 - [Pattern Library Guide](docs/PATTERN_LIBRARY_GUIDE.md)

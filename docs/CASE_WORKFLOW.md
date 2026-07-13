@@ -11,7 +11,9 @@ case initialization
 -> deterministic triage
 -> Decision Board preview
 -> Decision Review Package
--> human review
+-> Human Decision Record
+-> record validation
+-> explicit canonical-write workflow
 -> thermal design passport
 -> architecture comparison
 -> approved Decision Board
@@ -56,6 +58,13 @@ Export a Decision Review Package when the preview should be shared, archived, or
 python scripts/labos_case.py export-decision-review cases/example-incomplete-gan-rf-pa/ --output-dir exports/example-incomplete-gan-rf-pa-review
 ```
 
+Create and validate a Human Decision Record only after a review package exists. The template is blank and pending; the validator checks binding and guardrails but does not verify identity or write the canonical Decision Board:
+
+```bash
+python scripts/labos_case.py new-decision-record exports/example-incomplete-gan-rf-pa-review --output decisions/example-incomplete-gan-rf-pa-decision.json
+python scripts/labos_case.py validate-decision-record exports/example-incomplete-gan-rf-pa-review decisions/example-incomplete-gan-rf-pa-decision.json
+```
+
 ```text
 cases/<case_id>/
   00_problem_intake.yml
@@ -84,6 +93,7 @@ Existing unnumbered Markdown files may remain when they contain useful review co
 - Treat pattern references as decision support, not validation; pattern-based claims still require assumptions, confidence, validation status, and claim-ledger review.
 - Treat the Decision Board preview as a screening aid, not an approved Decision Board. Keep route selection deferred until evidence and human review support it.
 - Treat the Decision Review Package as review evidence only. It exports preview content and hashes, but it does not approve a route or write `02_decision_board.md`.
+- Treat the Human Decision Record as a human-entered review artifact. It is not a cryptographic signature and does not automatically modify canonical case files.
 - Identify red flags before making supplier requests.
 - Recommend validation before expensive simulation when boundaries are unclear.
 - Keep customer memo language conservative.
