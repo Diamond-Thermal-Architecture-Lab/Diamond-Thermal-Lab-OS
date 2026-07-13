@@ -53,4 +53,6 @@ The package preserves a deterministic preview for review. It keeps candidate rou
 
 ## Future Approval Workflow
 
-A future workflow may copy reviewed conclusions into `02_decision_board.md`, but that must be opt-in, reviewable, and separate from this exporter. Any future write workflow should preserve claim safety, confidentiality review, and validation traceability.
+A Human Decision Record can be generated against a package and bound to `review_manifest.json` by SHA256. The record captures human-entered review outcome, route decisions, evidence references, customer-release posture, acknowledgements, and attestations. The validator checks the binding and guardrails, but it does not verify human identity or create a cryptographic signature.
+
+A future workflow may copy reviewed conclusions into `02_decision_board.md`, but that must be opt-in, reviewable, and separate from this exporter and from Human Decision Record validation. Any future write workflow should preserve claim safety, confidentiality review, and validation traceability.

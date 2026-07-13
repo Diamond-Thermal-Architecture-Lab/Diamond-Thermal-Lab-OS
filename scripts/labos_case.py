@@ -16,6 +16,10 @@ if str(SCRIPTS_ROOT) not in sys.path:
 from labos.checkers.case_file_checker import REQUIRED_CASE_FILES
 from labos.decision_board.builder import build_decision_board
 from labos.decision_board.report import render as render_decision_board
+from labos.decision_record.report import exit_code as decision_record_exit_code
+from labos.decision_record.report import render_validation
+from labos.decision_record.template import create_decision_record_template
+from labos.decision_record.validator import validate_decision_record
 from labos.patterns.index import PatternIndexEntry, load_pattern_index, patterns_by_id, resolve_pattern_id
 from labos.review_package.exporter import export_decision_review_package
 from labos.review_package.report import render_export_summary
@@ -601,6 +605,21 @@ def build_parser() -> argparse.ArgumentParser:
     export_review_parser.add_argument("--output-dir", required=True, type=Path, help="Explicit package output directory.")
     export_review_parser.add_argument("--force", action="store_true", help="Overwrite only known generated package files.")
 
+    new_record_parser = subparsers.add_parser(
+        "new-decision-record", help="Create a blank Human Decision Record bound to a review package."
+    )
+    new_record_parser.add_argument("review_package_dir", type=Path, help="Path to a Decision Review Package.")
+    new_record_parser.add_argument("--output", required=True, type=Path, help="Explicit decision record JSON output file.")
+    new_record_parser.add_argument("--force", action="store_true", help="Overwrite only the explicit output file.")
+
+    validate_record_parser = subparsers.add_parser(
+        "validate-decision-record", help="Validate a Human Decision Record against a review package."
+    )
+    validate_record_parser.add_argument("review_package_dir", type=Path, help="Path to a Decision Review Package.")
+    validate_record_parser.add_argument("record_path", type=Path, help="Path to a Human Decision Record JSON file.")
+    validate_record_parser.add_argument("--strict", action="store_true", help="Return exit code 1 for WARN.")
+    validate_record_parser.add_argument("--json", action="store_true", help="Print JSON only.")
+
     list_parser = subparsers.add_parser("list", help="List case folders and canonical file status.")
     _add_common_parser_options(list_parser)
 
@@ -672,6 +691,34 @@ def main(argv: list[str] | None = None) -> int:
         print(render_export_summary(result, repo_root=REPO_ROOT))
         return 0
 
+    if args.command == "new-decision-record":
+        try:
+            record = create_decision_record_template(
+                args.review_package_dir,
+                args.output,
+                repo_root=REPO_ROOT,
+                force=args.force,
+            )
+        except (OSError, ValueError, FileExistsError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print("Human Decision Record template created")
+        print(f"Case: {record.get('case_id', '')}")
+        print(f"Record status: {record.get('record_status', '')}")
+        print(f"Review outcome: {record.get('review_outcome', '')}")
+        print(f"Output: {_display_path(args.output)}")
+        print("Validation note: This template is not an approval and does not modify the canonical case.")
+        return 0
+
+    if args.command == "validate-decision-record":
+        try:
+            result = validate_decision_record(args.review_package_dir, args.record_path)
+        except (OSError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_validation(result, as_json=args.json))
+        return decision_record_exit_code(result, strict=args.strict)
+
     if args.command == "list":
         rows = list_cases(args.cases_root)
         if not rows:
@@ -697,6 +744,14 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.error("Unknown command")
     return 2
+
+
+def _display_path(path: Path) -> str:
+    candidate = path if path.is_absolute() else Path.cwd() / path
+    try:
+        return str(candidate.resolve(strict=False).relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
 
 if __name__ == "__main__":
