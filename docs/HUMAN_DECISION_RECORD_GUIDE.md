@@ -66,4 +66,6 @@ The system does not verify identity. It validates that final records contain non
 
 ## Future Canonical Write Workflow
 
+A validated final `PASS` record may be used to generate a separate Canonical Decision Proposal. The proposal binds back to the exact review package and current case hashes, but it still does not edit `02_decision_board.md`.
+
 Any future workflow that copies an approved decision into `02_decision_board.md` must remain explicit, reviewable, and separate. The Human Decision Record is a prerequisite artifact, not an automatic write permission.

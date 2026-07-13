@@ -20,6 +20,7 @@ from labos.decision_record.report import exit_code as decision_record_exit_code
 from labos.decision_record.report import render_validation
 from labos.decision_record.template import create_decision_record_template
 from labos.decision_record.validator import validate_decision_record
+from labos.canonical_proposal.builder import build_canonical_decision_proposal
 from labos.patterns.index import PatternIndexEntry, load_pattern_index, patterns_by_id, resolve_pattern_id
 from labos.review_package.exporter import export_decision_review_package
 from labos.review_package.report import render_export_summary
@@ -620,6 +621,15 @@ def build_parser() -> argparse.ArgumentParser:
     validate_record_parser.add_argument("--strict", action="store_true", help="Return exit code 1 for WARN.")
     validate_record_parser.add_argument("--json", action="store_true", help="Print JSON only.")
 
+    proposal_parser = subparsers.add_parser(
+        "propose-canonical-decision", help="Generate a read-only canonical Decision Board proposal package."
+    )
+    proposal_parser.add_argument("case_path", type=Path, help="Path to the canonical case folder.")
+    proposal_parser.add_argument("review_package_dir", type=Path, help="Path to the bound Decision Review Package.")
+    proposal_parser.add_argument("record_path", type=Path, help="Path to a final PASS Human Decision Record.")
+    proposal_parser.add_argument("--output-dir", required=True, type=Path, help="Explicit proposal output directory.")
+    proposal_parser.add_argument("--force", action="store_true", help="Overwrite only known generated proposal files.")
+
     list_parser = subparsers.add_parser("list", help="List case folders and canonical file status.")
     _add_common_parser_options(list_parser)
 
@@ -718,6 +728,28 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(render_validation(result, as_json=args.json))
         return decision_record_exit_code(result, strict=args.strict)
+
+    if args.command == "propose-canonical-decision":
+        try:
+            result = build_canonical_decision_proposal(
+                args.case_path,
+                args.review_package_dir,
+                args.record_path,
+                args.output_dir,
+                repo_root=REPO_ROOT,
+                force=args.force,
+            )
+        except (OSError, ValueError, FileExistsError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print("Canonical Decision Proposal generated")
+        print(f"Case: {result.case_id}")
+        print(f"Review outcome: {result.review_outcome}")
+        print("Record validation: PASS")
+        print(f"Output directory: {_display_path(result.output_dir)}")
+        print("Files:\n" + "\n".join(f"- {name}" for name in result.files))
+        print("Validation note: This proposal has not been applied to the canonical case.")
+        return 0
 
     if args.command == "list":
         rows = list_cases(args.cases_root)

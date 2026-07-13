@@ -81,6 +81,18 @@ python scripts/labos_case.py validate-decision-record \
 
 The Human Decision Record binds a human-entered decision to one review package manifest. The template is blank and pending by default, and validation checks structure, binding, route IDs, customer-release guardrails, and attestations. It does not verify identity, create a cryptographic signature, or update canonical case files.
 
+## Canonical Decision Proposal
+
+```bash
+python scripts/labos_case.py propose-canonical-decision \
+  cases/example-case/ \
+  exports/example-case-review/ \
+  decisions/example-case-decision.json \
+  --output-dir proposals/example-case-canonical-decision
+```
+
+This creates a deterministic proposal package only after a final Human Decision Record validates as `PASS` and its source case hashes still match. It produces a proposed Decision Board replacement, a review diff, a manifest, and a blank application checklist. It does not edit `02_decision_board.md` or apply a decision.
+
 ## Create A New Case
 
 Use the local no-API case generator to create a complete numbered case folder:
@@ -129,6 +141,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Decision Board Guide](docs/DECISION_BOARD_GUIDE.md)
 - [Decision Review Package Guide](docs/DECISION_REVIEW_PACKAGE_GUIDE.md)
 - [Human Decision Record Guide](docs/HUMAN_DECISION_RECORD_GUIDE.md)
+- [Canonical Decision Proposal Guide](docs/CANONICAL_DECISION_PROPOSAL_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
 - [Pattern Library Guide](docs/PATTERN_LIBRARY_GUIDE.md)

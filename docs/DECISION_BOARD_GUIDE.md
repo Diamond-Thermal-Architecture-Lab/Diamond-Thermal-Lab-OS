@@ -52,6 +52,10 @@ python scripts/labos_case.py export-decision-review \
 
 The exporter uses the structured preview result directly. It writes package artifacts outside the canonical case folder and does not modify `02_decision_board.md`.
 
+## Canonical Proposal Boundary
+
+The preview is an initial screening artifact; the review package archives it; the Human Decision Record captures a human outcome; and a Canonical Decision Proposal renders a separate proposed replacement plus a unified diff. None of those layers writes the actual approved canonical `02_decision_board.md`. Any application remains a separate explicit PR workflow.
+
 ## Adding A Board Rule
 
 Add a focused, deterministic rule only for logic beyond triage. Give it a stable `BOARD-<FAMILY>-<NUMBER>` ID, preserve triage rule IDs instead of restating them, add a unit test, and document any new decision consequence. Keep the rule conservative: it may frame a hold or a next action, but it must not fabricate validation or select a winning architecture.

@@ -13,7 +13,8 @@ case initialization
 -> Decision Review Package
 -> Human Decision Record
 -> record validation
--> explicit canonical-write workflow
+-> Canonical Decision Proposal
+-> explicit PR-based canonical application
 -> thermal design passport
 -> architecture comparison
 -> approved Decision Board
