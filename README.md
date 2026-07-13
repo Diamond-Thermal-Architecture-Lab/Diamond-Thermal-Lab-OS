@@ -57,6 +57,16 @@ python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/ 
 
 The Decision Board preview combines deterministic triage, selected pattern candidates, missing data, hold points, and claim guardrails into one read-only decision view. It does not edit `02_decision_board.md`, select a winning route, or turn a pattern into a recommendation.
 
+## Decision Review Package
+
+```bash
+python scripts/labos_case.py export-decision-review \
+  cases/example-incomplete-gan-rf-pa/ \
+  --output-dir exports/example-incomplete-gan-rf-pa-review
+```
+
+The exporter writes a deterministic review package outside the canonical case folder. It includes the Decision Board preview, structured JSON, source/artifact hashes, and a blank human review checklist. It does not approve a decision or edit `02_decision_board.md`.
+
 ## Create A New Case
 
 Use the local no-API case generator to create a complete numbered case folder:
@@ -103,6 +113,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Case Generator Guide](docs/CASE_GENERATOR_GUIDE.md)
 - [Triage Engine Guide](docs/TRIAGE_ENGINE_GUIDE.md)
 - [Decision Board Guide](docs/DECISION_BOARD_GUIDE.md)
+- [Decision Review Package Guide](docs/DECISION_REVIEW_PACKAGE_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
 - [Pattern Library Guide](docs/PATTERN_LIBRARY_GUIDE.md)

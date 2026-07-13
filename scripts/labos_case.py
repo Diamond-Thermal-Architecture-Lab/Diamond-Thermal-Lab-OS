@@ -17,6 +17,8 @@ from labos.checkers.case_file_checker import REQUIRED_CASE_FILES
 from labos.decision_board.builder import build_decision_board
 from labos.decision_board.report import render as render_decision_board
 from labos.patterns.index import PatternIndexEntry, load_pattern_index, patterns_by_id, resolve_pattern_id
+from labos.review_package.exporter import export_decision_review_package
+from labos.review_package.report import render_export_summary
 from labos.triage.engine import triage_case
 from labos.triage.report import render as render_triage
 from labos_check_case import run_case_check
@@ -592,6 +594,13 @@ def build_parser() -> argparse.ArgumentParser:
     decision_board_parser.add_argument("case_path", type=Path, help="Path to a case folder.")
     decision_board_parser.add_argument("--json", action="store_true", help="Print JSON only.")
 
+    export_review_parser = subparsers.add_parser(
+        "export-decision-review", help="Export a deterministic Decision Review Package."
+    )
+    export_review_parser.add_argument("case_path", type=Path, help="Path to a case folder.")
+    export_review_parser.add_argument("--output-dir", required=True, type=Path, help="Explicit package output directory.")
+    export_review_parser.add_argument("--force", action="store_true", help="Overwrite only known generated package files.")
+
     list_parser = subparsers.add_parser("list", help="List case folders and canonical file status.")
     _add_common_parser_options(list_parser)
 
@@ -647,6 +656,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: {exc}", file=sys.stderr)
             return 2
         print(render_decision_board(result, as_json=args.json))
+        return 0
+
+    if args.command == "export-decision-review":
+        try:
+            result = export_decision_review_package(
+                args.case_path,
+                args.output_dir,
+                repo_root=REPO_ROOT,
+                force=args.force,
+            )
+        except (OSError, ValueError, FileExistsError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_export_summary(result, repo_root=REPO_ROOT))
         return 0
 
     if args.command == "list":
