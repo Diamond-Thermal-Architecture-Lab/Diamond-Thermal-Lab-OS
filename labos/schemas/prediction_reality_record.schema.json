@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "labos/prediction_reality_record.schema.json",
+  "title": "Diamond Thermal Lab OS Prediction-Reality Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "prediction_reality_format_version", "record_id", "case_id", "status", "quantity", "prediction", "reality_measurement_id", "prediction_evidence_ids", "comparison_context", "candidate_error_sources", "decision_impact", "learning_disposition", "confidentiality_level", "reviewed_by", "review_notes"
+  ],
+  "properties": {
+    "prediction_reality_format_version": {"type": "string", "const": "1.0"},
+    "record_id": {"type": "string", "pattern": "^PRL-[0-9]{3}$"},
+    "case_id": {"type": "string", "pattern": "^[a-z0-9_-]+$", "minLength": 1},
+    "status": {"type": "string", "enum": ["draft", "comparable", "reviewed", "rejected"]},
+    "quantity": {"type": "string", "minLength": 1},
+    "prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "lower_bound", "upper_bound", "model_name", "model_version", "input_reference", "input_sha256"],
+      "properties": {
+        "value": {"type": ["number", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "lower_bound": {"type": ["number", "null"]},
+        "upper_bound": {"type": ["number", "null"]},
+        "model_name": {"type": "string", "minLength": 1},
+        "model_version": {"type": "string", "minLength": 1},
+        "input_reference": {"type": "string", "minLength": 1},
+        "input_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "reality_measurement_id": {"type": "string", "pattern": "^MSR-[0-9]{3}$"},
+    "prediction_evidence_ids": {"type": "array", "items": {"type": "string", "pattern": "^EVD-[0-9]{3}$"}},
+    "comparison_context": {"type": "string", "minLength": 1},
+    "candidate_error_sources": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": ["parameter", "model_form", "boundary_condition", "geometry", "manufacturing", "measurement", "operating_condition", "unknown"]}},
+    "decision_impact": {"type": "string", "minLength": 1},
+    "learning_disposition": {"type": "string", "enum": ["pending_review", "accepted_for_calibration", "rejected_from_calibration", "information_only"]},
+    "confidentiality_level": {"type": "string", "enum": ["public", "internal", "customer-confidential", "restricted"]},
+    "reviewed_by": {"type": "string"},
+    "review_notes": {"type": "string"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"enum": ["comparable", "reviewed"]}}},
+      "then": {"properties": {"prediction": {"properties": {"value": {"type": "number"}, "unit": {"type": "string", "minLength": 1}}}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "reviewed"}}},
+      "then": {"properties": {"reviewed_by": {"minLength": 1}}}
+    }
+  ]
+}

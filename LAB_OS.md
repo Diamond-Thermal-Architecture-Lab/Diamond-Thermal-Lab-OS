@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Lab OS defines how this repository organizes GaN-on-Diamond engineering validation work. It is intentionally lightweight: it provides workflow structure, confidentiality boundaries, review expectations, and templates without becoming a large technical handbook.
+The Lab OS defines how this repository organizes GaN-on-Diamond engineering validation work. It is a GitHub-backed, model-agnostic, evidence-centered operating system: models are replaceable, while structured engineering state, controlled evidence references, and human accountability are cumulative. It remains intentionally lightweight and does not turn structured records into technical validation or automatic approval.
 
 ## Workflow
 
@@ -13,6 +13,8 @@ Issue -> Task Brief -> Design Doc -> Simulation / Measurement Plan -> Spec -> PR
 Decision-system case work should move through this MVP loop:
 
 Thermal Intake -> Thermal Design Passport -> Decision Board -> Architecture Comparison -> Red Flags -> Next Best Action -> Validation Plan -> Supplier Specification -> Customer Memo -> Claim Ledger -> Engineering Memory Update
+
+Optional post-validation learning may add Evidence Objects, Measurement References, and Prediction-Reality Records as sidecars. These retain controlled references and hashes only; raw confidential data remains outside the repository.
 
 1. Issue: define the problem, owner, priority, Lab OS layer, and expected artifact.
 2. Task Brief: clarify objective, scope, assumptions, inputs, deliverables, and acceptance criteria.

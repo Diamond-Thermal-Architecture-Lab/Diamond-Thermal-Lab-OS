@@ -1,10 +1,10 @@
 # Diamond Thermal Lab OS
 
-Diamond Thermal Lab OS is a GitHub-native thermal architecture decision system. It helps engineers convert incomplete semiconductor thermal management problems into traceable architecture decisions, architecture comparisons, red flags, validation plans, supplier specifications, customer-facing memos, claim ledgers, and reusable engineering memory.
+Diamond Thermal Lab OS is a GitHub-backed, model-agnostic, evidence-centered engineering intelligence operating system for complex thermal engineering. It preserves persistent engineering state and helps compile incomplete thermal problems into traceable decisions, evidence references, prediction-versus-reality comparisons, and human-reviewed learning records.
 
-Mission: compile thermal problems into validated architecture decisions.
+Mission: compile thermal problems into executable, evidence-backed and continuously learning engineering capabilities. Structured data and validator PASS states provide structural and traceability quality only; they are not technical validation or architecture approval.
 
-Chinese mission: 把热管理问题编译成可验证的热架构决策。
+Chinese mission: 把热管理问题编译成可执行、有证据支持、能够持续学习的工程能力。
 
 This is not a chatbot, not merely a report generator, and not an API automation project. The MVP is a manual, docs-first workflow that runs through GitHub issues, Markdown case folders, templates, and pull request review.
 
@@ -38,6 +38,19 @@ python scripts/labos_check_case.py cases/example-incomplete-gan-rf-pa/ --strict
 ```
 
 The checker screens for missing files, missing thermal inputs, unsafe claims, confidentiality markers, and common thermal architecture red flags. It does not validate a design or replace engineering judgment.
+
+## Evidence And Reality Foundation
+
+M13 adds optional, JSON sidecar engineering objects. Existing 12-file canonical cases remain unchanged, and raw confidential data stays outside the repository as controlled references and hashes.
+
+```bash
+python scripts/labos_case.py new-evidence cases/example-case/ --evidence-id EVD-001 --type measurement --output cases/example-case/evidence/EVD-001.json
+python scripts/labos_case.py new-measurement-reference cases/example-case/ --measurement-id MSR-001 --evidence-id EVD-001 --output cases/example-case/measurements/MSR-001.json
+python scripts/labos_case.py new-prediction-reality-record cases/example-case/ --record-id PRL-001 --measurement-id MSR-001 --output cases/example-case/prediction_reality/PRL-001.json
+python scripts/labos_case.py evidence-summary cases/example-case/ --json
+```
+
+Implemented today: deterministic templates, structural validation, controlled references, exact-unit comparison, and read-only summaries. Future targets include Gold Cases, solver and experiment adapters, an Engineering Problem Compiler, and evidence-graph capabilities; they are not implemented here.
 
 ## Deterministic Triage
 
@@ -144,6 +157,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Canonical Decision Proposal Guide](docs/CANONICAL_DECISION_PROPOSAL_GUIDE.md)
 - [Case File Naming Standard](docs/CASE_FILE_NAMING_STANDARD.md)
 - [Schema Guide](docs/SCHEMA_GUIDE.md)
+- [Evidence And Reality Guide](docs/EVIDENCE_AND_REALITY_GUIDE.md)
 - [Pattern Library Guide](docs/PATTERN_LIBRARY_GUIDE.md)
 - [Memory Policy](docs/MEMORY_POLICY.md)
 - [Cost Control Policy](docs/COST_CONTROL_POLICY.md)

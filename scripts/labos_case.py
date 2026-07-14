@@ -20,6 +20,19 @@ from labos.decision_record.report import exit_code as decision_record_exit_code
 from labos.decision_record.report import render_validation
 from labos.decision_record.template import create_decision_record_template
 from labos.decision_record.validator import validate_decision_record
+from labos.evidence.report import render_summary as render_evidence_summary
+from labos.evidence.report import render_validation as render_evidence_validation
+from labos.evidence.summary import summarize_case
+from labos.evidence.template import (
+    create_evidence_template,
+    create_measurement_template,
+    create_prediction_reality_template,
+)
+from labos.evidence.validator import (
+    validate_evidence,
+    validate_measurement_reference,
+    validate_prediction_reality_record,
+)
 from labos.canonical_proposal.builder import build_canonical_decision_proposal
 from labos.patterns.index import PatternIndexEntry, load_pattern_index, patterns_by_id, resolve_pattern_id
 from labos.review_package.exporter import export_decision_review_package
@@ -630,6 +643,46 @@ def build_parser() -> argparse.ArgumentParser:
     proposal_parser.add_argument("--output-dir", required=True, type=Path, help="Explicit proposal output directory.")
     proposal_parser.add_argument("--force", action="store_true", help="Overwrite only known generated proposal files.")
 
+    evidence_parser = subparsers.add_parser("new-evidence", help="Create a draft Evidence Object sidecar.")
+    evidence_parser.add_argument("case_path", type=Path, help="Path to a canonical case folder.")
+    evidence_parser.add_argument("--evidence-id", required=True, help="Case-scoped evidence ID, for example EVD-001.")
+    evidence_parser.add_argument("--type", required=True, dest="evidence_type", help="Evidence type.")
+    evidence_parser.add_argument("--output", required=True, type=Path, help="Explicit evidence JSON output path.")
+    evidence_parser.add_argument("--force", action="store_true", help="Overwrite only the explicit evidence file.")
+
+    validate_evidence_parser = subparsers.add_parser("validate-evidence", help="Validate an Evidence Object sidecar.")
+    validate_evidence_parser.add_argument("case_path", type=Path, help="Path to a canonical case folder.")
+    validate_evidence_parser.add_argument("evidence_path", type=Path, help="Evidence JSON path.")
+    validate_evidence_parser.add_argument("--json", action="store_true", help="Print JSON only.")
+
+    measurement_parser = subparsers.add_parser("new-measurement-reference", help="Create a draft Measurement Reference sidecar.")
+    measurement_parser.add_argument("case_path", type=Path, help="Path to a canonical case folder.")
+    measurement_parser.add_argument("--measurement-id", required=True, help="Case-scoped measurement ID, for example MSR-001.")
+    measurement_parser.add_argument("--evidence-id", required=True, help="Existing measurement-compatible Evidence Object ID.")
+    measurement_parser.add_argument("--output", required=True, type=Path, help="Explicit measurement JSON output path.")
+    measurement_parser.add_argument("--force", action="store_true", help="Overwrite only the explicit measurement file.")
+
+    validate_measurement_parser = subparsers.add_parser("validate-measurement-reference", help="Validate a Measurement Reference sidecar.")
+    validate_measurement_parser.add_argument("case_path", type=Path, help="Path to a canonical case folder.")
+    validate_measurement_parser.add_argument("measurement_path", type=Path, help="Measurement JSON path.")
+    validate_measurement_parser.add_argument("--json", action="store_true", help="Print JSON only.")
+
+    prediction_parser = subparsers.add_parser("new-prediction-reality-record", help="Create a draft Prediction-Reality sidecar.")
+    prediction_parser.add_argument("case_path", type=Path, help="Path to a canonical case folder.")
+    prediction_parser.add_argument("--record-id", required=True, help="Case-scoped record ID, for example PRL-001.")
+    prediction_parser.add_argument("--measurement-id", required=True, help="Existing Measurement Reference ID.")
+    prediction_parser.add_argument("--output", required=True, type=Path, help="Explicit prediction-reality JSON output path.")
+    prediction_parser.add_argument("--force", action="store_true", help="Overwrite only the explicit prediction-reality file.")
+
+    validate_prediction_parser = subparsers.add_parser("validate-prediction-reality-record", help="Validate a Prediction-Reality sidecar.")
+    validate_prediction_parser.add_argument("case_path", type=Path, help="Path to a canonical case folder.")
+    validate_prediction_parser.add_argument("record_path", type=Path, help="Prediction-reality JSON path.")
+    validate_prediction_parser.add_argument("--json", action="store_true", help="Print JSON only.")
+
+    summary_parser = subparsers.add_parser("evidence-summary", help="Summarize optional evidence and reality sidecars read-only.")
+    summary_parser.add_argument("case_path", type=Path, help="Path to a canonical case folder.")
+    summary_parser.add_argument("--json", action="store_true", help="Print JSON only.")
+
     list_parser = subparsers.add_parser("list", help="List case folders and canonical file status.")
     _add_common_parser_options(list_parser)
 
@@ -750,6 +803,69 @@ def main(argv: list[str] | None = None) -> int:
         print("Files:\n" + "\n".join(f"- {name}" for name in result.files))
         print("Validation note: This proposal has not been applied to the canonical case.")
         return 0
+
+    if args.command == "new-evidence":
+        try:
+            data = create_evidence_template(args.case_path, args.evidence_id, args.evidence_type, args.output, force=args.force)
+        except (OSError, ValueError, FileExistsError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(f"Evidence Object template created: {data['evidence_id']}")
+        return 0
+
+    if args.command == "validate-evidence":
+        try:
+            result = validate_evidence(args.case_path, args.evidence_path)
+        except (OSError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_evidence_validation(result, as_json=args.json))
+        return {"PASS": 0, "WARN": 1, "FAIL": 2}[result.status]
+
+    if args.command == "new-measurement-reference":
+        try:
+            data = create_measurement_template(args.case_path, args.measurement_id, args.evidence_id, args.output, force=args.force)
+        except (OSError, ValueError, FileExistsError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(f"Measurement Reference template created: {data['measurement_id']}")
+        return 0
+
+    if args.command == "validate-measurement-reference":
+        try:
+            result = validate_measurement_reference(args.case_path, args.measurement_path)
+        except (OSError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_evidence_validation(result, as_json=args.json))
+        return {"PASS": 0, "WARN": 1, "FAIL": 2}[result.status]
+
+    if args.command == "new-prediction-reality-record":
+        try:
+            data = create_prediction_reality_template(args.case_path, args.record_id, args.measurement_id, args.output, force=args.force)
+        except (OSError, ValueError, FileExistsError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(f"Prediction-Reality Record template created: {data['record_id']}")
+        return 0
+
+    if args.command == "validate-prediction-reality-record":
+        try:
+            result = validate_prediction_reality_record(args.case_path, args.record_path)
+        except (OSError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_evidence_validation(result, as_json=args.json))
+        return {"PASS": 0, "WARN": 1, "FAIL": 2}[result.status]
+
+    if args.command == "evidence-summary":
+        try:
+            result = summarize_case(args.case_path)
+        except (OSError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        print(render_evidence_summary(result, as_json=args.json))
+        return {"PASS": 0, "WARN": 1, "FAIL": 2}[result.status]
 
     if args.command == "list":
         rows = list_cases(args.cases_root)
