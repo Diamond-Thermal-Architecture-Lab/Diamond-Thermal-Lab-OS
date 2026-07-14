@@ -3,15 +3,42 @@
   "$id": "labos/evidence_object.schema.json",
   "title": "Diamond Thermal Lab OS Evidence Object",
   "type": "object",
-  "required": ["evidence_format_version", "evidence_id", "case_id", "title", "evidence_type", "status", "evidence_level", "source", "method_summary", "applicability", "uncertainty_summary", "supports_claim_ids", "contradicts_claim_ids", "measurement_reference_ids", "public_summary", "confidentiality_level", "reviewed_by", "review_notes"],
+  "additionalProperties": false,
+  "required": [
+    "evidence_format_version", "evidence_id", "case_id", "title", "evidence_type", "status", "evidence_level", "source", "method_summary", "applicability", "uncertainty_summary", "supports_claim_ids", "contradicts_claim_ids", "measurement_reference_ids", "public_summary", "confidentiality_level", "reviewed_by", "review_notes"
+  ],
   "properties": {
+    "evidence_format_version": {"type": "string", "const": "1.0"},
     "evidence_id": {"type": "string", "pattern": "^EVD-[0-9]{3}$"},
-    "evidence_type": {"enum": ["measurement", "simulation", "literature", "supplier_claim", "expert_judgment", "production_data", "field_data"]},
-    "status": {"enum": ["draft", "reviewed", "rejected", "deprecated"]},
-    "evidence_level": {"enum": ["unverified", "source_documented", "independently_measured", "customer_validated", "production_validated", "field_validated"]},
-    "supports_claim_ids": {"type": "array", "items": {"type": "string"}},
-    "contradicts_claim_ids": {"type": "array", "items": {"type": "string"}},
-    "measurement_reference_ids": {"type": "array", "items": {"type": "string"}}
+    "case_id": {"type": "string", "pattern": "^[a-z0-9_-]+$", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "evidence_type": {"type": "string", "enum": ["measurement", "simulation", "literature", "supplier_claim", "expert_judgment", "production_data", "field_data"]},
+    "status": {"type": "string", "enum": ["draft", "reviewed", "rejected", "deprecated"]},
+    "evidence_level": {"type": "string", "enum": ["unverified", "source_documented", "independently_measured", "customer_validated", "production_validated", "field_validated"]},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "sha256"],
+      "properties": {
+        "reference": {"type": "string"},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "method_summary": {"type": "string", "minLength": 1},
+    "applicability": {"type": "string", "minLength": 1},
+    "uncertainty_summary": {"type": "string", "minLength": 1},
+    "supports_claim_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "contradicts_claim_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "measurement_reference_ids": {"type": "array", "items": {"type": "string", "pattern": "^MSR-[0-9]{3}$"}},
+    "public_summary": {"type": "string", "minLength": 1},
+    "confidentiality_level": {"type": "string", "enum": ["public", "internal", "customer-confidential", "restricted"]},
+    "reviewed_by": {"type": "string"},
+    "review_notes": {"type": "string"}
   },
-  "additionalProperties": true
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "reviewed"}}},
+      "then": {"properties": {"reviewed_by": {"minLength": 1}, "source": {"properties": {"reference": {"minLength": 1}}}}}
+    }
+  ]
 }

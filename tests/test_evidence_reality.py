@@ -213,8 +213,232 @@ class EvidenceRealityTests(unittest.TestCase):
             malformed = case / "evidence" / "EVD-001.json"
             malformed.parent.mkdir()
             malformed.write_text("{bad", encoding="utf-8")
+            self.assertEqual(validate_evidence(case, malformed).status, "FAIL")
+
+
+class EvidenceRealityHardeningTests(unittest.TestCase):
+    def test_all_template_bytes_are_deterministic_for_identical_logical_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
+            first, second = copy_case(first_tmp), copy_case(second_tmp)
+            first_paths = (
+                first / "evidence" / "EVD-001.json",
+                first / "measurements" / "MSR-001.json",
+                first / "prediction_reality" / "PRL-001.json",
+            )
+            second_paths = (
+                second / "evidence" / "EVD-001.json",
+                second / "measurements" / "MSR-001.json",
+                second / "prediction_reality" / "PRL-001.json",
+            )
+            create_evidence_template(first, "EVD-001", "measurement", first_paths[0])
+            create_measurement_template(first, "MSR-001", "EVD-001", first_paths[1])
+            create_prediction_reality_template(first, "PRL-001", "MSR-001", first_paths[2])
+            create_evidence_template(second, "EVD-001", "measurement", second_paths[0])
+            create_measurement_template(second, "MSR-001", "EVD-001", second_paths[1])
+            create_prediction_reality_template(second, "PRL-001", "MSR-001", second_paths[2])
+            for first_path, second_path in zip(first_paths, second_paths, strict=True):
+                self.assertEqual(first_path.read_bytes(), second_path.read_bytes())
+
+    def test_schema_contracts_are_complete_and_explicit(self) -> None:
+        schemas = {
+            "evidence_object.schema.json": ("source", "evidence_id", "EVD-"),
+            "measurement_reference.schema.json": ("uncertainty", "measurement_id", "MSR-"),
+            "prediction_reality_record.schema.json": ("prediction", "record_id", "PRL-"),
+        }
+        for filename, (nested, identifier, prefix) in schemas.items():
+            with self.subTest(filename=filename):
+                data = json.loads((REPO_ROOT / "labos" / "schemas" / filename).read_text(encoding="utf-8"))
+                self.assertEqual(data["$schema"], "https://json-schema.org/draft/2020-12/schema")
+                self.assertFalse(data["additionalProperties"])
+                self.assertTrue(set(data["required"]).issubset(data["properties"]))
+                self.assertEqual(data["properties"][identifier]["pattern"], f"^{prefix}[0-9]{{3}}$")
+                self.assertEqual(data["properties"][nested]["type"], "object")
+                self.assertIn("additionalProperties", data["properties"][nested])
+
+    def test_evidence_user_file_problems_return_fail_results(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            path = make_reviewed_evidence(case)
+            cases: list[tuple[str, object]] = [
+                ("array-root", []),
+                ("wrong-case", {"case_id": "wrong-case"}),
+                ("bad-id", {"evidence_id": "EVD-1"}),
+                ("bad-type", {"evidence_type": "unknown"}),
+                ("bad-status", {"status": "unknown"}),
+                ("bad-level", {"evidence_level": "unknown"}),
+                ("bad-confidentiality", {"confidentiality_level": "secret"}),
+                ("missing-reviewer", {"reviewed_by": ""}),
+                ("bad-source-hash", {"source": {"reference": "controlled", "sha256": "ABC"}}),
+                ("windows-path", {"source": {"reference": "C:\\restricted\\raw.csv", "sha256": None}}),
+                ("posix-path", {"source": {"reference": "/restricted/raw.csv", "sha256": None}}),
+                ("credential", {"source": {"reference": "token=not-allowed", "sha256": None}}),
+            ]
+            valid = json.loads(path.read_text(encoding="utf-8"))
+            for name, change in cases:
+                with self.subTest(name=name):
+                    if name == "array-root":
+                        path.write_text(json.dumps(change), encoding="utf-8")
+                    else:
+                        data = dict(valid)
+                        data.update(change)  # type: ignore[arg-type]
+                        path.write_text(json.dumps(data), encoding="utf-8")
+                    self.assertEqual(validate_evidence(case, path).status, "FAIL")
+            path.write_text(json.dumps(valid), encoding="utf-8")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["evidence_type"], data["evidence_level"] = "supplier_claim", "production_validated"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertEqual(validate_evidence(case, path).status, "FAIL")
+
+    def test_evidence_arrays_and_measurement_reference_ids_are_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            path = make_reviewed_evidence(case)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["supports_claim_ids"] = "CLM-001"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertEqual(validate_evidence(case, path).status, "FAIL")
+            data["supports_claim_ids"] = ["CLM-001"]
+            data["measurement_reference_ids"] = ["MSR-1"]
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertEqual(validate_evidence(case, path).status, "FAIL")
+            data["measurement_reference_ids"] = ["MSR-001"]
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertEqual(validate_evidence(case, path).status, "FAIL")
+
+    def test_measurement_contract_edge_cases(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            make_reviewed_evidence(case)
+            path = make_reviewed_measurement(case)
+            valid = json.loads(path.read_text(encoding="utf-8"))
+            cases = {
+                "wrong-case": {"case_id": "wrong-case"},
+                "bad-id": {"measurement_id": "MSR-X"},
+                "bad-evidence-id": {"evidence_id": "EVD-1"},
+                "bool-value": {"value": True},
+                "no-unit": {"unit": ""},
+                "missing-reviewer": {"reviewed_by": ""},
+                "bad-raw-hash": {"raw_data_sha256": "bad"},
+                "unsafe-reference": {"raw_data_reference": "/restricted/raw.csv"},
+                "bad-uncertainty": {"uncertainty": {"numeric_value": True, "unit": 3, "basis": ""}},
+            }
+            for name, change in cases.items():
+                with self.subTest(name=name):
+                    data = dict(valid)
+                    data.update(change)
+                    path.write_text(json.dumps(data), encoding="utf-8")
+                    self.assertEqual(validate_measurement_reference(case, path).status, "FAIL")
+            data = dict(valid)
+            data["status"] = "completed"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertEqual(validate_measurement_reference(case, path).status, "PASS")
+            data = dict(valid)
+            data["status"], data["value"], data["unit"] = "planned", None, None
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertEqual(validate_measurement_reference(case, path).status, "WARN")
+
+    def test_prediction_contract_edge_cases(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            make_reviewed_evidence(case)
+            make_reviewed_measurement(case)
+            path = make_prediction(case)
+            valid = json.loads(path.read_text(encoding="utf-8"))
+            cases = {
+                "wrong-case": {"case_id": "wrong-case"},
+                "bad-record-id": {"record_id": "PRL-X"},
+                "bad-measurement-id": {"reality_measurement_id": "MSR-X"},
+                "unknown-measurement": {"reality_measurement_id": "MSR-999"},
+                "unknown-evidence": {"prediction_evidence_ids": ["EVD-999"]},
+                "bad-evidence-id": {"prediction_evidence_ids": ["EVD-X"]},
+                "missing-comparable-prediction": {"prediction": {**valid["prediction"], "value": None}},
+                "rejected-bounds": {"prediction": {**valid["prediction"], "lower_bound": 110, "upper_bound": 100}},
+                "reviewed-without-reviewer": {"status": "reviewed", "reviewed_by": ""},
+                "accepted-without-review": {"learning_disposition": "accepted_for_calibration"},
+                "bool-prediction": {"prediction": {**valid["prediction"], "value": True}},
+            }
+            for name, change in cases.items():
+                with self.subTest(name=name):
+                    data = dict(valid)
+                    data.update(change)
+                    path.write_text(json.dumps(data), encoding="utf-8")
+                    self.assertEqual(validate_prediction_reality_record(case, path).status, "FAIL")
+            data = dict(valid)
+            data["status"] = "draft"
+            data["prediction"] = {**valid["prediction"], "value": None}
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertEqual(validate_prediction_reality_record(case, path).status, "WARN")
+
+    def test_prediction_interval_miss_and_malformed_results(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            make_reviewed_evidence(case)
+            make_reviewed_measurement(case)
+            path = make_prediction(case)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["prediction"]["upper_bound"] = 95
+            path.write_text(json.dumps(data), encoding="utf-8")
+            result = validate_prediction_reality_record(case, path)
+            self.assertEqual(result.status, "PASS")
+            self.assertFalse(result.comparison["reality_within_prediction_interval"])
+            for validator, folder, name in (
+                (validate_evidence, "evidence", "EVD-099.json"),
+                (validate_measurement_reference, "measurements", "MSR-099.json"),
+                (validate_prediction_reality_record, "prediction_reality", "PRL-099.json"),
+            ):
+                malformed = case / folder / name
+                malformed.parent.mkdir(exist_ok=True)
+                malformed.write_text("{bad", encoding="utf-8")
+                with self.subTest(name=name):
+                    self.assertEqual(validator(case, malformed).status, "FAIL")
+                malformed.write_text("[]", encoding="utf-8")
+                with self.subTest(name=f"array-{name}"):
+                    self.assertEqual(validator(case, malformed).status, "FAIL")
+
+    def test_cli_malformed_json_is_structured_fail_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            commands = (
+                ("validate-evidence", case / "evidence" / "EVD-001.json"),
+                ("validate-measurement-reference", case / "measurements" / "MSR-001.json"),
+                ("validate-prediction-reality-record", case / "prediction_reality" / "PRL-001.json"),
+            )
+            for command, path in commands:
+                path.parent.mkdir(exist_ok=True)
+                path.write_text("{bad", encoding="utf-8")
+                completed = subprocess.run([sys.executable, str(SCRIPT), command, str(case), str(path), "--json"], cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+                with self.subTest(command=command):
+                    self.assertEqual(completed.returncode, 2)
+                    self.assertNotIn("Traceback", completed.stderr)
+                    self.assertEqual(json.loads(completed.stdout)["status"], "FAIL")
+
+    def test_summary_and_general_checker_fail_on_malformed_sidecar(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            malformed = case / "evidence" / "EVD-001.json"
+            malformed.parent.mkdir()
+            malformed.write_text("{bad", encoding="utf-8")
+            self.assertEqual(summarize_case(case).status, "FAIL")
+            checked = subprocess.run([sys.executable, str(REPO_ROOT / "scripts" / "labos_check_case.py"), str(case)], cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+            self.assertEqual(checked.returncode, 2)
+            self.assertIn("Status:\nFAIL", checked.stdout)
+
+    def test_force_preserves_unrelated_files_and_symlink_escape_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            case = copy_case(tmp)
+            output = case / "evidence" / "EVD-001.json"
+            create_evidence_template(case, "EVD-001", "measurement", output)
+            unrelated = case / "evidence" / "notes.txt"
+            unrelated.write_text("preserve\n", encoding="utf-8")
+            create_evidence_template(case, "EVD-001", "measurement", output, force=True)
+            self.assertEqual(unrelated.read_text(encoding="utf-8"), "preserve\n")
+            escape = Path(tmp) / "escape"
+            try:
+                escape.symlink_to(Path(tmp), target_is_directory=True)
+            except (NotImplementedError, OSError) as exc:
+                self.skipTest(f"directory symlink unavailable: {exc}")
             with self.assertRaises(ValueError):
-                validate_evidence(case, malformed)
+                create_evidence_template(case, "EVD-002", "measurement", escape / "EVD-002.json")
 
 
 if __name__ == "__main__":

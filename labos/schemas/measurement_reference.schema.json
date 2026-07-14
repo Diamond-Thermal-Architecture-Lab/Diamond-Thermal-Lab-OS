@@ -3,13 +3,46 @@
   "$id": "labos/measurement_reference.schema.json",
   "title": "Diamond Thermal Lab OS Measurement Reference",
   "type": "object",
-  "required": ["measurement_format_version", "measurement_id", "case_id", "evidence_id", "status", "quantity", "value", "unit", "sample_id", "method", "operating_conditions", "uncertainty", "raw_data_reference", "raw_data_sha256", "confidentiality_level", "reviewed_by", "review_notes"],
+  "additionalProperties": false,
+  "required": [
+    "measurement_format_version", "measurement_id", "case_id", "evidence_id", "status", "quantity", "value", "unit", "sample_id", "method", "operating_conditions", "uncertainty", "raw_data_reference", "raw_data_sha256", "confidentiality_level", "reviewed_by", "review_notes"
+  ],
   "properties": {
+    "measurement_format_version": {"type": "string", "const": "1.0"},
     "measurement_id": {"type": "string", "pattern": "^MSR-[0-9]{3}$"},
-    "status": {"enum": ["planned", "completed", "reviewed", "rejected"]},
+    "case_id": {"type": "string", "pattern": "^[a-z0-9_-]+$", "minLength": 1},
+    "evidence_id": {"type": "string", "pattern": "^EVD-[0-9]{3}$"},
+    "status": {"type": "string", "enum": ["planned", "completed", "reviewed", "rejected"]},
+    "quantity": {"type": "string", "minLength": 1},
     "value": {"type": ["number", "null"]},
     "unit": {"type": ["string", "null"]},
-    "uncertainty": {"type": "object"}
+    "sample_id": {"type": "string", "pattern": "^ANON-[A-Za-z0-9_-]+$"},
+    "method": {"type": "string", "minLength": 1},
+    "operating_conditions": {"type": "string", "minLength": 1},
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numeric_value", "unit", "basis"],
+      "properties": {
+        "numeric_value": {"type": ["number", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "basis": {"type": "string", "minLength": 1}
+      }
+    },
+    "raw_data_reference": {"type": "string", "minLength": 1},
+    "raw_data_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "confidentiality_level": {"type": "string", "enum": ["public", "internal", "customer-confidential", "restricted"]},
+    "reviewed_by": {"type": "string"},
+    "review_notes": {"type": "string"}
   },
-  "additionalProperties": true
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"enum": ["completed", "reviewed"]}}},
+      "then": {"properties": {"value": {"type": "number"}, "unit": {"type": "string", "minLength": 1}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "reviewed"}}},
+      "then": {"properties": {"reviewed_by": {"minLength": 1}}}
+    }
+  ]
 }

@@ -2,9 +2,9 @@
 
 Diamond Thermal Lab OS is a GitHub-backed, model-agnostic, evidence-centered engineering intelligence operating system for complex thermal engineering. It preserves persistent engineering state and helps compile incomplete thermal problems into traceable decisions, evidence references, prediction-versus-reality comparisons, and human-reviewed learning records.
 
-Mission: compile thermal problems into executable, evidence-backed engineering capabilities. Structured data and validator PASS states provide structural and traceability quality only; they are not technical validation or architecture approval.
+Mission: compile thermal problems into executable, evidence-backed and continuously learning engineering capabilities. Structured data and validator PASS states provide structural and traceability quality only; they are not technical validation or architecture approval.
 
-Chinese mission: 把热管理问题编译成可验证的热架构决策。
+Chinese mission: 把热管理问题编译成可执行、有证据支持、能够持续学习的工程能力。
 
 This is not a chatbot, not merely a report generator, and not an API automation project. The MVP is a manual, docs-first workflow that runs through GitHub issues, Markdown case folders, templates, and pull request review.
 
