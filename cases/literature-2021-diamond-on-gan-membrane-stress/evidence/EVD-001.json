@@ -1,0 +1,23 @@
+{
+  "applicability": "Applies to circular 0.5 mm, 2 mm, and 5 mm GaN/III-N membranes in an approximately 15 mm by 15 mm silicon-framed sample, with approximately 38 to 57 um of CVD diamond grown at approximately 720 to 750 degrees Celsius.",
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "confidentiality_level": "public",
+  "contradicts_claim_ids": [],
+  "evidence_format_version": "1.0",
+  "evidence_id": "EVD-001",
+  "evidence_level": "source_documented",
+  "evidence_type": "literature",
+  "measurement_reference_ids": [],
+  "method_summary": "The paper combines analytical modelling, COMSOL thermal-stress FEM, surface profilometry, Raman spectroscopy, and cross-sectional HAADF-STEM/EDX.",
+  "public_summary": "Published literature reports that membrane bow increased strongly with diameter and that the 5 mm membrane suffered thermally coupled damage; this is source-documented evidence, not an automatic architecture recommendation.",
+  "review_notes": "Draft literature transcription pending final human review.",
+  "reviewed_by": "",
+  "source": {
+    "reference": "arXiv:2102.09664; Cuenca et al.; Thermal stress modelling of diamond on GaN/III-Nitride membranes; 2021",
+    "sha256": null
+  },
+  "status": "draft",
+  "supports_claim_ids": [],
+  "title": "Experimental and modelling evidence for thermal stress and bow in diamond-on-GaN membranes",
+  "uncertainty_summary": "Reported values are literature-transcribed values; raw measurement files are not in this repository; the 5 mm bow is an estimated maximum net bow; the paper reports the largest profilometry standard deviation as 2 um."
+}

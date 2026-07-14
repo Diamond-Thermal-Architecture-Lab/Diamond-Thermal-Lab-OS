@@ -1,0 +1,65 @@
+{
+  "board_status": "READY_FOR_ARCHITECTURE_SCREENING",
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "decision_board_ruleset_version": "decision-board-1.0",
+  "decision_state": "screening",
+  "generated_artifact_sha256": {
+    "decision_board_preview.json": "cbe9fff37b0628e91bfebc0f4e22fe2df687596702174ac135dff061c8759430",
+    "decision_board_preview.md": "e38d0651e2a612b08558a35e81181bb76161330054e2f3714a0a81cf21bb5833",
+    "human_review_checklist.md": "6ee1ac064f30208361f5d445581b853515505f7d46fb9e230d04137815a2d58c"
+  },
+  "generated_artifacts": [
+    "decision_board_preview.md",
+    "decision_board_preview.json",
+    "review_manifest.json",
+    "human_review_checklist.md"
+  ],
+  "package_format_version": "decision-review-package-1.0",
+  "relevant_pattern_ids": [
+    "PAT-GAN-DIA-001",
+    "PAT-DIA-SUBMOUNT-001",
+    "PAT-SIC-ALN-001"
+  ],
+  "source_case_files": [
+    "00_problem_intake.yml",
+    "01_thermal_design_passport.yml",
+    "02_decision_board.md",
+    "03_architecture_genomes.yml",
+    "04_design_space_scorecard.md",
+    "05_red_flags.md",
+    "06_next_best_action.md",
+    "07_validation_plan.md",
+    "08_supplier_specification.md",
+    "09_customer_memo.md",
+    "10_claim_ledger.yml",
+    "11_engineering_memory_entry.md"
+  ],
+  "source_case_sha256": {
+    "00_problem_intake.yml": "dbb1a42268d4be643773f70effa14895a14b23ab3629f15faf860a5f228224fa",
+    "01_thermal_design_passport.yml": "1e054046fb72cf8b509a14124619c48824e9d5dc00b15001aae1e149a20e9025",
+    "02_decision_board.md": "a546b6cd3d90836f8a0983ddbadedfe6f9fb079537a482ae91ed802d58f1906e",
+    "03_architecture_genomes.yml": "e4a01d76750e5da05b0b66a2534f6e29b3c9f47357d734e376ab66374a26c0d0",
+    "04_design_space_scorecard.md": "716c3e35e73f839c78d789bb45953d671e96c49bda9287b6924e7d3869db4dc3",
+    "05_red_flags.md": "0965f3d1eb1367cacc9e9263621e7427961fb62ce71949ce4e9d18d2177a9825",
+    "06_next_best_action.md": "6d5985b2a98d7c9c1d5b12f449dc97f721b9dfa468d6a3e6a5542cfaacebeea2",
+    "07_validation_plan.md": "2d797d349e20326ec5e7038c58b830671db5f8e0838eb60851c07ef1956bcac8",
+    "08_supplier_specification.md": "91369853ce54810b36d5958dc1e142719866e0bd14fc2cf831dec19172b1da06",
+    "09_customer_memo.md": "4626ede038692c482e7cb71d852596c13000fa749c16923c8c4300eb516a0efd",
+    "10_claim_ledger.yml": "56a5b154109b08cb711b86fadbbaae39eeef59696e1ddc3a273a523412e2e84b",
+    "11_engineering_memory_entry.md": "1ff45f3af53f221dd79863c70bc47ebd94664ef6d00deff9a736cfaa073bfd9c"
+  },
+  "triage_ruleset_version": "triage-1.0",
+  "triggered_rule_ids": [
+    "TRIAGE-INTERFACE-001",
+    "TRIAGE-DESIGN-002",
+    "TRIAGE-PACKAGE-001",
+    "TRIAGE-DESIGN-001",
+    "BOARD-STATUS-003",
+    "BOARD-ROUTE-003",
+    "BOARD-ROUTE-001",
+    "BOARD-HOLD-001",
+    "BOARD-CLAIM-001",
+    "BOARD-ACTION-001"
+  ],
+  "validation_note": "This package is for human review and is not an approved engineering decision."
+}

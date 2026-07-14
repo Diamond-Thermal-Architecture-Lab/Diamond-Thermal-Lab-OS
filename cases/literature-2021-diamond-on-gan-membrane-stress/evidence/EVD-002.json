@@ -1,0 +1,29 @@
+{
+  "applicability": "Applies to the reported 0.5 mm, 2 mm, and 5 mm circular GaN/III-N membranes after direct CVD diamond growth under the source-paper configuration. Values must not be generalized to other membrane stacks, fixtures, reactors, or process windows without validation.",
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "confidentiality_level": "public",
+  "contradicts_claim_ids": [],
+  "evidence_format_version": "1.0",
+  "evidence_id": "EVD-002",
+  "evidence_level": "source_documented",
+  "evidence_type": "measurement",
+  "measurement_reference_ids": [
+    "MSR-001",
+    "MSR-002",
+    "MSR-003",
+    "MSR-004",
+    "MSR-005"
+  ],
+  "method_summary": "Published measurement results transcribed from surface profilometry and Raman spectroscopy reported by Cuenca et al. No raw profilometry or Raman files are stored in this repository.",
+  "public_summary": "Published profilometry and Raman measurements show increasing membrane deformation with membrane diameter, approximately 1 GPa residual tensile stress in the reported GaN/III-N membranes, and severe thermally coupled deformation and damage in the reported 5 mm membrane.",
+  "review_notes": "Draft literature transcription pending final human review. This Evidence Object represents published measurement data, not an independent Diamond Thermal Lab measurement.",
+  "reviewed_by": "",
+  "source": {
+    "reference": "arXiv:2102.09664; Cuenca et al.; Thermal stress modelling of diamond on GaN/III-Nitride membranes; 2021; published measurement transcription",
+    "sha256": null
+  },
+  "status": "draft",
+  "supports_claim_ids": [],
+  "title": "Literature-transcribed membrane bow and residual-stress measurements",
+  "uncertainty_summary": "Values and uncertainties are transcribed from the source paper. The 5 mm bow is reported as an estimated maximum net bow without a dedicated numeric uncertainty. The repository does not contain the raw measurement files."
+}

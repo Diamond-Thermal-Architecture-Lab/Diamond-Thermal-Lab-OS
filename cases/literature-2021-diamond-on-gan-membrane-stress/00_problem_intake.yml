@@ -1,0 +1,70 @@
+case_id: literature-2021-diamond-on-gan-membrane-stress
+title: Direct CVD Diamond Integration on GaN and III-N Membranes
+application: high-power microwave GaN device platform and bonding-free diamond integration
+device_type: AlGaN/GaN HEMT heterostructure membrane supported by a residual silicon frame
+
+customer_question: >
+  Can approximately 50 micrometers of CVD diamond be grown directly on the
+  N-polar side of a GaN and III-N membrane structure without causing
+  unacceptable residual stress, membrane bow, delamination, local process
+  overheating, structural damage, or incompatibility with downstream
+  semiconductor fabrication?
+
+heat_source_geometry: >
+  The dominant thermal load is the MPCVD growth process rather than an
+  electrically powered transistor hotspot. Circular membrane regions of
+  0.5 millimeter, 2 millimeters, and 5 millimeters diameter are formed in an
+  approximately 15 millimeter by 15 millimeter sample. The structure contains
+  approximately 1.7 micrometers of GaN, 3.6 micrometers of III-N layers,
+  a residual silicon frame approximately 75 micrometers thick, and a target
+  diamond layer approximately 38 to 57 micrometers thick.
+
+power_or_power_density: >
+  No transistor electrical dissipation is applied during this case. The
+  structure experiences an MPCVD process temperature of approximately
+  720 to 750 degrees Celsius for about 19 hours. The target diamond growth
+  rate is approximately 2 to 3 micrometers per hour.
+
+current_material_stack: >
+  GaN device layer / AlGaN barrier and III-N strain-relief layers /
+  AlN nucleation layer / etched silicon membrane frame. The proposed route
+  adds polycrystalline CVD diamond directly to the exposed N-polar side
+  of the III-N membrane.
+
+cooling_boundary: >
+  During growth, the sample rejects heat through the residual silicon frame,
+  the frame-to-fixture contacts, and the MPCVD sample holder. The membrane
+  temperature can be spatially non-uniform. Movement of the membrane toward
+  the plasma can change its local heating condition during growth.
+
+target_temperature_or_margin: >
+  Keep residual stress, membrane bow, adhesion state, and local process
+  temperature within limits compatible with intact GaN and III-N layers,
+  contact lithography, wafer handling, metallization, and subsequent
+  device fabrication.
+
+known_data:
+  - The process includes heating from room temperature to approximately 720 to 750 degrees Celsius followed by cooling to room temperature.
+  - Diamond, GaN, III-N layers, and silicon have different thermal expansion behavior.
+  - Candidate circular membrane diameters are 0.5 millimeter, 2 millimeters, and 5 millimeters.
+  - The GaN layer is approximately 1.7 micrometers thick.
+  - The remaining III-N layers are approximately 3.6 micrometers thick.
+  - The residual silicon support is approximately 75 micrometers thick.
+  - The intended diamond thickness is approximately 38 to 57 micrometers.
+  - Surface profilometry can be used to measure membrane shape.
+  - Raman spectroscopy can be used to estimate stress and temperature.
+  - Downstream lithography and mechanical handling require a sufficiently flat and intact membrane.
+
+missing_data:
+  - Maximum allowable membrane bow for each downstream lithography and handling process.
+  - Maximum allowable residual biaxial stress for the exact GaN and III-N stack.
+  - Fracture, buckling, fatigue, and delamination limits.
+  - Spatial membrane temperature distribution during MPCVD growth.
+  - Thermal contact conductance between the silicon frame, fixture, and sample holder.
+  - The diamond and III-N thermal boundary resistance is unmeasured and unbounded.
+  - Diamond and III-N interfacial adhesion strength and fracture energy are unmeasured.
+  - Initial membrane curvature before diamond growth.
+  - Repeatability between membrane locations, samples, and separate growth runs.
+  - Acceptable process window for membrane diameter, diamond thickness, and growth temperature.
+
+confidentiality_level: public

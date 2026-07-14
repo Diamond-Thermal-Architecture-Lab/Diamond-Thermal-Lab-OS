@@ -1,0 +1,23 @@
+{
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "confidentiality_level": "public",
+  "evidence_id": "EVD-002",
+  "measurement_format_version": "1.0",
+  "measurement_id": "MSR-003",
+  "method": "surface profilometry and curvature interpretation reported in the source paper",
+  "operating_conditions": "Approximately 5 mm circular GaN/III-N membrane after CVD diamond growth; the membrane was warped, displaced toward the plasma, and damaged.",
+  "quantity": "maximum_estimated_net_membrane_bow",
+  "raw_data_reference": "controlled-literature-reference:arXiv-2102.09664:Figure-13-sections-4.3-and-5.2",
+  "raw_data_sha256": null,
+  "review_notes": "Estimated maximum net bow from the paper; do not treat as raw metrology data.",
+  "reviewed_by": "",
+  "sample_id": "ANON-MEMBRANE-5MM",
+  "status": "completed",
+  "uncertainty": {
+    "basis": "The paper describes the result as an estimated maximum net bow of around 58 um and does not provide a dedicated numeric uncertainty for this estimate.",
+    "numeric_value": null,
+    "unit": "um"
+  },
+  "unit": "um",
+  "value": 58
+}

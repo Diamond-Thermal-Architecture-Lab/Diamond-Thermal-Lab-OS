@@ -1,0 +1,58 @@
+case_id: literature-2021-diamond-on-gan-membrane-stress
+title: "Direct CVD diamond integration on GaN and III-N membranes"
+status: draft
+confidentiality_level: "public"
+claims:
+  - claim_id: CLM-001
+    claim: This case folder has been opened for preliminary thermal architecture review.
+    claim_type: process
+    basis: Generated local no-API case scaffold.
+    assumptions:
+      - Technical inputs are incomplete and require engineering review.
+      - No performance improvement is claimed by this scaffold.
+    confidence: low
+    validation_required: true
+    status: draft
+    public_release: not_allowed_until_review
+    confidentiality_level: "public"
+    reviewer: TODO
+  - claim_id: CLM-PAT-001
+    claim: PAT-GAN-DIA-001 is a screening candidate only, not a final recommendation or measured result.
+    claim_type: pattern_based
+    basis: Approved Lab OS pattern index selection.
+    pattern_id: PAT-GAN-DIA-001
+    assumptions:
+      - Case-specific scoring, assumptions, and validation evidence remain incomplete.
+    confidence: low
+    validation_required: true
+    status: draft
+    public_release: not_allowed_until_review
+    confidentiality_level: "public"
+    reviewer: TODO
+  - claim_id: CLM-PAT-002
+    claim: PAT-DIA-SUBMOUNT-001 is a screening candidate only, not a final recommendation or measured result.
+    claim_type: pattern_based
+    basis: Approved Lab OS pattern index selection.
+    pattern_id: PAT-DIA-SUBMOUNT-001
+    assumptions:
+      - Case-specific scoring, assumptions, and validation evidence remain incomplete.
+    confidence: low
+    validation_required: true
+    status: draft
+    public_release: not_allowed_until_review
+    confidentiality_level: "public"
+    reviewer: TODO
+  - claim_id: CLM-PAT-003
+    claim: PAT-SIC-ALN-001 is a screening candidate only, not a final recommendation or measured result.
+    claim_type: pattern_based
+    basis: Approved Lab OS pattern index selection.
+    pattern_id: PAT-SIC-ALN-001
+    assumptions:
+      - Case-specific scoring, assumptions, and validation evidence remain incomplete.
+    confidence: low
+    validation_required: true
+    status: draft
+    public_release: not_allowed_until_review
+    confidentiality_level: "public"
+    reviewer: TODO
+note: Validated results are not yet available; no measured result has been generated.

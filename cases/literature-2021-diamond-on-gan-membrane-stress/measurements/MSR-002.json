@@ -1,0 +1,23 @@
+{
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "confidentiality_level": "public",
+  "evidence_id": "EVD-002",
+  "measurement_format_version": "1.0",
+  "measurement_id": "MSR-002",
+  "method": "surface profilometry reported in the source paper",
+  "operating_conditions": "Approximately 2 mm circular GaN/III-N membrane; initial bow was reported as approximately 10 um and bow increased by approximately 17 um after CVD diamond growth.",
+  "quantity": "increase_in_membrane_bow_after_growth",
+  "raw_data_reference": "controlled-literature-reference:arXiv-2102.09664:Figure-13-and-section-4.3",
+  "raw_data_sha256": null,
+  "review_notes": "The stored quantity is the reported increase, not a derived final-bow value.",
+  "reviewed_by": "",
+  "sample_id": "ANON-MEMBRANE-2MM",
+  "status": "completed",
+  "uncertainty": {
+    "basis": "Use the paper-reported largest profilometry standard deviation of 2 um as a conservative literature-level note.",
+    "numeric_value": 2,
+    "unit": "um"
+  },
+  "unit": "um",
+  "value": 17
+}
