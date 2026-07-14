@@ -1,0 +1,50 @@
+case_id: literature-2021-diamond-on-gan-membrane-stress
+title: "Direct CVD diamond integration on GaN and III-N membranes"
+status: draft
+confidentiality_level: "public"
+architectures:
+  - route_id: route-001
+    route_name: TODO: candidate route name
+    heat_source: TODO
+    substrate: TODO
+    bonding_interface: TODO
+    heat_spreader: TODO
+    package_path: TODO
+    cooling_boundary: TODO
+    manufacturing_route: TODO
+    validation_method: TODO
+    risk_profile: TODO
+    maturity_level: TODO
+    when_to_use: TODO
+    when_not_to_use: TODO
+  - route_id: pattern-001
+    pattern_id: PAT-GAN-DIA-001
+    route_name: "die-near diamond integration"
+    route_status: candidate
+    confidence: low
+    assumptions:
+      - TODO: bound case-specific geometry, interface, and cooling assumptions.
+    validation_status: unvalidated
+    decision_status: screening_only
+    note: "High-potential, higher-integration-risk candidate; do not treat as an immediate recommendation."
+  - route_id: pattern-002
+    pattern_id: PAT-DIA-SUBMOUNT-001
+    route_name: "die-near submount"
+    route_status: candidate
+    confidence: low
+    assumptions:
+      - TODO: bound case-specific geometry, interface, and cooling assumptions.
+    validation_status: unvalidated
+    decision_status: screening_only
+    note: "Diamond-related screening candidate; interface thermal resistance and bonding or contact quality require review."
+  - route_id: pattern-003
+    pattern_id: PAT-SIC-ALN-001
+    route_name: "substrate or carrier upgrade"
+    route_status: candidate
+    confidence: low
+    assumptions:
+      - TODO: bound case-specific geometry, interface, and cooling assumptions.
+    validation_status: unvalidated
+    decision_status: screening_only
+    note: "Screening candidate only; case-specific evidence and scoring remain required."
+note: Validated results are not yet available; no measured result has been generated.

@@ -1,0 +1,34 @@
+case_id: literature-2021-diamond-on-gan-membrane-stress
+title: "Direct CVD diamond integration on GaN and III-N membranes"
+status: draft
+confidentiality_level: "public"
+likely_bottleneck: TODO: identify likely thermal bottleneck after intake review.
+bottleneck_classification: TODO: conduction, interface, spreading, package, cooling boundary, or unknown.
+architecture_candidates:
+  - TODO: include diamond and non-diamond candidates neutrally when relevant.
+constraints:
+  - TODO: list cost, schedule, manufacturability, reliability, and integration constraints.
+assumptions:
+  - TODO: keep assumptions separate from measured facts.
+confidence_level: low
+recommended_near_term_route: TODO: do not select until assumptions are bounded.
+recommended_long_term_route: TODO: do not select until validation evidence exists.
+next_best_action: TODO: collect missing inputs before expensive simulation or supplier commitment.
+
+selected_patterns:
+  - pattern_id: PAT-GAN-DIA-001
+    route_type: "die-near diamond integration"
+    maturity_level: "high-potential concept"
+    screening_status: candidate
+    note: Selected pattern is a screening candidate, not a recommendation supported by case evidence.
+  - pattern_id: PAT-DIA-SUBMOUNT-001
+    route_type: "die-near submount"
+    maturity_level: "candidate"
+    screening_status: candidate
+    note: Selected pattern is a screening candidate, not a recommendation supported by case evidence.
+  - pattern_id: PAT-SIC-ALN-001
+    route_type: "substrate or carrier upgrade"
+    maturity_level: "established to candidate"
+    screening_status: candidate
+    note: Selected pattern is a screening candidate, not a recommendation supported by case evidence.
+note: Validated results are not yet available; no measured result has been generated.
