@@ -19,6 +19,9 @@ case initialization
 -> architecture comparison
 -> approved Decision Board
 -> validation planning
+-> optional evidence capture and measurement references
+-> optional prediction-versus-reality comparison
+-> human-reviewed learning record
 -> red flags
 -> next best action
 -> supplier specification
@@ -51,6 +54,12 @@ Use the Decision Board preview after triage to combine the current evidence, can
 ```bash
 python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/
 python scripts/labos_case.py decision-board cases/example-incomplete-gan-rf-pa/ --json
+```
+
+After validation planning, cases may optionally add evidence, measurements, and prediction-reality sidecars. These do not alter the canonical 12-file standard and are not an approval workflow:
+
+```bash
+python scripts/labos_case.py evidence-summary cases/example-incomplete-gan-rf-pa/
 ```
 
 Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "labos/prediction_reality_record.schema.json",
+  "title": "Diamond Thermal Lab OS Prediction Reality Record",
+  "type": "object",
+  "required": ["prediction_reality_format_version", "record_id", "case_id", "status", "quantity", "prediction", "reality_measurement_id", "prediction_evidence_ids", "comparison_context", "candidate_error_sources", "decision_impact", "learning_disposition", "confidentiality_level", "reviewed_by", "review_notes"],
+  "properties": {
+    "record_id": {"type": "string", "pattern": "^PRL-[0-9]{3}$"},
+    "status": {"enum": ["draft", "comparable", "reviewed", "rejected"]},
+    "learning_disposition": {"enum": ["pending_review", "accepted_for_calibration", "rejected_from_calibration", "information_only"]},
+    "prediction": {"type": "object", "required": ["value", "unit", "lower_bound", "upper_bound", "model_name", "model_version", "input_reference", "input_sha256"]}
+  },
+  "additionalProperties": true
+}

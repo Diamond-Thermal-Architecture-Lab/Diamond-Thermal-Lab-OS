@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "labos/measurement_reference.schema.json",
+  "title": "Diamond Thermal Lab OS Measurement Reference",
+  "type": "object",
+  "required": ["measurement_format_version", "measurement_id", "case_id", "evidence_id", "status", "quantity", "value", "unit", "sample_id", "method", "operating_conditions", "uncertainty", "raw_data_reference", "raw_data_sha256", "confidentiality_level", "reviewed_by", "review_notes"],
+  "properties": {
+    "measurement_id": {"type": "string", "pattern": "^MSR-[0-9]{3}$"},
+    "status": {"enum": ["planned", "completed", "reviewed", "rejected"]},
+    "value": {"type": ["number", "null"]},
+    "unit": {"type": ["string", "null"]},
+    "uncertainty": {"type": "object"}
+  },
+  "additionalProperties": true
+}

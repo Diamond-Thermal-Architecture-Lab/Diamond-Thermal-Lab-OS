@@ -60,6 +60,8 @@ class CaseCheckReport:
             for finding in self.section_findings("Pattern references")
         ):
             actions.append("Resolve unknown pattern IDs and review pattern-based claims against case evidence.")
+        if self.section_findings("Evidence and reality"):
+            actions.append("Resolve broken evidence links and complete human review before treating sidecars as stronger evidence.")
         if self.section_findings("Confidentiality warnings"):
             actions.append("Remove restricted markers or move sensitive content to approved private handling.")
         return actions
@@ -71,6 +73,7 @@ class CaseCheckReport:
             "Thermal input warnings",
             "Red flags",
             "Pattern references",
+            "Evidence and reality",
             "Claim safety warnings",
             "Confidentiality warnings",
         ]

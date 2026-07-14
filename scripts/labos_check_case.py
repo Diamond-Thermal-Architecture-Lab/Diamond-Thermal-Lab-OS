@@ -11,6 +11,7 @@ if str(REPO_ROOT) not in sys.path:
 from labos.checkers.case_file_checker import check_required_files
 from labos.checkers.claim_safety_checker import check_claim_safety
 from labos.checkers.confidentiality_checker import check_confidentiality
+from labos.checkers.evidence_sidecar_checker import check_evidence_sidecars
 from labos.checkers.pattern_reference_checker import check_pattern_references
 from labos.checkers.red_flag_checker import check_thermal_red_flags
 from labos.checkers.report import CaseCheckReport
@@ -25,6 +26,7 @@ def run_case_check(case_path: Path, strict: bool = False) -> CaseCheckReport:
     check_critical_thermal_inputs(case_path, report)
     check_thermal_red_flags(case_path, report)
     check_pattern_references(case_path, report)
+    check_evidence_sidecars(case_path, report)
     check_claim_safety(case_path, report)
     check_confidentiality(case_path, report)
     return report

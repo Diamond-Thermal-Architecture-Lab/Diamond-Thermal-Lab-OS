@@ -46,10 +46,22 @@ Goal: create reviewed public-safe specifications.
 - Track version history and review state.
 - Keep restricted process details out of public-facing specification artifacts.
 
-## Recommended Next Milestones
+## Completed M0-M12
 
-- Create the first L0 issue to review labels and templates.
-- Open a first L1 architecture task brief for public-safe system boundaries.
-- Draft one L2 engineering case template instance using sanitized assumptions.
-- Define an L3 validation data handling policy before adding measurement-derived summaries.
-- Review the example GaN RF PA case and decide which case artifacts should be required for every MVP pull request.
+The initial Lab OS foundation is complete: canonical case structure, local no-API checks and CI, pattern and memory references, deterministic triage, Decision Board preview, review packages, Human Decision Records, and Canonical Decision Proposals.
+
+## M13: Evidence And Prediction-Reality Foundation
+
+M13 adds optional Evidence Objects, Measurement References, and Prediction-Reality Records. It is a deterministic local protocol for controlled references, hashes, traceability checks, and read-only comparison. It is not a complete Evidence Graph, Gold Case certification system, model-calibration system, or experiment adapter.
+
+## H1 Priorities
+
+- Real Gold Cases with reviewed public-safe evidence.
+- Evidence and measurement objects linked to real controlled data sources.
+- Prediction-Reality learning loops with human review.
+- A Quick Case interface.
+- Explicit PR-based canonical application after human review.
+
+## Later Stages
+
+Future work may include an Engineering Problem Compiler, solver and experiment adapters, Agent support, and engineering benchmarks. These remain future capabilities and must not be represented as implemented.
