@@ -1,0 +1,30 @@
+{
+  "candidate_error_sources": [
+    "model_form",
+    "geometry",
+    "boundary_condition"
+  ],
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "comparison_context": "The blind baseline was created before literature outcomes were added. It identified interface and integration uncertainty but produced no numerical membrane-bow prediction.",
+  "confidentiality_level": "public",
+  "decision_impact": "The baseline cannot be quantitatively compared with the 58 um measured result because it did not produce a bow prediction. The missing prediction demonstrates that thermomechanical and process-fixture reasoning are not represented sufficiently in the current deterministic rules.",
+  "learning_disposition": "pending_review",
+  "prediction": {
+    "input_reference": "blind-baseline-commit:ce9520deb1216610b8226626fcbaa51b19621b6c; exports/literature-2021-diamond-on-gan-membrane-stress-baseline/review_manifest.json",
+    "input_sha256": null,
+    "lower_bound": null,
+    "model_name": "Diamond Thermal Lab OS deterministic triage and Decision Board",
+    "model_version": "triage-ruleset-1.0 / decision-board-1.0",
+    "unit": "um",
+    "upper_bound": null,
+    "value": null
+  },
+  "prediction_evidence_ids": [],
+  "prediction_reality_format_version": "1.0",
+  "quantity": "maximum_estimated_net_membrane_bow",
+  "reality_measurement_id": "MSR-003",
+  "record_id": "PRL-001",
+  "review_notes": "Do not fabricate a prediction value. This draft record intentionally preserves the missing quantitative prediction as a Gold Case capability gap.",
+  "reviewed_by": "",
+  "status": "draft"
+}

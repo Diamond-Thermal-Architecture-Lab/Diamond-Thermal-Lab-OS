@@ -1,0 +1,23 @@
+{
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "confidentiality_level": "public",
+  "evidence_id": "EVD-002",
+  "measurement_format_version": "1.0",
+  "measurement_id": "MSR-001",
+  "method": "surface profilometry reported in the source paper",
+  "operating_conditions": "Approximately 0.5 mm circular GaN/III-N membrane after approximately 38 to 57 um CVD diamond growth at approximately 720 to 750 degrees Celsius.",
+  "quantity": "post_growth_membrane_bow",
+  "raw_data_reference": "controlled-literature-reference:arXiv-2102.09664:Figure-13-and-section-4.3",
+  "raw_data_sha256": null,
+  "review_notes": "Value transcribed from the paper; raw profilometry data are not stored in this repository.",
+  "reviewed_by": "",
+  "sample_id": "ANON-MEMBRANE-0P5MM",
+  "status": "completed",
+  "uncertainty": {
+    "basis": "The Figure 13 caption reports the largest standard deviation of the orthogonal profilometry bow traces as 2 um; use this as a conservative paper-level uncertainty note, not a sample-specific metrology certificate.",
+    "numeric_value": 2,
+    "unit": "um"
+  },
+  "unit": "um",
+  "value": 7
+}

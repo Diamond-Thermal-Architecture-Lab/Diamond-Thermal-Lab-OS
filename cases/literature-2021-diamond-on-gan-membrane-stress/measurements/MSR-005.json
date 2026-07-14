@@ -1,0 +1,23 @@
+{
+  "case_id": "literature-2021-diamond-on-gan-membrane-stress",
+  "confidentiality_level": "public",
+  "evidence_id": "EVD-002",
+  "measurement_format_version": "1.0",
+  "measurement_id": "MSR-005",
+  "method": "Raman spectroscopy using the GaN E2 high peak shift reported in the source paper",
+  "operating_conditions": "Approximately 2 mm membrane measured at room temperature after diamond growth.",
+  "quantity": "average_residual_biaxial_tensile_stress_in_GaN_III_N",
+  "raw_data_reference": "controlled-literature-reference:arXiv-2102.09664:Figure-12-and-section-4.2",
+  "raw_data_sha256": null,
+  "review_notes": "This is stress in the GaN/III-N layers, not diamond stress.",
+  "reviewed_by": "",
+  "sample_id": "ANON-MEMBRANE-2MM",
+  "status": "completed",
+  "uncertainty": {
+    "basis": "Paper-reported uncertainty.",
+    "numeric_value": 0.1,
+    "unit": "GPa"
+  },
+  "unit": "GPa",
+  "value": 1.0
+}
