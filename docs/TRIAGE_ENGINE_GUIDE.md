@@ -16,9 +16,9 @@ Rules use stable `TRIAGE-<FAMILY>-<NUMBER>` IDs. Each triggered rule records its
 
 ## Thermomechanical Screening
 
-When an existing case combines a membrane or thin-layer context, elevated-temperature processing, and deposited-layer integration, triage adds an optional `thermomechanical_screening` result. It reports known inputs, missing evidence, source-evidence limitations, and stable `TRIAGE-THERMOMECH-*` rules for property basis, thermal history, stress/warpage evidence, interface mechanical evidence, process-fixture boundaries, geometry scale-up, and downstream compatibility.
+When an existing case combines credible membrane or suspended-structure context, deposited/bonded/directly grown layer integration, and a thermally significant process, triage adds an optional `thermomechanical_screening` result. It reports known inputs, missing evidence, source-evidence limitations, and stable `TRIAGE-THERMOMECH-*` rules for property basis, thermal history, stress/warpage evidence, interface mechanical evidence, process-fixture boundaries, geometry scale-up, and downstream compatibility. A diamond submount, a generic film mention, or a deposition term alone does not activate this family.
 
-This is qualitative screening only. It does not calculate stress, bow, warpage, delamination, or a probability of failure; it does not add numerical thresholds; and it does not make a route recommendation. A source-documented measurement or validator result remains distinct from case-specific acceptance evidence and human review.
+This is qualitative screening only. It does not calculate stress, bow, warpage, delamination, or a probability of failure; it does not add numerical thresholds; and it does not make a route recommendation. A topic mention is not evidence. A positive case-text declaration is stated context, not independently reviewed evidence. A completed measurement remains source context pending review unless its relevant parent Evidence Object and Measurement Reference are both reviewed and traceably linked. A source-documented measurement or validator result remains distinct from case-specific acceptance evidence and human review.
 
 ## Patterns and Read-only Behavior
 

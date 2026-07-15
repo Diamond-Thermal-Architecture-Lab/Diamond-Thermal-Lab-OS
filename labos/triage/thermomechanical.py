@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from labos.evidence.loader import iter_sidecar_json
@@ -10,45 +11,81 @@ from .models import TriggeredRule
 from .rules import MISSING_RE
 
 
-MEMBRANE_TERMS = ("membrane", "thin film", "thin-film", "thin layer", "thin-layer")
-PROCESS_TERMS = ("cvd", "deposition", "deposited", "growth", "grown", "anneal", "process temperature", "high-temperature")
-INTEGRATION_TERMS = ("coating", "deposited", "deposition", "diamond", "film", "grown layer", "growth")
+STRUCTURAL_TERMS = ("membrane", "suspended region", "suspended area", "thin structural layer")
 FIXTURE_TERMS = ("fixture", "sample holder", "carrier", "reactor", "plasma", "frame-to-fixture")
-COMPATIBILITY_TERMS = ("lithography", "handling", "packaging", "metallization", "downstream")
+DOWNSTREAM_TERMS = ("lithography", "handling", "packaging", "metallization", "downstream")
+POSITIVE_TERMS = ("defined", "documented", "measured", "reviewed", "bounded", "available", "compared", "evaluated", "validated")
+UNRESOLVED_RE = re.compile(r"\b(unmeasured|unbounded|not measured|not available|not defined)\b", re.IGNORECASE)
 DIMENSION_RE = re.compile(r"\b(\d+(?:\.\d+)?)\s*(?:mm|millimeter(?:s)?)\b", re.IGNORECASE)
+INTEGRATION_RE = re.compile(
+    r"(?:\b(?:deposited|coated|bonded|grown|integrated)\b.{0,80}\b(?:on|to|with)\b|"
+    r"\b(?:deposited|coated|grown)\b.{0,80}\b(?:film|coating|layer)\b.{0,80}\b(?:by|using)\s+(?:cvd|deposition)\b|"
+    r"\b(?:add|adds|adding)\b.{0,80}\b(?:diamond|coating|film|layer)\b.{0,80}\b(?:on|to)\b|"
+    r"\bdirect(?:ly)?\b.{0,80}\b(?:cvd|growth|deposition)\b)",
+    re.IGNORECASE,
+)
+THERMAL_PROCESS_RE = re.compile(
+    r"\b(?:mpcvd|cvd|anneal(?:ing)?|thermal\s+(?:growth|deposition|process)|process\s+temperature)\b",
+    re.IGNORECASE,
+)
+LATERAL_TERMS = ("membrane diameter", "membrane size", "lateral dimension", "suspended area", "device area", "intended size range")
 
 
-def _contains(text: str, terms: tuple[str, ...]) -> bool:
-    return any(term in text for term in terms)
+@dataclass(frozen=True)
+class EvidenceState:
+    source_quantities: frozenset[str]
+    reviewed_quantities: frozenset[str]
+    limitations: tuple[str, ...]
 
 
-def _unresolved_near(text: str, terms: tuple[str, ...]) -> bool:
-    for line in text.splitlines():
-        lowered = line.lower()
-        if any(term in lowered for term in terms) and MISSING_RE.search(lowered):
-            return True
-    return False
+def _lines(text: str) -> list[str]:
+    return [line.strip().lower() for line in text.splitlines() if line.strip()]
 
 
-def _listed_as_missing(text: str, terms: tuple[str, ...]) -> bool:
+def _has_unresolved_marker(line: str) -> bool:
+    return MISSING_RE.search(line) is not None or UNRESOLVED_RE.search(line) is not None
+
+
+def _listed_as_missing(lines: list[str], terms: tuple[str, ...]) -> bool:
     """Recognize canonical intake `missing_data` entries that omit words such as TODO."""
     in_missing_data = False
-    for line in text.splitlines():
-        stripped = line.strip().lower()
-        if stripped == "missing_data:":
+    for line in lines:
+        if line == "missing_data:":
             in_missing_data = True
             continue
-        if in_missing_data and line and not line[0].isspace() and not stripped.startswith("-"):
+        if in_missing_data and not line.startswith("-"):
             in_missing_data = False
-        if in_missing_data and any(term in stripped for term in terms):
+        if in_missing_data and any(term in line for term in terms):
             return True
     return False
 
 
-def _evidence_state(case_path: Path) -> tuple[set[str], bool, list[str]]:
-    """Read optional public sidecars defensively; malformed files remain a limitation."""
-    quantities: set[str] = set()
-    reviewed_evidence = False
+def _resolved_declaration(lines: list[str], terms: tuple[str, ...], *, factual: bool = False) -> bool:
+    """Recognize an explicit stated basis, never proof that the statement is true."""
+    for line in lines:
+        if not any(term in line for term in terms) or _has_unresolved_marker(line):
+            continue
+        if any(term in line for term in POSITIVE_TERMS):
+            return True
+        if factual and (
+            re.search(r"\d", line)
+            or "approximately" in line
+            or any(marker in line for marker in ("cooling to", "cooling from", "to room temperature", "after cooling"))
+        ):
+            return True
+    return False
+
+
+def _applicable(lines: list[str]) -> bool:
+    structural = any(any(term in line for term in STRUCTURAL_TERMS) for line in lines)
+    integration = any(INTEGRATION_RE.search(line) for line in lines)
+    thermal_process = any(THERMAL_PROCESS_RE.search(line) for line in lines)
+    return structural and integration and thermal_process
+
+
+def _evidence_state(case_path: Path) -> EvidenceState:
+    """Classify sidecars by traceable parent evidence without promoting draft data."""
+    evidence_by_id: dict[str, str] = {}
     limitations: list[str] = []
     for path in iter_sidecar_json(case_path, "evidence"):
         try:
@@ -56,20 +93,50 @@ def _evidence_state(case_path: Path) -> tuple[set[str], bool, list[str]]:
         except (OSError, json.JSONDecodeError):
             limitations.append(f"{path.name} is not usable structured evidence.")
             continue
-        if data.get("status") == "reviewed":
-            reviewed_evidence = True
-        else:
-            limitations.append(f"{path.name} is source context pending human evidence review.")
+        evidence_id = data.get("evidence_id")
+        status = data.get("status")
+        if not isinstance(evidence_id, str) or not isinstance(status, str):
+            limitations.append(f"{path.name} lacks usable evidence identity or status.")
+            continue
+        evidence_by_id[evidence_id] = status
+
+    source_quantities: set[str] = set()
+    reviewed_quantities: set[str] = set()
     for path in iter_sidecar_json(case_path, "measurements"):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             limitations.append(f"{path.name} is not usable structured measurement context.")
             continue
+        measurement_id = data.get("measurement_id")
+        evidence_id = data.get("evidence_id")
+        status = data.get("status")
         quantity = data.get("quantity")
-        if isinstance(quantity, str) and data.get("value") is not None:
-            quantities.add(quantity.lower())
-    return quantities, reviewed_evidence, limitations
+        value = data.get("value")
+        if not isinstance(measurement_id, str) or not isinstance(evidence_id, str) or not isinstance(status, str) or not isinstance(quantity, str):
+            limitations.append(f"{path.name} lacks usable measurement identity, parent, status, or quantity.")
+            continue
+        parent_status = evidence_by_id.get(evidence_id)
+        if parent_status is None:
+            limitations.append(f"{path.name} references missing parent Evidence Object {evidence_id}.")
+            continue
+        if status not in {"completed", "reviewed"} or not isinstance(value, (int, float)) or isinstance(value, bool):
+            limitations.append(f"{path.name} is not a completed or reviewed numeric measurement context.")
+            continue
+        source_quantities.add(quantity.lower())
+        if status == "reviewed" and parent_status == "reviewed" and isinstance(data.get("reviewed_by"), str) and data["reviewed_by"].strip():
+            reviewed_quantities.add(quantity.lower())
+        else:
+            limitations.append(f"{path.name} is source-documented context pending linked human evidence review.")
+    return EvidenceState(frozenset(source_quantities), frozenset(reviewed_quantities), tuple(dict.fromkeys(limitations)))
+
+
+def _quantity_state(evidence: EvidenceState, terms: tuple[str, ...]) -> str:
+    if any(any(term in quantity for term in terms) for quantity in evidence.reviewed_quantities):
+        return "reviewed"
+    if any(any(term in quantity for term in terms) for quantity in evidence.source_quantities):
+        return "source_pending_review"
+    return "missing"
 
 
 def _rule(
@@ -95,12 +162,35 @@ def _rule(
     )
 
 
+def _process_history_complete(lines: list[str]) -> bool:
+    temperature = _resolved_declaration(lines, ("growth temperature", "deposition temperature", "process temperature"), factual=True)
+    dwell = _resolved_declaration(lines, ("dwell", "exposure", "hour", "hours"), factual=True)
+    cooling = _resolved_declaration(lines, ("cooling", "cool-down", "cool down"), factual=True)
+    return temperature and dwell and cooling
+
+
+def _lateral_dimensions(lines: list[str]) -> set[str]:
+    values: set[str] = set()
+    for line in lines:
+        if any(term in line for term in LATERAL_TERMS):
+            values.update(DIMENSION_RE.findall(line))
+    return values
+
+
+def _lateral_comparison_declared(lines: list[str]) -> bool:
+    comparison_terms = ("compared", "evaluated", "geometry-dependent evidence", "validated over", "available")
+    return any(
+        any(term in line for term in LATERAL_TERMS)
+        and any(marker in line for marker in comparison_terms)
+        and not _has_unresolved_marker(line)
+        for line in lines
+    )
+
+
 def screen_thermomechanical(case_path: Path, text: str) -> tuple[dict[str, object], list[TriggeredRule]]:
-    """Return deterministic qualitative guardrails for elevated-temperature membrane integration."""
-    membrane = _contains(text, MEMBRANE_TERMS)
-    process = _contains(text, PROCESS_TERMS)
-    integration = _contains(text, INTEGRATION_TERMS)
-    if not (membrane and process and integration):
+    """Return deterministic qualitative guardrails for credible high-temperature membrane integration context."""
+    lines = _lines(text)
+    if not _applicable(lines):
         return {
             "status": "not_applicable",
             "known_inputs": [],
@@ -108,151 +198,150 @@ def screen_thermomechanical(case_path: Path, text: str) -> tuple[dict[str, objec
             "evidence_limitations": [],
         }, []
 
-    quantities, reviewed_evidence, limitations = _evidence_state(case_path)
-    known: list[str] = ["membrane or thin-layer context", "elevated-temperature material integration"]
-    if _contains(text, ("temperature", "thermal history", "heating", "cooling")):
-        known.append("process thermal history is described")
-    if _contains(text, ("thermal expansion", "coefficient of thermal expansion", "cte")):
-        known.append("thermal expansion difference is identified")
-    if _contains(text, FIXTURE_TERMS):
-        known.append("process fixture or reactor boundary context is identified")
-    if quantities:
-        known.append("optional source-documented measurement sidecars are present")
-
+    evidence = _evidence_state(case_path)
+    known = ["membrane or thin structural context", "deposited, bonded, coated, or directly grown layer integration", "thermally significant process context"]
     rules: list[TriggeredRule] = []
     missing: list[str] = []
-    property_terms = ("temperature-dependent", "thermal expansion coefficient", "coefficient of thermal expansion", "cte data")
-    if not _contains(text, property_terms):
-        gap = "temperature-dependent material-property basis for the integrated layer pair"
+
+    property_terms = ("cte", "thermal expansion", "temperature-dependent material", "material-property")
+    property_declared = _resolved_declaration(lines, property_terms) and not _listed_as_missing(lines, property_terms)
+    if property_declared:
+        known.append("material-property basis is declared in case text; it is not independently reviewed evidence")
+    else:
+        gap = "temperature-dependent material-property and reference-temperature basis"
         missing.append(gap)
         rules.append(_rule(
             "TRIAGE-THERMOMECH-001",
             "Material-property basis is incomplete",
             "Thermomechanical material-property evidence is incomplete for elevated-temperature layer integration.",
-            ["membrane or thin-layer context", "elevated-temperature deposited-layer integration"],
+            ["credible membrane integration context"],
             [gap],
-            "Thermal expansion differences alone do not establish residual stress, but they require a documented property and reference-temperature basis before route advancement.",
-            "Obtain temperature-dependent material-property and stress-free-reference assumptions suitable for a qualitative thermomechanical review.",
+            "Thermal expansion context alone does not establish residual stress; a stated basis remains distinct from reviewed evidence.",
+            "Obtain temperature-dependent material-property and stress-free-reference assumptions suitable for qualitative thermomechanical review.",
         ))
-    if not _contains(text, ("process temperature", "thermal history", "heating from", "cooling to", "growth temperature", "deposition temperature")):
-        gap = "process thermal history or temperature range"
+
+    process_complete = _process_history_complete(lines)
+    if process_complete:
+        known.append("growth or deposition temperature, exposure, and cooling route are stated in case text")
+    else:
+        gap = "growth or deposition temperature, dwell or exposure, and cooling-route evidence"
         missing.append(gap)
         rules.append(_rule(
             "TRIAGE-THERMOMECH-002",
             "Process thermal history is incomplete",
-            "The deposited-layer route lacks a defined process thermal history for thermomechanical screening.",
-            ["membrane or thin-layer context", "material integration process is referenced"],
+            "The deposited-layer route lacks a resolved process thermal history for thermomechanical screening.",
+            ["thermally significant integration process"],
             [gap],
-            "A thermal route cannot be screened for thermomechanical evidence needs without knowing the relevant heating and cooling context.",
-            "Define the public-safe process temperature range, dwell or exposure context, and cooling reference before advancing the route.",
+            "A topic mention or an unresolved temperature statement does not define the heating, exposure, cooling, or reference context.",
+            "Define the public-safe growth or deposition temperature, dwell or exposure, cooling route, and relevant reference condition before advancing the route.",
         ))
 
-    stress_terms = ("residual stress", "biaxial stress", "stress mapping", "raman")
-    bow_terms = ("bow", "warpage", "curvature", "profilometry")
-    has_stress_measurement = any("stress" in quantity for quantity in quantities)
-    has_bow_measurement = any("bow" in quantity or "warpage" in quantity or "curvature" in quantity for quantity in quantities)
-    stress_unresolved = _unresolved_near(text, stress_terms) or _listed_as_missing(text, stress_terms)
-    bow_unresolved = _unresolved_near(text, bow_terms) or _listed_as_missing(text, bow_terms)
-    has_stress_basis = has_stress_measurement or (_contains(text, stress_terms) and not stress_unresolved)
-    has_bow_basis = has_bow_measurement or (_contains(text, bow_terms) and not bow_unresolved)
-    stress_gap = "case-specific residual-stress acceptance and evidence basis"
-    bow_gap = "pre/post-process bow or warpage acceptance and comparison basis"
-    if stress_unresolved or not has_stress_basis:
-        missing.append(stress_gap)
-    if bow_unresolved or not has_bow_basis:
-        missing.append(bow_gap)
-    if stress_unresolved or bow_unresolved or not has_stress_basis or not has_bow_basis:
-        evidence = ["elevated-temperature membrane integration"]
-        if has_stress_measurement or has_bow_measurement:
-            evidence.append("source-documented measurement sidecars")
-        required = []
-        if stress_unresolved or not has_stress_basis:
-            required.append(stress_gap)
-        if bow_unresolved or not has_bow_basis:
-            required.append(bow_gap)
+    stress_state = _quantity_state(evidence, ("stress",))
+    bow_state = _quantity_state(evidence, ("bow", "warpage", "curvature"))
+    acceptance_declared = _resolved_declaration(lines, ("stress acceptance", "bow acceptance", "warpage acceptance", "allowable stress", "allowable bow"))
+    comparison_declared = _resolved_declaration(lines, ("initial", "post-process", "post growth", "post-growth")) and any(
+        "compar" in line or "evaluat" in line for line in lines if "initial" in line or "post" in line
+    )
+    if stress_state == "reviewed":
+        known.append("reviewed structured residual-stress evidence is linked to reviewed Evidence Object")
+    elif stress_state == "source_pending_review":
+        known.append("source-documented residual-stress context is present pending human evidence review")
+    if bow_state == "reviewed":
+        known.append("reviewed structured bow or warpage evidence is linked to reviewed Evidence Object")
+    elif bow_state == "source_pending_review":
+        known.append("source-documented bow or warpage context is present pending human evidence review")
+    required: list[str] = []
+    if stress_state != "reviewed":
+        required.append("reviewed residual-stress evidence relevant to the route")
+    if bow_state != "reviewed":
+        required.append("reviewed bow or warpage evidence relevant to the route")
+    if not acceptance_declared or _listed_as_missing(lines, ("stress", "bow", "warpage", "curvature")):
+        required.append("case-specific stress or bow/warpage acceptance criteria")
+    if not comparison_declared or _listed_as_missing(lines, ("initial", "curvature", "bow", "profilometry")):
+        required.append("initial-state versus post-process comparison basis")
+    if required:
+        missing.extend(required)
         rules.append(_rule(
             "TRIAGE-THERMOMECH-003",
             "Stress and warpage evidence remains incomplete",
-            "Residual-stress or bow/warpage evidence is not sufficient to advance the membrane integration route.",
-            evidence,
+            "Residual-stress or bow/warpage context is not sufficient to advance the membrane integration route.",
+            ["elevated-temperature membrane integration", f"stress evidence state: {stress_state}", f"bow evidence state: {bow_state}"],
             required,
-            "Reported or source-documented values do not replace case-specific acceptance criteria, initial-state comparison, or human evidence review.",
-            "Obtain initial and post-process profilometry, a stress evidence basis such as Raman mapping where applicable, and explicit acceptance criteria before advancing the route.",
+            "Source-documented values and prose declarations do not replace reviewed evidence, applicable acceptance criteria, or initial/post-process comparison.",
+            "Obtain reviewed stress and profilometry evidence where applicable, define acceptance criteria, and compare initial with post-process state before advancing the route.",
         ))
 
     adhesion_terms = ("adhesion", "delamination", "fracture energy", "bond strength", "interface strength")
-    if _unresolved_near(text, adhesion_terms) or _listed_as_missing(text, adhesion_terms) or not _contains(text, adhesion_terms):
+    if not _resolved_declaration(lines, adhesion_terms) or _listed_as_missing(lines, adhesion_terms):
         gap = "interface adhesion, fracture, or delamination evidence"
         missing.append(gap)
         rules.append(_rule(
             "TRIAGE-THERMOMECH-004",
             "Interface mechanical evidence is incomplete",
-            "The integrated layer interface lacks sufficient adhesion or mechanical-integrity evidence for thermomechanical screening.",
-            ["deposited-layer integration on a membrane or thin-layer structure"],
+            "The integrated layer interface lacks a stated adhesion or mechanical-integrity basis for thermomechanical screening.",
+            ["deposited-layer integration on a membrane or thin structural layer"],
             [gap],
             "Missing interface evidence does not predict delamination or cracking; it identifies a validation condition before stronger route conclusions.",
             "Define a public-safe adhesion or mechanical-integrity validation basis and the evidence needed to reconsider the route.",
         ))
 
-    if _contains(text, FIXTURE_TERMS) and (
-        _unresolved_near(text, FIXTURE_TERMS + ("thermal contact conductance", "boundary"))
-        or _listed_as_missing(text, FIXTURE_TERMS + ("thermal contact conductance", "boundary"))
-    ):
+    fixture_defined = _resolved_declaration(lines, FIXTURE_TERMS + ("thermal contact", "process boundary", "ambient boundary"), factual=True)
+    if not fixture_defined or _listed_as_missing(lines, FIXTURE_TERMS + ("thermal contact", "boundary")):
         gap = "process-fixture, carrier, or reactor thermal-boundary definition"
         missing.append(gap)
         rules.append(_rule(
             "TRIAGE-THERMOMECH-005",
             "Process thermal boundary is incomplete",
-            "A process-fixture or reactor boundary is present but its relevant thermal contact or boundary evidence is unresolved.",
-            ["fixture, carrier, frame, plasma, or reactor context"],
+            "The applicable process lacks a resolved fixture, carrier, or reactor thermal-boundary basis.",
+            ["thermally significant membrane integration process"],
             [gap],
-            "A process fixture is distinct from a conventional package-to-heat-sink boundary and can affect the thermal history used for screening.",
+            "A process fixture is distinct from a conventional package-to-heat-sink boundary and can affect the process thermal history.",
             "Define the public-safe fixture, carrier, reactor, contact, and ambient boundary assumptions before treating package screening as sufficient.",
         ))
 
-    dimensions = set(DIMENSION_RE.findall(text))
-    if len(dimensions) >= 2 or "scale-up" in text or "scaling" in text:
-        scale_gap = "geometry scale-up and thickness-interaction evidence"
-        scale_unresolved = (
-            _unresolved_near(text, ("diameter", "size", "scale", "thickness", "process window"))
-            or _listed_as_missing(text, ("diameter", "size", "scale", "thickness", "process window"))
-            or "scale-up" not in text
-        )
-        if scale_unresolved:
-            missing.append(scale_gap)
-            rules.append(_rule(
-                "TRIAGE-THERMOMECH-006",
-                "Geometry scale-up evidence is incomplete",
-                "Multiple membrane dimensions or a scale-up context are present without a bounded thermomechanical comparison basis.",
-                ["multiple lateral dimensions or explicit scale-up context", "deposited-layer integration"],
-                [scale_gap],
-                "Lateral size and deposited-film/substrate thickness interaction can change thermomechanical behavior; this rule does not infer a direction or magnitude.",
-                "Compare geometry, layer-thickness, initial-curvature, and process-boundary evidence across the intended size range before extrapolating the route.",
-            ))
+    dimensions = _lateral_dimensions(lines)
+    if len(dimensions) >= 2 and not _lateral_comparison_declared(lines):
+        gap = "geometry scale-up and thickness-interaction comparison evidence"
+        missing.append(gap)
+        rules.append(_rule(
+            "TRIAGE-THERMOMECH-006",
+            "Geometry scale-up evidence is incomplete",
+            "Multiple lateral membrane dimensions are present without an explicit geometry-dependent comparison basis.",
+            ["multiple membrane diameters or lateral dimensions", "deposited-layer integration"],
+            [gap],
+            "Lateral size and deposited-film/substrate thickness interaction can change thermomechanical behavior; this rule does not infer a direction or magnitude.",
+            "Compare geometry, layer thickness, initial curvature, and process-boundary evidence across the intended lateral size range before extrapolating the route.",
+        ))
 
-    if _contains(text, COMPATIBILITY_TERMS) and (
-        _unresolved_near(text, COMPATIBILITY_TERMS + ("flatness", "acceptance", "allowable"))
-        or _listed_as_missing(text, COMPATIBILITY_TERMS + ("flatness", "acceptance", "allowable"))
-    ):
+    downstream_relevant = any(any(term in line for term in DOWNSTREAM_TERMS) for line in lines)
+    downstream_defined = _resolved_declaration(lines, DOWNSTREAM_TERMS + ("flatness", "compatibility", "acceptance"))
+    if downstream_relevant and (not downstream_defined or _listed_as_missing(lines, DOWNSTREAM_TERMS + ("flatness", "compatibility", "acceptance", "allowable"))):
         gap = "downstream handling, lithography, packaging, or flatness compatibility criteria"
         missing.append(gap)
         rules.append(_rule(
             "TRIAGE-THERMOMECH-007",
             "Downstream compatibility criteria are incomplete",
             "Downstream handling or fabrication compatibility is relevant but the acceptance basis is unresolved.",
-            ["downstream lithography, handling, packaging, or fabrication context"],
+            ["explicit downstream lithography, handling, packaging, or fabrication context"],
             [gap],
             "A route can remain a screening candidate while downstream compatibility evidence is collected; the absence of criteria is not a failure prediction.",
-            "Define the downstream flatness, handling, packaging, or fabrication compatibility criteria before strengthening the route decision.",
+            "Define downstream flatness, handling, packaging, or fabrication compatibility criteria before strengthening the route decision.",
         ))
 
-    limitations = list(dict.fromkeys(limitations))
-    if quantities and not reviewed_evidence:
-        limitations.append("Source-documented measurement context remains pending human evidence review.")
-    screening_status = "needs_evidence" if rules else "evidence_referenced"
+    limitations = list(evidence.limitations)
+    if evidence.source_quantities and not evidence.reviewed_quantities:
+        limitations.append("Source-documented measurement context remains pending linked human evidence review.")
+    if rules:
+        status = "needs_evidence"
+    elif evidence.reviewed_quantities:
+        status = "reviewed_evidence_referenced"
+    elif evidence.source_quantities:
+        status = "source_context_pending_review"
+    else:
+        status = "stated_context_no_explicit_gap"
     return {
-        "status": screening_status,
-        "known_inputs": known,
+        "status": status,
+        "known_inputs": list(dict.fromkeys(known)),
         "missing_evidence": list(dict.fromkeys(missing)),
-        "evidence_limitations": limitations,
+        "evidence_limitations": list(dict.fromkeys(limitations)),
     }, rules

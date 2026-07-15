@@ -6,7 +6,7 @@ M14 extends the existing read-only deterministic triage engine. It adds qualitat
 
 ## Available Inputs
 
-The existing canonical intake and optional sidecars already provide reusable text-level signals: layer stack, membrane or substrate geometry, stated layer thicknesses, process or growth temperature, thermal boundary descriptions, missing-data lists, validation plans, pattern references, and evidence/measurement status. These inputs can identify that an elevated-temperature deposited-layer integration route needs thermomechanical evidence without changing the 12-file case contract.
+The existing canonical intake and optional sidecars already provide reusable signals: layer stack, membrane geometry, stated layer thicknesses, process or growth context, thermal-boundary descriptions, missing-data lists, validation plans, and evidence/measurement status. The detector activates only when it finds credible combined context for a membrane or suspended structural region, deposited/bonded/directly grown layer integration, and a thermally significant process. A bulk diamond substrate, generic film mention, or ordinary deposition term alone does not activate it. These inputs can identify that an elevated-temperature deposited-layer integration route needs thermomechanical evidence without changing the 12-file case contract.
 
 ## Important Missing Inputs
 
@@ -20,16 +20,18 @@ No Canonical Case schema change is needed. The triage result receives an additiv
 
 Each thermomechanical rule records a stable ID, title, triggering inputs, missing evidence, engineering rationale, enabled action, and evidence boundary. The rules distinguish:
 
-- stated case text as known context;
+- a topic mention, which is context rather than evidence;
+- a positive, line-level declared basis, which is stated context but not proof that the declaration is true;
 - explicit `TODO`, `unknown`, `missing`, or `unmeasured` text as missing evidence;
 - optional literature or measurement sidecars as source-documented context whose draft/unreviewed status remains a limitation; and
+- reviewed measurement context only when a relevant Measurement Reference is reviewed, linked to an existing reviewed Evidence Object, and identifies a usable quantity;
 - rule output as an unvalidated screening inference.
 
-The rules never convert a literature measurement, a pattern, or a validator result into a validated design conclusion.
+Text such as "stress must be investigated" or "bow is a concern" never satisfies an evidence request. Likewise, a completed measurement with a draft parent Evidence Object stays source-documented context pending human evidence review. The rules never convert a literature measurement, a pattern, or a validator result into a validated design conclusion.
 
 ## Reusable Relationships
 
-The rule family activates only when a membrane or thin-layer context is combined with deposited-layer integration and elevated-temperature process context. It then looks for missing evidence about thermal expansion/property basis, process history, residual stress, bow/warpage acceptance, adhesion/delamination, fixture or reactor boundary, downstream compatibility, and geometry scale-up. These are general missing-evidence relationships, not paper-specific phrases or numerical limits.
+The rule family uses phrase-level context where practical. It then looks for missing evidence about thermal expansion/property basis, process history, residual stress, bow/warpage acceptance, adhesion/delamination, fixture or reactor boundary, downstream compatibility, and geometry scale-up. Multiple thickness values do not count as lateral scale-up; lateral dimensions must be associated with membrane, suspended-area, or equivalent geometry context. These are general missing-evidence relationships, not paper-specific phrases or numerical limits.
 
 ## Compatibility
 

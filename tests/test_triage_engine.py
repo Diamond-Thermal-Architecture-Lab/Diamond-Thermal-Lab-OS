@@ -38,6 +38,56 @@ confidentiality_level: public
         (path / "03_architecture_genomes.yml").write_text(extra, encoding="utf-8")
 
 
+def write_thermomechanical_case(path: Path, extra: str = "") -> None:
+    write_case(
+        path,
+        question="screen direct CVD diamond growth on a suspended membrane",
+        extra=extra,
+    )
+    intake = path / "00_problem_intake.yml"
+    intake.write_text(
+        intake.read_text(encoding="utf-8").replace(
+            "current_material_stack: package_path defined; interface thermal resistance bounded",
+            "current_material_stack: direct CVD diamond grown on a suspended membrane",
+        ),
+        encoding="utf-8",
+    )
+
+
+def write_evidence(path: Path, evidence_id: str, status: str) -> None:
+    directory = path / "evidence"
+    directory.mkdir(exist_ok=True)
+    (directory / f"{evidence_id}.json").write_text(
+        json.dumps({"evidence_id": evidence_id, "status": status}), encoding="utf-8"
+    )
+
+
+def write_measurement(
+    path: Path,
+    measurement_id: str,
+    evidence_id: str,
+    quantity: str,
+    status: str = "completed",
+    *,
+    reviewed_by: str = "",
+) -> None:
+    directory = path / "measurements"
+    directory.mkdir(exist_ok=True)
+    (directory / f"{measurement_id}.json").write_text(
+        json.dumps(
+            {
+                "measurement_id": measurement_id,
+                "evidence_id": evidence_id,
+                "status": status,
+                "quantity": quantity,
+                "value": 1.0,
+                "reviewed_by": reviewed_by,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 class TriageEngineTests(unittest.TestCase):
     def test_incomplete_example_needs_data(self) -> None:
         result = triage_case(REPO_ROOT / "cases" / "example-incomplete-gan-rf-pa")
@@ -190,41 +240,119 @@ class TriageEngineTests(unittest.TestCase):
     def test_missing_process_history_is_a_qualitative_gap(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "case"
-            write_case(
-                path,
-                question="screen an integrated membrane coating",
-                extra="membrane with a deposited diamond film by CVD; residual stress and bow are TODO; fixture boundary is TODO",
-            )
+            write_thermomechanical_case(path, "growth temperature: unknown")
             result = triage_case(path)
             self.assertIn("TRIAGE-THERMOMECH-002", {rule.rule_id for rule in result.triggered_rules})
             self.assertIn("thermomechanical_validation_needed", result.secondary_classifications)
 
-    def test_complete_thermomechanical_context_does_not_trigger_missing_evidence_rules(self) -> None:
+    def test_diamond_submount_and_generic_film_do_not_activate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "case"
-            write_case(
+            write_case(path, extra="diamond submount used below a bulk package")
+            self.assertEqual(triage_case(path).thermomechanical_screening["status"], "not_applicable")
+            (path / "03_architecture_genomes.yml").write_text("an ordinary thin film is deposited", encoding="utf-8")
+            self.assertEqual(triage_case(path).thermomechanical_screening["status"], "not_applicable")
+
+    def test_incomplete_example_remains_thermomechanically_not_applicable(self) -> None:
+        result = triage_case(REPO_ROOT / "cases" / "example-incomplete-gan-rf-pa")
+        self.assertEqual(result.thermomechanical_screening["status"], "not_applicable")
+
+    def test_missing_cte_and_topic_mentions_do_not_count_as_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(
                 path,
-                question="screen an integrated membrane coating",
-                extra=(
-                    "membrane with deposited diamond film by CVD; process temperature and thermal history are defined; "
-                    "temperature-dependent coefficient of thermal expansion data are documented; residual stress acceptance "
-                    "and Raman evidence are documented; initial and post-process bow profilometry acceptance is documented; "
-                    "adhesion and fracture energy evidence are documented; fixture thermal contact boundary is defined; "
-                    "0.5 mm and 2 mm scale-up evidence is documented; downstream lithography handling flatness acceptance is documented"
+                "CTE data are missing\nResidual stress must be investigated.\nBow is an important concern.",
+            )
+            ids = {rule.rule_id for rule in triage_case(path).triggered_rules}
+            self.assertIn("TRIAGE-THERMOMECH-001", ids)
+            self.assertIn("TRIAGE-THERMOMECH-003", ids)
+
+    def test_positive_declarations_are_stated_context_not_reviewed_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(
+                path,
+                "\n".join(
+                    (
+                        "CTE data documented.", "growth temperature: 800 C", "exposure: 2 hours", "cooling to room temperature.",
+                        "stress acceptance documented.", "bow acceptance documented.", "initial and post-process curvature compared.",
+                        "adhesion evidence documented.", "fixture thermal boundary defined.",
+                    )
                 ),
             )
             result = triage_case(path)
-            self.assertEqual(result.thermomechanical_screening["status"], "evidence_referenced")
+            self.assertIn("material-property basis is declared", " ".join(result.thermomechanical_screening["known_inputs"]))
+            self.assertEqual(result.thermomechanical_screening["status"], "needs_evidence")
+            self.assertNotEqual(result.thermomechanical_screening["status"], "reviewed_evidence_referenced")
+
+    def test_draft_parent_measurement_remains_pending_review(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(path)
+            write_evidence(path, "EVD-001", "draft")
+            write_measurement(path, "MSR-001", "EVD-001", "residual stress")
+            write_measurement(path, "MSR-002", "EVD-001", "membrane bow")
+            result = triage_case(path)
+            rule = next(rule for rule in result.triggered_rules if rule.rule_id == "TRIAGE-THERMOMECH-003")
+            self.assertIn("stress evidence state: source_pending_review", rule.evidence)
+            self.assertIn("pending linked human evidence review", " ".join(result.thermomechanical_screening["evidence_limitations"]))
+
+    def test_reviewed_parent_and_relevant_measurements_can_be_reviewed_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(
+                path,
+                "\n".join((
+                    "CTE data documented.", "growth temperature: 800 C", "exposure: 2 hours", "cooling to room temperature.",
+                    "stress acceptance documented.", "bow acceptance documented.", "initial and post-process curvature compared.",
+                    "adhesion evidence documented.", "fixture thermal boundary defined.",
+                )),
+            )
+            write_evidence(path, "EVD-001", "reviewed")
+            write_measurement(path, "MSR-001", "EVD-001", "residual stress", "reviewed", reviewed_by="reviewer")
+            write_measurement(path, "MSR-002", "EVD-001", "membrane bow", "reviewed", reviewed_by="reviewer")
+            result = triage_case(path)
+            self.assertEqual(result.thermomechanical_screening["status"], "reviewed_evidence_referenced")
             self.assertFalse(any("THERMOMECH" in rule.rule_id for rule in result.triggered_rules))
+
+    def test_unrelated_reviewed_evidence_does_not_promote_draft_measurement(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(path)
+            write_evidence(path, "EVD-001", "reviewed")
+            write_evidence(path, "EVD-002", "draft")
+            write_measurement(path, "MSR-001", "EVD-002", "residual stress")
+            result = triage_case(path)
+            rule = next(rule for rule in result.triggered_rules if rule.rule_id == "TRIAGE-THERMOMECH-003")
+            self.assertIn("stress evidence state: source_pending_review", rule.evidence)
+
+    def test_missing_parent_and_malformed_sidecars_are_safe(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(path)
+            write_measurement(path, "MSR-001", "EVD-999", "residual stress")
+            (path / "evidence").mkdir(exist_ok=True)
+            (path / "evidence" / "EVD-001.json").write_text("{not-json", encoding="utf-8")
+            result = triage_case(path)
+            limitations = result.thermomechanical_screening["evidence_limitations"]
+            self.assertIn("MSR-001.json references missing parent Evidence Object EVD-999.", limitations)
+            self.assertIn("EVD-001.json is not usable structured evidence.", limitations)
+
+    def test_lateral_dimensions_are_not_thicknesses_and_comparison_can_be_declared(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(path, "diamond thickness: 38 um\nsubstrate thickness: 75 um")
+            self.assertNotIn("TRIAGE-THERMOMECH-006", {rule.rule_id for rule in triage_case(path).triggered_rules})
+            (path / "03_architecture_genomes.yml").write_text("membrane diameter: 0.5 mm\nmembrane diameter: 2 mm", encoding="utf-8")
+            self.assertIn("TRIAGE-THERMOMECH-006", {rule.rule_id for rule in triage_case(path).triggered_rules})
+            (path / "03_architecture_genomes.yml").write_text("membrane diameter: 0.5 mm\nmembrane diameter: 2 mm\ncurvature evaluated for each membrane diameter", encoding="utf-8")
+            self.assertNotIn("TRIAGE-THERMOMECH-006", {rule.rule_id for rule in triage_case(path).triggered_rules})
 
     def test_malformed_optional_thermomechanical_sidecar_is_reported_without_traceback(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "case"
-            write_case(
-                path,
-                question="screen an integrated membrane coating",
-                extra="membrane with a deposited diamond film by CVD; residual stress and bow are TODO",
-            )
+            write_thermomechanical_case(path)
             (path / "evidence").mkdir()
             (path / "evidence" / "EVD-001.json").write_text("{not-json", encoding="utf-8")
             result = triage_case(path)
@@ -248,6 +376,12 @@ class TriageEngineTests(unittest.TestCase):
         self.assertEqual(first.returncode, 0)
         self.assertEqual(first.stdout, second.stdout)
         self.assertEqual(json.loads(first.stdout)["thermomechanical_screening"]["status"], "needs_evidence")
+
+    def test_legacy_rule_dictionaries_omit_empty_thermomechanical_fields(self) -> None:
+        result = triage_case(REPO_ROOT / "cases" / "example-incomplete-gan-rf-pa")
+        legacy_rule = result.triggered_rules[0].to_dict()
+        self.assertNotIn("title", legacy_rule)
+        self.assertNotIn("missing_evidence", legacy_rule)
 
 
 if __name__ == "__main__":

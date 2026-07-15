@@ -170,7 +170,7 @@ These rules are qualitative screening guardrails, not validated stress or warpag
 6. Rerun the blind baseline from an unchanged input snapshot.
 7. Compare the improved output against this baseline.
 
-Categorical prediction should precede numerical prediction. Useful categorical examples include low bow risk, moderate bow risk, high bow risk, thermomechanical hold required, and unsupported without coupled FEM. The system should not fabricate a precise bow value from rules alone.
+Any future categorical prediction contract must first define and independently validate its basis. Labels such as low, moderate, or high bow risk must not be inferred from these qualitative M14 guardrails or learned from this paper alone. A thermomechanical hold or an unsupported-without-coupled-FEM outcome can remain an evidence-bound screening statement. The system should not fabricate a precise bow value from rules alone.
 
 ## Rerun Acceptance Criteria
 
