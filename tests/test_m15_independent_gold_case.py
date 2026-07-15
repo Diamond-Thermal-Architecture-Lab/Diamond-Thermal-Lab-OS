@@ -28,6 +28,14 @@ BASELINE = REPO_ROOT / "exports" / f"{CASE_ID}-baseline"
 M14_BASELINE = REPO_ROOT / "exports" / "literature-2021-diamond-on-gan-membrane-stress-baseline"
 SCRIPT = REPO_ROOT / "scripts" / "labos_case.py"
 M14_THERMOMECHANICAL_SOURCE = REPO_ROOT / "labos" / "triage" / "thermomechanical.py"
+SCHEMAS = REPO_ROOT / "labos" / "schemas"
+RECOGNIZED_DEPENDENCY_MANIFESTS = [
+    "requirements.txt",
+    "requirements-dev.txt",
+    "pyproject.toml",
+    "Pipfile",
+    "poetry.lock",
+]
 
 EXPECTED_BASELINE_HASHES = {
     "decision_board_preview.json": "6a18fadcbdef0295a0cfd9ddbe43f4e99e11ea9bb6a4e9112e9f610ff718bc2e",
@@ -58,6 +66,9 @@ EXPECTED_M14_BASELINE_HASHES = {
     "human_review_checklist.md": "6ee1ac064f30208361f5d445581b853515505f7d46fb9e230d04137815a2d58c",
     "review_manifest.json": "975a7dd162886b4b3932dbdb6be234071b5be013e51b05eac7c323fb512e81fe",
 }
+EXPECTED_M14_THERMOMECHANICAL_SHA256 = "d9e6e1fbd36c96fa83e88676ac30760449639bb2e40161fd63ba1e05e262618f"
+EXPECTED_SCHEMA_TREE_SHA256 = "e62fc8c9545c4d212da3eb20074e8568a9855a7b092c4e6b889edd0580f2459e"
+EXPECTED_DEPENDENCY_MANIFEST_HASHES: dict[str, str] = {}
 
 
 def _sha256(path: Path) -> str:
@@ -76,6 +87,18 @@ def _triage_json(case_path: Path) -> str:
     if completed.returncode != 0:
         raise AssertionError(completed.stderr)
     return completed.stdout
+
+
+def _tree_sha256(root: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(item for item in root.rglob("*") if item.is_file()):
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        data = path.read_bytes()
+        digest.update(len(relative).to_bytes(4, "big"))
+        digest.update(relative)
+        digest.update(len(data).to_bytes(8, "big"))
+        digest.update(data)
+    return digest.hexdigest()
 
 
 class M15BlindBaselineTests(unittest.TestCase):
@@ -295,20 +318,16 @@ class M15EvidenceRevealTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertNotIn("Diamond is referenced without interface-risk discussion", completed.stdout)
 
-    def test_m14_thermomechanical_source_was_not_changed_in_this_branch(self) -> None:
-        completed = subprocess.run(
-            ["git", "diff", "--name-only", "157d0f56ed7c7a6eae3b222097a1d7b351264d77...HEAD"],
-            cwd=REPO_ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-        )
-        self.assertEqual(completed.returncode, 0, completed.stderr)
-        changed = set(completed.stdout.splitlines())
-        self.assertNotIn(str(M14_THERMOMECHANICAL_SOURCE.relative_to(REPO_ROOT)).replace("\\", "/"), changed)
-        self.assertFalse(any(path.startswith("labos/schemas/") for path in changed))
-        self.assertFalse(any(path in {"requirements.txt", "pyproject.toml", "Pipfile", "poetry.lock"} for path in changed))
+    def test_m14_rules_schemas_and_dependencies_are_unchanged(self) -> None:
+        self.assertEqual(_sha256(M14_THERMOMECHANICAL_SOURCE), EXPECTED_M14_THERMOMECHANICAL_SHA256)
+        self.assertEqual(_tree_sha256(SCHEMAS), EXPECTED_SCHEMA_TREE_SHA256)
+
+        actual_manifests = {
+            manifest: _sha256(REPO_ROOT / manifest)
+            for manifest in RECOGNIZED_DEPENDENCY_MANIFESTS
+            if (REPO_ROOT / manifest).is_file()
+        }
+        self.assertEqual(actual_manifests, EXPECTED_DEPENDENCY_MANIFEST_HASHES)
 
 
 if __name__ == "__main__":
