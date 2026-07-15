@@ -24,14 +24,14 @@ Each thermomechanical rule records a stable ID, title, triggering inputs, missin
 - a positive, line-level declared basis, which is stated context but not proof that the declaration is true;
 - explicit `TODO`, `unknown`, `missing`, or `unmeasured` text as missing evidence;
 - optional literature or measurement sidecars as source-documented context whose draft/unreviewed status remains a limitation; and
-- reviewed measurement context only when a relevant Measurement Reference is reviewed, linked to an existing reviewed Evidence Object, and identifies a usable quantity;
+- reviewed measurement context only when a relevant Measurement Reference is reviewed, has a non-empty reviewer, matches the triaged case, and is reciprocally linked from an existing reviewed Evidence Object with a non-empty reviewer;
 - rule output as an unvalidated screening inference.
 
-Text such as "stress must be investigated" or "bow is a concern" never satisfies an evidence request. Likewise, a completed measurement with a draft parent Evidence Object stays source-documented context pending human evidence review. The rules never convert a literature measurement, a pattern, or a validator result into a validated design conclusion.
+Text such as "stress must be investigated" or "bow is a concern" never satisfies an evidence request. Likewise, a completed measurement with a draft parent Evidence Object stays source-documented context pending human evidence review. A one-way measurement `evidence_id` is insufficient for reviewed context: the parent must also list the measurement ID. Rejected or deprecated parents are limitations, not normal source context. The rules never convert a literature measurement, a pattern, or a validator result into a validated design conclusion.
 
 ## Reusable Relationships
 
-The rule family uses phrase-level context where practical. It then looks for missing evidence about thermal expansion/property basis, process history, residual stress, bow/warpage acceptance, adhesion/delamination, fixture or reactor boundary, downstream compatibility, and geometry scale-up. Multiple thickness values do not count as lateral scale-up; lateral dimensions must be associated with membrane, suspended-area, or equivalent geometry context. These are general missing-evidence relationships, not paper-specific phrases or numerical limits.
+The rule family uses phrase-level context where practical. It then looks for missing evidence about thermal expansion/property basis, process history, residual stress, bow/warpage acceptance, adhesion/delamination, fixture or reactor boundary, downstream compatibility, and geometry scale-up. Fixture identifiers and plasma operating parameters do not define a thermal boundary; an explicit contact, wall, ambient, or boundary condition is required. Stress acceptance and bow/warpage acceptance remain separate bases. Multiple thickness values do not count as lateral scale-up; lateral dimensions must be associated with membrane, suspended-area, or equivalent geometry context, and availability alone is not a geometry-dependent comparison. These are general missing-evidence relationships, not paper-specific phrases or numerical limits.
 
 ## Compatibility
 

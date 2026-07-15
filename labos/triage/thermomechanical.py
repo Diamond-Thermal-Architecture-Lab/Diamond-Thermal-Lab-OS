@@ -29,6 +29,7 @@ THERMAL_PROCESS_RE = re.compile(
     re.IGNORECASE,
 )
 LATERAL_TERMS = ("membrane diameter", "membrane size", "lateral dimension", "suspended area", "device area", "intended size range")
+FIXTURE_BOUNDARY_TERMS = ("thermal boundary", "thermal contact", "contact conductance", "contact condition", "ambient boundary", "reactor wall")
 
 
 @dataclass(frozen=True)
@@ -83,9 +84,33 @@ def _applicable(lines: list[str]) -> bool:
     return structural and integration and thermal_process
 
 
+def _case_id(case_path: Path) -> str | None:
+    try:
+        for line in (case_path / "00_problem_intake.yml").read_text(encoding="utf-8").splitlines():
+            if line.startswith("case_id:"):
+                value = line.partition(":")[2].strip()
+                return value or None
+    except OSError:
+        return None
+    return None
+
+
+def _fixture_boundary_declared(lines: list[str]) -> bool:
+    """Require boundary semantics, not a fixture identifier or operating parameter."""
+    for line in lines:
+        if _has_unresolved_marker(line):
+            continue
+        if not any(term in line for term in FIXTURE_TERMS) or not any(term in line for term in FIXTURE_BOUNDARY_TERMS):
+            continue
+        if any(term in line for term in POSITIVE_TERMS) or "contact conductance" in line:
+            return True
+    return False
+
+
 def _evidence_state(case_path: Path) -> EvidenceState:
     """Classify sidecars by traceable parent evidence without promoting draft data."""
-    evidence_by_id: dict[str, str] = {}
+    case_id = _case_id(case_path)
+    evidence_by_id: dict[str, dict[str, object]] = {}
     limitations: list[str] = []
     for path in iter_sidecar_json(case_path, "evidence"):
         try:
@@ -98,7 +123,7 @@ def _evidence_state(case_path: Path) -> EvidenceState:
         if not isinstance(evidence_id, str) or not isinstance(status, str):
             limitations.append(f"{path.name} lacks usable evidence identity or status.")
             continue
-        evidence_by_id[evidence_id] = status
+        evidence_by_id[evidence_id] = data
 
     source_quantities: set[str] = set()
     reviewed_quantities: set[str] = set()
@@ -116,15 +141,39 @@ def _evidence_state(case_path: Path) -> EvidenceState:
         if not isinstance(measurement_id, str) or not isinstance(evidence_id, str) or not isinstance(status, str) or not isinstance(quantity, str):
             limitations.append(f"{path.name} lacks usable measurement identity, parent, status, or quantity.")
             continue
-        parent_status = evidence_by_id.get(evidence_id)
-        if parent_status is None:
+        parent = evidence_by_id.get(evidence_id)
+        if parent is None:
             limitations.append(f"{path.name} references missing parent Evidence Object {evidence_id}.")
             continue
         if status not in {"completed", "reviewed"} or not isinstance(value, (int, float)) or isinstance(value, bool):
             limitations.append(f"{path.name} is not a completed or reviewed numeric measurement context.")
             continue
+        parent_status = parent.get("status")
+        parent_case_id = parent.get("case_id")
+        measurement_case_id = data.get("case_id")
+        if parent_status in {"rejected", "deprecated"}:
+            limitations.append(f"{path.name} has a rejected or deprecated parent Evidence Object {evidence_id}.")
+            continue
+        if parent_status not in {"draft", "reviewed"}:
+            limitations.append(f"{path.name} has a parent Evidence Object {evidence_id} with an unusable status.")
+            continue
+        if case_id is None or parent_case_id != case_id or measurement_case_id != case_id:
+            limitations.append(f"{path.name} or parent {evidence_id} does not match the triaged case ID.")
+            continue
         source_quantities.add(quantity.lower())
-        if status == "reviewed" and parent_status == "reviewed" and isinstance(data.get("reviewed_by"), str) and data["reviewed_by"].strip():
+        parent_measurements = parent.get("measurement_reference_ids")
+        reciprocal_linked = isinstance(parent_measurements, list) and measurement_id in parent_measurements
+        if not reciprocal_linked:
+            limitations.append(f"{path.name} is not reciprocally linked from parent Evidence Object {evidence_id}.")
+        if (
+            status == "reviewed"
+            and parent_status == "reviewed"
+            and isinstance(data.get("reviewed_by"), str)
+            and data["reviewed_by"].strip()
+            and isinstance(parent.get("reviewed_by"), str)
+            and parent["reviewed_by"].strip()
+            and reciprocal_linked
+        ):
             reviewed_quantities.add(quantity.lower())
         else:
             limitations.append(f"{path.name} is source-documented context pending linked human evidence review.")
@@ -178,7 +227,7 @@ def _lateral_dimensions(lines: list[str]) -> set[str]:
 
 
 def _lateral_comparison_declared(lines: list[str]) -> bool:
-    comparison_terms = ("compared", "evaluated", "geometry-dependent evidence", "validated over", "available")
+    comparison_terms = ("compared", "evaluated", "geometry-dependent evidence", "validated over")
     return any(
         any(term in line for term in LATERAL_TERMS)
         and any(marker in line for marker in comparison_terms)
@@ -238,7 +287,8 @@ def screen_thermomechanical(case_path: Path, text: str) -> tuple[dict[str, objec
 
     stress_state = _quantity_state(evidence, ("stress",))
     bow_state = _quantity_state(evidence, ("bow", "warpage", "curvature"))
-    acceptance_declared = _resolved_declaration(lines, ("stress acceptance", "bow acceptance", "warpage acceptance", "allowable stress", "allowable bow"))
+    stress_acceptance_declared = _resolved_declaration(lines, ("stress acceptance", "allowable stress", "residual stress criteria", "residual stress limit"))
+    bow_acceptance_declared = _resolved_declaration(lines, ("bow acceptance", "warpage acceptance", "curvature acceptance", "allowable bow", "allowable warpage", "allowable curvature"))
     comparison_declared = _resolved_declaration(lines, ("initial", "post-process", "post growth", "post-growth")) and any(
         "compar" in line or "evaluat" in line for line in lines if "initial" in line or "post" in line
     )
@@ -255,8 +305,10 @@ def screen_thermomechanical(case_path: Path, text: str) -> tuple[dict[str, objec
         required.append("reviewed residual-stress evidence relevant to the route")
     if bow_state != "reviewed":
         required.append("reviewed bow or warpage evidence relevant to the route")
-    if not acceptance_declared or _listed_as_missing(lines, ("stress", "bow", "warpage", "curvature")):
-        required.append("case-specific stress or bow/warpage acceptance criteria")
+    if not stress_acceptance_declared or _listed_as_missing(lines, ("stress acceptance", "allowable stress", "residual stress criteria", "residual stress limit")):
+        required.append("case-specific residual-stress acceptance criteria")
+    if not bow_acceptance_declared or _listed_as_missing(lines, ("bow acceptance", "warpage acceptance", "curvature acceptance", "allowable bow", "allowable warpage", "allowable curvature")):
+        required.append("case-specific bow/warpage/curvature acceptance criteria")
     if not comparison_declared or _listed_as_missing(lines, ("initial", "curvature", "bow", "profilometry")):
         required.append("initial-state versus post-process comparison basis")
     if required:
@@ -285,7 +337,7 @@ def screen_thermomechanical(case_path: Path, text: str) -> tuple[dict[str, objec
             "Define a public-safe adhesion or mechanical-integrity validation basis and the evidence needed to reconsider the route.",
         ))
 
-    fixture_defined = _resolved_declaration(lines, FIXTURE_TERMS + ("thermal contact", "process boundary", "ambient boundary"), factual=True)
+    fixture_defined = _fixture_boundary_declared(lines)
     if not fixture_defined or _listed_as_missing(lines, FIXTURE_TERMS + ("thermal contact", "boundary")):
         gap = "process-fixture, carrier, or reactor thermal-boundary definition"
         missing.append(gap)
