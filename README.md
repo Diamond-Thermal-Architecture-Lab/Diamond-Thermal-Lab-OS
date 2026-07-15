@@ -52,6 +52,10 @@ python scripts/labos_case.py evidence-summary cases/example-case/ --json
 
 Implemented today: deterministic templates, structural validation, controlled references, exact-unit comparison, and read-only summaries. Future targets include Gold Cases, solver and experiment adapters, an Engineering Problem Compiler, and evidence-graph capabilities; they are not implemented here.
 
+## Reality-Calibrated Thermomechanical Triage
+
+Triage now adds qualitative `TRIAGE-THERMOMECH-*` screening guardrails when a case combines a membrane or thin-layer structure, elevated-temperature processing, and deposited-layer integration. It identifies missing evidence for material-property basis, stress/warpage review, fixture boundaries, scale-up, and downstream compatibility. It does not calculate stress or bow, learn numerical thresholds, validate a design, or approve a route.
+
 ## Deterministic Triage
 
 ```bash
@@ -151,6 +155,7 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 - [Case Workflow](docs/CASE_WORKFLOW.md)
 - [Case Generator Guide](docs/CASE_GENERATOR_GUIDE.md)
 - [Triage Engine Guide](docs/TRIAGE_ENGINE_GUIDE.md)
+- [M14 Thermomechanical Triage Design](docs/THERMOMECHANICAL_TRIAGE_DESIGN.md)
 - [Decision Board Guide](docs/DECISION_BOARD_GUIDE.md)
 - [Decision Review Package Guide](docs/DECISION_REVIEW_PACKAGE_GUIDE.md)
 - [Human Decision Record Guide](docs/HUMAN_DECISION_RECORD_GUIDE.md)

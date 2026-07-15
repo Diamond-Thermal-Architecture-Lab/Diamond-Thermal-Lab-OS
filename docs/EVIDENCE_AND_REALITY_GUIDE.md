@@ -37,3 +37,7 @@ Store only opaque controlled references and optional lowercase SHA256 hashes. Do
 ## Limits
 
 This layer is not a complete Evidence Graph, Gold Case certification system, model calibration framework, solver adapter, experiment automation system, or AI orchestration layer. Human review remains required before learning or decision changes.
+
+## Gold Case Learning Boundary
+
+A public-safe Gold Case can expose a deterministic screening gap after a frozen blind baseline is compared with later evidence. M14 thermomechanical triage consumes only the available case context and optional sidecar status to request missing evidence; it does not learn numerical thresholds, modify rules automatically, or treat one literature result as a general validation of a rule family. A second independent case is required before generalization claims are considered.
