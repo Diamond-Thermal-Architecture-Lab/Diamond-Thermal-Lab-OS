@@ -54,13 +54,24 @@ The initial Lab OS foundation is complete: canonical case structure, local no-AP
 
 M13 adds optional Evidence Objects, Measurement References, and Prediction-Reality Records. It is a deterministic local protocol for controlled references, hashes, traceability checks, and read-only comparison. It is not a complete Evidence Graph, Gold Case certification system, model-calibration system, or experiment adapter.
 
+## M14: Reality-Calibrated Thermomechanical Triage
+
+M14 adds deterministic qualitative screening for elevated-temperature deposited-layer integration on membranes or thin structures. It uses a Gold Case learning loop to expose missing thermomechanical evidence, process-fixture boundaries, scale-up evidence, and downstream compatibility requirements. It is a screening and learning milestone, not a validated thermomechanical solver, material database, or automatic calibration system.
+
+## M15: Independent Gold Case Generalization Test
+
+M15 should test the M14 rule family against a second independent Gold Case or equivalent public-safe benchmark. The aim is to check generalization and false positives before any broader professional-kernel or Quick Case / Visual Thermal Canvas work.
+
 ## H1 Priorities
 
 - Real Gold Cases with reviewed public-safe evidence.
 - Evidence and measurement objects linked to real controlled data sources.
 - Prediction-Reality learning loops with human review.
-- A Quick Case interface.
 - Explicit PR-based canonical application after human review.
+
+## Planned After Additional Case Validation
+
+- A Quick Case / Visual Thermal Canvas interface after the professional kernel is validated through additional cases.
 
 ## Later Stages
 

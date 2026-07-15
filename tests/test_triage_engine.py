@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -146,6 +147,107 @@ class TriageEngineTests(unittest.TestCase):
     def test_invalid_path_returns_exit_two(self) -> None:
         completed = subprocess.run([sys.executable, str(SCRIPT), "triage", "cases/not-a-case"], cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         self.assertEqual(completed.returncode, 2)
+
+    def test_gold_case_triggers_thermomechanical_guardrails(self) -> None:
+        result = triage_case(REPO_ROOT / "cases" / "literature-2021-diamond-on-gan-membrane-stress")
+        rule_ids = {rule.rule_id for rule in result.triggered_rules}
+        self.assertEqual(result.thermomechanical_screening["status"], "needs_evidence")
+        self.assertIn("thermomechanical_validation_needed", result.secondary_classifications)
+        self.assertTrue(
+            {
+                "TRIAGE-THERMOMECH-001",
+                "TRIAGE-THERMOMECH-003",
+                "TRIAGE-THERMOMECH-005",
+                "TRIAGE-THERMOMECH-006",
+            }.issubset(rule_ids)
+        )
+        rule = next(item for item in result.triggered_rules if item.rule_id == "TRIAGE-THERMOMECH-003")
+        self.assertTrue(rule.title)
+        self.assertTrue(rule.triggering_inputs)
+        self.assertTrue(rule.missing_evidence)
+        self.assertTrue(rule.engineering_rationale)
+        self.assertTrue(rule.evidence_boundary)
+
+    def test_frozen_gold_case_baseline_is_unchanged(self) -> None:
+        baseline = REPO_ROOT / "exports" / "literature-2021-diamond-on-gan-membrane-stress-baseline"
+        expected = {
+            "decision_board_preview.json": "cbe9fff37b0628e91bfebc0f4e22fe2df687596702174ac135dff061c8759430",
+            "decision_board_preview.md": "e38d0651e2a612b08558a35e81181bb76161330054e2f3714a0a81cf21bb5833",
+            "human_review_checklist.md": "6ee1ac064f30208361f5d445581b853515505f7d46fb9e230d04137815a2d58c",
+            "review_manifest.json": "975a7dd162886b4b3932dbdb6be234071b5be013e51b05eac7c323fb512e81fe",
+        }
+        actual = {
+            name: hashlib.sha256((baseline / name).read_bytes()).hexdigest()
+            for name in expected
+        }
+        self.assertEqual(actual, expected)
+
+    def test_thermomechanical_context_does_not_predict_failure(self) -> None:
+        result = triage_case(REPO_ROOT / "cases" / "literature-2021-diamond-on-gan-membrane-stress")
+        thermo_findings = [rule.finding.lower() for rule in result.triggered_rules if "THERMOMECH" in rule.rule_id]
+        self.assertFalse(any("will fail" in finding or "will crack" in finding or "will delaminate" in finding for finding in thermo_findings))
+
+    def test_missing_process_history_is_a_qualitative_gap(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_case(
+                path,
+                question="screen an integrated membrane coating",
+                extra="membrane with a deposited diamond film by CVD; residual stress and bow are TODO; fixture boundary is TODO",
+            )
+            result = triage_case(path)
+            self.assertIn("TRIAGE-THERMOMECH-002", {rule.rule_id for rule in result.triggered_rules})
+            self.assertIn("thermomechanical_validation_needed", result.secondary_classifications)
+
+    def test_complete_thermomechanical_context_does_not_trigger_missing_evidence_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_case(
+                path,
+                question="screen an integrated membrane coating",
+                extra=(
+                    "membrane with deposited diamond film by CVD; process temperature and thermal history are defined; "
+                    "temperature-dependent coefficient of thermal expansion data are documented; residual stress acceptance "
+                    "and Raman evidence are documented; initial and post-process bow profilometry acceptance is documented; "
+                    "adhesion and fracture energy evidence are documented; fixture thermal contact boundary is defined; "
+                    "0.5 mm and 2 mm scale-up evidence is documented; downstream lithography handling flatness acceptance is documented"
+                ),
+            )
+            result = triage_case(path)
+            self.assertEqual(result.thermomechanical_screening["status"], "evidence_referenced")
+            self.assertFalse(any("THERMOMECH" in rule.rule_id for rule in result.triggered_rules))
+
+    def test_malformed_optional_thermomechanical_sidecar_is_reported_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_case(
+                path,
+                question="screen an integrated membrane coating",
+                extra="membrane with a deposited diamond film by CVD; residual stress and bow are TODO",
+            )
+            (path / "evidence").mkdir()
+            (path / "evidence" / "EVD-001.json").write_text("{not-json", encoding="utf-8")
+            result = triage_case(path)
+            self.assertIn("EVD-001.json is not usable structured evidence.", result.thermomechanical_screening["evidence_limitations"])
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPT), "triage", str(path), "--json"],
+                cwd=REPO_ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0)
+            self.assertNotIn("Traceback", completed.stderr)
+            self.assertIn("EVD-001.json is not usable structured evidence.", json.loads(completed.stdout)["thermomechanical_screening"]["evidence_limitations"])
+
+    def test_thermomechanical_json_is_deterministic(self) -> None:
+        case_path = REPO_ROOT / "cases" / "literature-2021-diamond-on-gan-membrane-stress"
+        first = subprocess.run([sys.executable, str(SCRIPT), "triage", str(case_path), "--json"], cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE, check=False)
+        second = subprocess.run([sys.executable, str(SCRIPT), "triage", str(case_path), "--json"], cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE, check=False)
+        self.assertEqual(first.returncode, 0)
+        self.assertEqual(first.stdout, second.stdout)
+        self.assertEqual(json.loads(first.stdout)["thermomechanical_screening"]["status"], "needs_evidence")
 
 
 if __name__ == "__main__":

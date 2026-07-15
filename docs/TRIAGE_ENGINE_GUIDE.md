@@ -14,6 +14,12 @@ Critical intake gaps take precedence. `NEEDS_DATA` identifies a missing critical
 
 Rules use stable `TRIAGE-<FAMILY>-<NUMBER>` IDs. Each triggered rule records its severity, finding, evidence, and enabled action. The engine normally reports `low` or `medium` confidence; it does not infer high confidence from incomplete case data. It selects one next action with the highest immediate decision impact and names conservative actions that should not be taken first, such as detailed FEM before geometry and cooling boundaries are defined.
 
+## Thermomechanical Screening
+
+When an existing case combines a membrane or thin-layer context, elevated-temperature processing, and deposited-layer integration, triage adds an optional `thermomechanical_screening` result. It reports known inputs, missing evidence, source-evidence limitations, and stable `TRIAGE-THERMOMECH-*` rules for property basis, thermal history, stress/warpage evidence, interface mechanical evidence, process-fixture boundaries, geometry scale-up, and downstream compatibility.
+
+This is qualitative screening only. It does not calculate stress, bow, warpage, delamination, or a probability of failure; it does not add numerical thresholds; and it does not make a route recommendation. A source-documented measurement or validator result remains distinct from case-specific acceptance evidence and human review.
+
 ## Patterns and Read-only Behavior
 
 Canonical and recognized alias pattern references are normalized through the shared pattern index. Patterns are screening context only: diamond routes require interface-risk consideration, direct GaN-on-Diamond remains a higher-integration-risk candidate, and conventional package improvement remains a legitimate candidate. The command reads existing canonical case files and does not write reports, scorecards, or other case artifacts.

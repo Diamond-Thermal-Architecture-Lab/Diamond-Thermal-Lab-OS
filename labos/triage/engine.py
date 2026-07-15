@@ -4,19 +4,23 @@ import re
 from pathlib import Path
 
 from labos.checkers.case_file_checker import iter_case_files
-from labos.checkers.thermal_input_checker import combined_case_text, field_value
+from labos.checkers.thermal_input_checker import field_value
 from labos.patterns.index import resolve_pattern_id
 
 from .models import TriageResult, TriggeredRule
 from .rules import CRITICAL_FIELDS, has_bounded_interface_evidence, has_measurement_evidence, has_package_uncertainty, is_missing
+from .thermomechanical import screen_thermomechanical
 
 
 PATTERN_RE = re.compile(r"\bPAT-[A-Z0-9]+(?:-[A-Z0-9]+)+\b", re.IGNORECASE)
+TRIAGE_EXCLUDED_ARTIFACTS = {"GOLD_CASE_ASSESSMENT.md"}
 
 
 def _patterns(case_path: Path) -> list[str]:
     found: list[str] = []
     for path in iter_case_files(case_path):
+        if path.name in TRIAGE_EXCLUDED_ARTIFACTS:
+            continue
         for match in PATTERN_RE.finditer(path.read_text(encoding="utf-8")):
             canonical = resolve_pattern_id(match.group(0))
             if canonical and canonical not in found:
@@ -35,7 +39,11 @@ def triage_case(case_path: Path) -> TriageResult:
 
     intake_text = intake_path.read_text(encoding="utf-8")
     values = {field: field_value(intake_text, field) for field in (*CRITICAL_FIELDS, "case_id")}
-    text = combined_case_text(case_path)
+    text = "\n".join(
+        path.read_text(encoding="utf-8").lower()
+        for path in iter_case_files(case_path)
+        if path.name not in TRIAGE_EXCLUDED_ARTIFACTS
+    )
     patterns = _patterns(case_path)
     rules: list[TriggeredRule] = []
     missing = [field for field in CRITICAL_FIELDS if is_missing(values.get(field, ""))]
@@ -44,6 +52,7 @@ def triage_case(case_path: Path) -> TriageResult:
     diamond_context = any("DIA" in pattern for pattern in patterns) or any(term in text for term in ("diamond", "bonding", "submount", "tim", "solder"))
     secondary: list[str] = []
     do_not: list[str] = []
+    thermomechanical, thermomechanical_rules = screen_thermomechanical(case_path, text)
 
     if missing:
         for field in missing:
@@ -55,7 +64,11 @@ def triage_case(case_path: Path) -> TriageResult:
             secondary.append("interface_limited_candidate")
             _rule(rules, "TRIAGE-INTERFACE-001", "WARN", "Interface resistance remains unbounded in an interface-sensitive context.", "pattern or material context", "Bound interface thermal resistance.")
         do_not.append("Do not start detailed FEM before defining heat source geometry and cooling boundary.")
-        return TriageResult(values.get("case_id", case_path.name), "NEEDS_DATA", "insufficient_data", secondary, "low", "Critical thermal inputs are incomplete; screening cannot rank architectures safely.", missing, missing[0], f"Define {missing[0]}.", do_not, patterns, rules, "This is a deterministic screening assessment, not a validated thermal conclusion.")
+        rules.extend(thermomechanical_rules)
+        if thermomechanical_rules:
+            secondary.append("thermomechanical_validation_needed")
+            do_not.append("Do not advance elevated-temperature membrane integration without the stated thermomechanical evidence.")
+        return TriageResult(values.get("case_id", case_path.name), "NEEDS_DATA", "insufficient_data", secondary, "low", "Critical thermal inputs are incomplete; screening cannot rank architectures safely.", missing, missing[0], f"Define {missing[0]}.", do_not, patterns, rules, "This is a deterministic screening assessment, not a validated thermal conclusion.", thermomechanical_screening=thermomechanical)
 
     if diamond_context and not interface_bounded:
         secondary.append("interface_limited_candidate")
@@ -83,6 +96,10 @@ def triage_case(case_path: Path) -> TriageResult:
     if package_uncertain:
         secondary.append("package_limited_candidate")
         _rule(rules, "TRIAGE-PACKAGE-001", "WARN", "Package or mounting path remains uncertain.", "package path context", "Define package-to-heat-sink path.")
+    rules.extend(thermomechanical_rules)
+    if thermomechanical_rules:
+        secondary.append("thermomechanical_validation_needed")
+        do_not.append("Do not advance elevated-temperature membrane integration without the stated thermomechanical evidence.")
     symptom_asserted = any(term in text for term in ("overheating", "hot spot", "thermal symptom"))
     if symptom_asserted and not has_measurement_evidence(text):
         secondary.append("measurement_limited")
@@ -105,5 +122,8 @@ def triage_case(case_path: Path) -> TriageResult:
         confidence = "low"
         action = "Compare two or three candidate architectures with a screening model."
         _rule(rules, "TRIAGE-DESIGN-001", "INFO", "Multiple routes remain plausible without a validated winner.", "case inputs", action)
+    if thermomechanical_rules:
+        action = "Obtain the stated thermomechanical evidence before advancing elevated-temperature membrane integration."
     do_not.append("Do not treat pattern selection as a validated recommendation.")
-    return TriageResult(values.get("case_id", case_path.name), status, primary, secondary, confidence, "Classification is conservative and rule-based; candidates are not confirmed bottlenecks.", [], secondary[0] if secondary else "architecture comparison evidence", action, do_not, patterns, rules, "This is a deterministic screening assessment, not a validated thermal conclusion.")
+    top_uncertainty = "thermomechanical evidence" if thermomechanical_rules else secondary[0] if secondary else "architecture comparison evidence"
+    return TriageResult(values.get("case_id", case_path.name), status, primary, secondary, confidence, "Classification is conservative and rule-based; candidates are not confirmed bottlenecks.", [], top_uncertainty, action, do_not, patterns, rules, "This is a deterministic screening assessment, not a validated thermal conclusion.", thermomechanical_screening=thermomechanical)

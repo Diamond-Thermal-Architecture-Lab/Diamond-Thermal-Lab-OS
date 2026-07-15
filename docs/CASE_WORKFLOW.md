@@ -9,6 +9,7 @@ The case workflow turns an incomplete thermal management problem into a reviewab
 case initialization
 -> intake completion
 -> deterministic triage
+-> thermomechanical screening when elevated-temperature layer integration is in scope
 -> Decision Board preview
 -> Decision Review Package
 -> Human Decision Record
@@ -48,6 +49,8 @@ Run deterministic triage after completing the initial intake and before human ro
 ```bash
 python scripts/labos_case.py triage cases/example-incomplete-gan-rf-pa/
 ```
+
+For a membrane or thin-layer route with elevated-temperature material integration, read the thermomechanical screening output before advancing the candidate. It may request property, thermal-history, stress/warpage, fixture-boundary, scale-up, or downstream-compatibility evidence. It is a qualitative guardrail, not a stress model or a route approval.
 
 Use the Decision Board preview after triage to combine the current evidence, candidate patterns, hold points, and next actions. It is also read-only; a separate reviewed workflow is required before editing `02_decision_board.md`:
 

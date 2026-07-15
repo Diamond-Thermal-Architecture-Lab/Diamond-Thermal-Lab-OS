@@ -58,4 +58,6 @@ class DecisionBoardResult:
     ruleset_version: str = "decision-board-1.0"
 
     def to_dict(self) -> dict[str, object]:
-        return asdict(self)
+        data = asdict(self)
+        data["triggered_rules"] = [rule.to_dict() for rule in self.triggered_rules]
+        return data
