@@ -1,0 +1,54 @@
+case_id: literature-arxiv-2305-thermal-sio2-released-membrane
+title: "Released SiO2 membrane thermomechanical screening benchmark"
+status: draft
+owner: "engineering review"
+application: "released thin-film process integration screening"
+device_type: "thermally grown SiO2 released membrane"
+customer_question: >
+  Can thermally grown SiO2 be released as self-supporting square membranes
+  across the intended lateral sizes without unresolved thermomechanical
+  constraints?
+heat_source_geometry: >
+  A 50 mm diameter double-side-polished silicon wafer has approximately
+  1.5 micrometres of thermally grown SiO2 on both sides. Backside square
+  release windows target self-supporting square SiO2 membranes with known
+  side lengths of approximately 256.7, 340.5, and 506.7 micrometres.
+power_or_power_density: >
+  No electrically powered heat source is applied. Wet thermal oxidation is
+  performed at approximately 1130 degrees Celsius. The release process uses
+  approximately 34 wt% KOH at approximately 60 degrees Celsius.
+current_material_stack: >
+  Thermally grown SiO2 layer on both sides of a silicon wafer before release.
+  Backside square windows and KOH processing remove local silicon support to
+  leave the target self-supporting SiO2 membrane surrounded by a silicon frame.
+cooling_boundary: >
+  High-temperature oxidation reactor, ambient, dwell, cooling route, and
+  stress-free reference condition are incompletely defined. Release-fixture
+  constraint conditions during KOH processing are also incompletely defined.
+target_temperature_or_margin: >
+  Establish whether the intended released-membrane process can advance from
+  screening with appropriate thermomechanical evidence and no unsupported
+  performance or route claim.
+known_data:
+  - 50 mm diameter double-side-polished silicon wafer.
+  - Wet thermal oxidation on both sides at approximately 1130 degrees Celsius.
+  - Thermally grown SiO2 thickness is approximately 1.5 micrometres.
+  - Backside square release windows use an approximately 34 wt% KOH process at approximately 60 degrees Celsius.
+  - Target self-supporting square SiO2 membrane side lengths are approximately 256.7, 340.5, and 506.7 micrometres.
+  - A silicon frame surrounds each released membrane.
+missing_data:
+  - Temperature-dependent material-property and stress-free reference-temperature basis for the oxide and silicon process stack.
+  - Complete oxidation dwell, exposure, and cooling-route history.
+  - High-temperature reactor, ambient, and thermal-contact boundary definition.
+  - Release-fixture mechanical constraint definition during KOH processing.
+  - Residual-stress evidence and case-specific residual-stress acceptance criteria.
+  - Initial and post-release curvature, centre-profile, and bow or warpage acceptance criteria.
+  - Geometry-dependent comparison across the intended membrane side-length range.
+assumptions:
+  - The listed membrane side lengths are known geometric inputs, not outcome measurements.
+  - This blind input excludes measured membrane profiles, inferred stress values, and result-derived explanations.
+validation_placeholders:
+  - Obtain public-safe process history, thermal-boundary, material-property, and release-fixture evidence.
+  - Obtain applicable initial and post-release profile evidence and acceptance criteria before stronger decisions.
+note: Blind baseline input only. No source outcome information or measured result is included.
+confidentiality_level: public

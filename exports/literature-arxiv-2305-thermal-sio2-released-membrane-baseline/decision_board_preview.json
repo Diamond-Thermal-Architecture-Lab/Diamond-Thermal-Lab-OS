@@ -1,0 +1,113 @@
+{
+  "board_status": "READY_FOR_ARCHITECTURE_SCREENING",
+  "candidate_routes": [],
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "claim_guardrails": [
+    "Screening output is not a validated thermal conclusion.",
+    "Pattern selection is not a final recommendation.",
+    "Measured and simulated evidence must be clearly distinguished.",
+    "Supplier-stated properties must not be treated as system-level performance."
+  ],
+  "confidence": "low",
+  "critical_missing_data": [],
+  "current_decision": "Proceed with comparative screening of the identified candidate routes.",
+  "decision_basis": [
+    "Interface resistance is not bounded for an interface-sensitive route.",
+    "Multiple routes remain plausible without a validated winner."
+  ],
+  "decision_state": "screening",
+  "deferred_routes": [],
+  "hold_points": [
+    "Do not optimize diamond thickness before bounding interface resistance.",
+    "Do not treat pattern selection as a validated recommendation.",
+    "Do not optimize diamond thickness before interface resistance is bounded.",
+    "Do not make customer-facing thermal claims before measurement or validation."
+  ],
+  "next_actions": [
+    {
+      "action": "Compare two or three candidate architectures with a screening model.",
+      "completion_evidence": "A documented input, bounded range, or measurement record that resolves the stated gap.",
+      "owner_role": "thermal engineer",
+      "priority": 1,
+      "rationale": "The deterministic triage result identifies this as the highest-impact immediate uncertainty reduction."
+    },
+    {
+      "action": "Bound interface thermal resistance for the relevant thermal stack.",
+      "completion_evidence": "A documented sensitivity range, measurement basis, or reviewed interface assumption.",
+      "owner_role": "thermal engineer",
+      "priority": 2,
+      "rationale": "Interface uncertainty can change the relative value of material and package routes."
+    },
+    {
+      "action": "Define supplier or test acceptance criteria before external engagement.",
+      "completion_evidence": "A public-safe data request or validation plan with acceptance criteria.",
+      "owner_role": "project owner",
+      "priority": 3,
+      "rationale": "Evidence requests need clear decision and inspection criteria."
+    }
+  ],
+  "primary_classification": "design_space_unclear",
+  "problem_summary": "thermally grown SiO2 released membrane in released thin-film process integration screening: Can thermally grown SiO2 be released as self-supporting square membranes across the intended lateral sizes without unresolved thermomechanical constraints?",
+  "relevant_pattern_ids": [],
+  "ruleset_version": "decision-board-1.0",
+  "secondary_classifications": [
+    "interface_limited_candidate"
+  ],
+  "top_uncertainties": [
+    "interface_limited_candidate",
+    "interface thermal resistance"
+  ],
+  "triage_status": "READY_FOR_SCREENING",
+  "triggered_rules": [
+    {
+      "action_enabled": "Bound or measure interface thermal resistance.",
+      "evidence": "case text and pattern context",
+      "finding": "Interface resistance is not bounded for an interface-sensitive route.",
+      "rule_id": "TRIAGE-INTERFACE-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Compare two or three candidate architectures with a screening model.",
+      "evidence": "case inputs",
+      "finding": "Multiple routes remain plausible without a validated winner.",
+      "rule_id": "TRIAGE-DESIGN-001",
+      "severity": "INFO"
+    },
+    {
+      "action_enabled": "Proceed with comparative screening of the identified candidate routes.",
+      "evidence": "triage status READY_FOR_SCREENING; no explicit reviewed comparison evidence",
+      "finding": "Core inputs support comparative screening but not an approved architecture decision.",
+      "rule_id": "BOARD-STATUS-003",
+      "severity": "INFO"
+    },
+    {
+      "action_enabled": "Select legitimate screening candidates only after critical inputs are complete.",
+      "evidence": "no known pattern references",
+      "finding": "No approved pattern candidate is selected in the case.",
+      "rule_id": "BOARD-ROUTE-002",
+      "severity": "INFO"
+    },
+    {
+      "action_enabled": "Close the applicable data, evidence, and validation gaps before strengthening the decision.",
+      "evidence": "READY_FOR_SCREENING",
+      "finding": "Decision hold points preserve traceability while case evidence remains incomplete or unvalidated.",
+      "rule_id": "BOARD-HOLD-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Keep external language aligned with the claim ledger and validation state.",
+      "evidence": "triage state and unvalidated pattern context",
+      "finding": "Claim guardrails remain active until case-specific evidence and review support stronger statements.",
+      "rule_id": "BOARD-CLAIM-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Compare two or three candidate architectures with a screening model.",
+      "evidence": "Compare two or three candidate architectures with a screening model.",
+      "finding": "The first Decision Board action is inherited from triage.",
+      "rule_id": "BOARD-ACTION-001",
+      "severity": "INFO"
+    }
+  ],
+  "validation_note": "This is a deterministic decision preview, not an approved engineering decision."
+}

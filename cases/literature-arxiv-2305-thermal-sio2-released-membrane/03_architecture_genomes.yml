@@ -1,0 +1,20 @@
+case_id: literature-arxiv-2305-thermal-sio2-released-membrane
+title: "Released SiO2 membrane thermomechanical screening benchmark"
+status: draft
+confidentiality_level: public
+architectures:
+  - route_id: route-001
+    route_name: "Thermally grown SiO2 released-membrane process path"
+    heat_source: "High-temperature wet oxidation process; no powered device heat source."
+    substrate: "50 mm double-side-polished silicon wafer before local release."
+    bonding_interface: "No retained added-material bonding interface is asserted after target release."
+    heat_spreader: "Not applicable to this blind process-screening case."
+    package_path: "Silicon frame surrounding a target self-supporting square SiO2 membrane."
+    cooling_boundary: "Oxidation reactor and release-fixture constraints require definition."
+    manufacturing_route: "Wet oxidation followed by backside square-window KOH release."
+    validation_method: "TODO: public-safe profile, process-history, boundary, and acceptance evidence."
+    risk_profile: "Thermomechanical screening evidence incomplete."
+    maturity_level: "screening_only"
+    when_to_use: "Only for collecting bounded blind-input evidence."
+    when_not_to_use: "Do not use as a confirmed process decision or performance claim."
+note: Blind baseline input only; no outcome information is included.

@@ -1,0 +1,18 @@
+case_id: literature-arxiv-2305-thermal-sio2-released-membrane
+title: "Released SiO2 membrane thermomechanical screening benchmark"
+status: draft
+confidentiality_level: public
+claims:
+  - claim_id: CLM-001
+    claim: This case records blind process-screening inputs only and does not assert an engineering outcome.
+    claim_type: process
+    basis: Public-safe blind-input benchmark construction.
+    assumptions:
+      - Outcome measurements and source-derived explanations are excluded until evidence reveal.
+      - No route or customer claim is approved.
+    confidence: low
+    validation_required: true
+    status: draft
+    public_release: not_allowed_until_review
+    confidentiality_level: public
+    reviewer: TODO

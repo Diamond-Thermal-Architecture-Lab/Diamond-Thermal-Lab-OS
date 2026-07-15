@@ -1,0 +1,58 @@
+{
+  "board_status": "READY_FOR_ARCHITECTURE_SCREENING",
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "decision_board_ruleset_version": "decision-board-1.0",
+  "decision_state": "screening",
+  "generated_artifact_sha256": {
+    "decision_board_preview.json": "6a18fadcbdef0295a0cfd9ddbe43f4e99e11ea9bb6a4e9112e9f610ff718bc2e",
+    "decision_board_preview.md": "80912cdd40b32c5a8d2f8159c9d9c1c55cd7719c15e6c38c4c6625f766c9f488",
+    "human_review_checklist.md": "6ee1ac064f30208361f5d445581b853515505f7d46fb9e230d04137815a2d58c"
+  },
+  "generated_artifacts": [
+    "decision_board_preview.md",
+    "decision_board_preview.json",
+    "review_manifest.json",
+    "human_review_checklist.md"
+  ],
+  "package_format_version": "decision-review-package-1.0",
+  "relevant_pattern_ids": [],
+  "source_case_files": [
+    "00_problem_intake.yml",
+    "01_thermal_design_passport.yml",
+    "02_decision_board.md",
+    "03_architecture_genomes.yml",
+    "04_design_space_scorecard.md",
+    "05_red_flags.md",
+    "06_next_best_action.md",
+    "07_validation_plan.md",
+    "08_supplier_specification.md",
+    "09_customer_memo.md",
+    "10_claim_ledger.yml",
+    "11_engineering_memory_entry.md"
+  ],
+  "source_case_sha256": {
+    "00_problem_intake.yml": "8c795eab010653d3fc0441d19ddd44afb8a26368c333267be2a357380047e65e",
+    "01_thermal_design_passport.yml": "36701af4ba7ad3b96aba60e79c4c6b136170cfa27be314b9412a19df670845c1",
+    "02_decision_board.md": "95f3d4131949fa9abca00e7adc99960cc508bb13ccc45c41c889e89e6162dbe5",
+    "03_architecture_genomes.yml": "1533f6a0d06e8f94a2d2f9fac166df7da40060523123c0262543c56b62356fc2",
+    "04_design_space_scorecard.md": "9e66bb52186e7e970f9552f21dd804d9b5fd31a396c24a6f8a10c08e1bdb9ddc",
+    "05_red_flags.md": "4311c1f82d61418253644d3937703c06b3b72b4ddcbf43f2fc3924bb2c66c4e5",
+    "06_next_best_action.md": "28c19ca664faaf5c1a57566d89aaad106c3c3738563e0d2e5ed72f88663e0034",
+    "07_validation_plan.md": "5ae90168f5f119ed68687cadee2465959e18a2e97d73a0cf8667a06ebc74ccb0",
+    "08_supplier_specification.md": "5d0b8e946f048ec327d9fe35c5fca8d4d02dd8ebb4eafe4a4af175abda1882ef",
+    "09_customer_memo.md": "60fbe28188592e1b10eec0b1682fe6eb4e41566984d40b0a5a38595787a015a4",
+    "10_claim_ledger.yml": "248cd39bda0a31e80170a9eaee3e5cc77c9c8b399b2d4d661d7d18acc5545971",
+    "11_engineering_memory_entry.md": "e00a1190410114cc14f63c66c29dda57bc500be2e3277dcdb15d019767843453"
+  },
+  "triage_ruleset_version": "triage-1.0",
+  "triggered_rule_ids": [
+    "TRIAGE-INTERFACE-001",
+    "TRIAGE-DESIGN-001",
+    "BOARD-STATUS-003",
+    "BOARD-ROUTE-002",
+    "BOARD-HOLD-001",
+    "BOARD-CLAIM-001",
+    "BOARD-ACTION-001"
+  ],
+  "validation_note": "This package is for human review and is not an approved engineering decision."
+}

@@ -1,0 +1,24 @@
+{
+  "baseline_format_version": "1.0",
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "baseline_phase": "blind_input_before_evidence_reveal",
+  "blind_input_manifest_file": "BLIND_INPUT_MANIFEST.md",
+  "triage_ruleset_version": "1.1",
+  "frozen_artifacts": [
+    "decision_board_preview.json",
+    "decision_board_preview.md",
+    "human_review_checklist.md",
+    "review_manifest.json",
+    "triage_report.md",
+    "triage_result.json"
+  ],
+  "frozen_artifact_sha256": {
+    "decision_board_preview.json": "6a18fadcbdef0295a0cfd9ddbe43f4e99e11ea9bb6a4e9112e9f610ff718bc2e",
+    "decision_board_preview.md": "80912cdd40b32c5a8d2f8159c9d9c1c55cd7719c15e6c38c4c6625f766c9f488",
+    "human_review_checklist.md": "6ee1ac064f30208361f5d445581b853515505f7d46fb9e230d04137815a2d58c",
+    "review_manifest.json": "f00ce5370270c0984bd0023acb886014ccb72ce89028b61c9315b2069cbcdcfb",
+    "triage_report.md": "a8f35bc5765f03807da8f0074e533086f034edf407861fd60f8f6db7cc53f248",
+    "triage_result.json": "d99a8d6490d64c37736aae8426adeb72b896a009b9f65cc4b6444d3c5dca2b64"
+  },
+  "validation_note": "These artifacts freeze the repository-level blind baseline before literature outcome evidence is added. baseline_manifest.json is intentionally excluded from its own hash mapping."
+}
