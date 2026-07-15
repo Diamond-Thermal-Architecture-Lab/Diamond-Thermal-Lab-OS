@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from labos.checkers.case_file_checker import iter_case_files
+from labos.checkers.case_file_checker import iter_canonical_case_files
 from labos.checkers.thermal_input_checker import field_value
 from labos.patterns.index import resolve_pattern_id
 
@@ -13,14 +13,10 @@ from .thermomechanical import screen_thermomechanical
 
 
 PATTERN_RE = re.compile(r"\bPAT-[A-Z0-9]+(?:-[A-Z0-9]+)+\b", re.IGNORECASE)
-TRIAGE_EXCLUDED_ARTIFACTS = {"GOLD_CASE_ASSESSMENT.md"}
-
 
 def _patterns(case_path: Path) -> list[str]:
     found: list[str] = []
-    for path in iter_case_files(case_path):
-        if path.name in TRIAGE_EXCLUDED_ARTIFACTS:
-            continue
+    for path in iter_canonical_case_files(case_path):
         for match in PATTERN_RE.finditer(path.read_text(encoding="utf-8")):
             canonical = resolve_pattern_id(match.group(0))
             if canonical and canonical not in found:
@@ -41,8 +37,7 @@ def triage_case(case_path: Path) -> TriageResult:
     values = {field: field_value(intake_text, field) for field in (*CRITICAL_FIELDS, "case_id")}
     text = "\n".join(
         path.read_text(encoding="utf-8").lower()
-        for path in iter_case_files(case_path)
-        if path.name not in TRIAGE_EXCLUDED_ARTIFACTS
+        for path in iter_canonical_case_files(case_path)
     )
     patterns = _patterns(case_path)
     rules: list[TriggeredRule] = []

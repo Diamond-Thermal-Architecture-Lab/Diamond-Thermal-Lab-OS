@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .case_file_checker import iter_case_files, read_text
+from .case_file_checker import iter_canonical_case_files, read_text
 from .report import CaseCheckReport
 
 
@@ -18,8 +18,8 @@ def field_value(text: str, field: str) -> str:
 
 
 def combined_case_text(case_path: Path) -> str:
-    """Return public-safe case text for local deterministic screening checks."""
-    return "\n".join(read_text(path) for path in iter_case_files(case_path)).lower()
+    """Return canonical case text for local deterministic screening checks."""
+    return "\n".join(read_text(path) for path in iter_canonical_case_files(case_path)).lower()
 
 
 def check_critical_thermal_inputs(case_path: Path, report: CaseCheckReport) -> None:

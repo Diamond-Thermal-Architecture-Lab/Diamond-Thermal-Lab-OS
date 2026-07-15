@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .case_file_checker import iter_case_files
+from .case_file_checker import iter_canonical_case_files
 from .report import CaseCheckReport
 from labos.patterns.index import DEFAULT_PATTERN_INDEX, load_known_pattern_ids, resolve_pattern_id
 
@@ -53,7 +53,7 @@ class ClaimRecord:
 
 def find_pattern_references(case_path: Path) -> dict[str, set[str]]:
     references: dict[str, set[str]] = {}
-    for path in iter_case_files(case_path):
+    for path in iter_canonical_case_files(case_path):
         for match in PATTERN_ID_RE.finditer(path.read_text(encoding="utf-8")):
             references.setdefault(match.group(0), set()).add(path.name)
     return references

@@ -20,12 +20,6 @@ REQUIRED_CASE_FILES = [
     "11_engineering_memory_entry.md",
 ]
 
-NON_CANONICAL_REVIEW_ARTIFACTS = {
-    "BLIND_INPUT_MANIFEST.md",
-    "GOLD_CASE_ASSESSMENT.md",
-}
-
-
 def check_required_files(case_path: Path, report: CaseCheckReport) -> None:
     if not case_path.exists() or not case_path.is_dir():
         report.add("FAIL", "Required files", "Case path does not exist or is not a directory.", str(case_path))
@@ -36,16 +30,31 @@ def check_required_files(case_path: Path, report: CaseCheckReport) -> None:
             report.add("FAIL", "Required files", f"Missing required case file: {filename}", filename)
 
 
-def iter_case_files(case_path: Path) -> list[Path]:
+def iter_canonical_case_files(case_path: Path) -> list[Path]:
+    """Return only the numbered Canonical Case files used for engineering inference."""
+    if not case_path.exists():
+        return []
+    return [path for filename in REQUIRED_CASE_FILES if (path := case_path / filename).is_file()]
+
+
+def iter_public_case_text_files(case_path: Path) -> list[Path]:
+    """Return root-level public case text for safety and confidentiality scanning."""
     if not case_path.exists():
         return []
     return sorted(
         path
         for path in case_path.iterdir()
-        if path.is_file()
-        and path.name not in NON_CANONICAL_REVIEW_ARTIFACTS
-        and path.suffix.lower() in {".md", ".yml", ".yaml"}
+        if path.is_file() and path.suffix.lower() in {".md", ".yml", ".yaml"}
     )
+
+
+def iter_case_files(case_path: Path) -> list[Path]:
+    """Compatibility alias for canonical diagnostic files.
+
+    New code should choose either iter_canonical_case_files for engineering
+    inference or iter_public_case_text_files for public-language scanning.
+    """
+    return iter_canonical_case_files(case_path)
 
 
 def read_text(path: Path) -> str:

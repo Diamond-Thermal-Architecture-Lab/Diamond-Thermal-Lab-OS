@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .case_file_checker import iter_case_files
+from .case_file_checker import iter_public_case_text_files
 from .report import CaseCheckReport
 
 
@@ -33,7 +33,7 @@ def check_confidentiality(case_path: Path, report: CaseCheckReport) -> None:
         if "confidentiality_level" not in text and "confidentiality level" not in text:
             report.add("WARN", "Confidentiality warnings", "Missing confidentiality level marker.", filename)
 
-    for path in iter_case_files(case_path):
+    for path in iter_public_case_text_files(case_path):
         text = path.read_text(encoding="utf-8").lower()
         for marker in RESTRICTED_MARKERS:
             if marker in text:
@@ -61,4 +61,3 @@ def check_confidentiality(case_path: Path, report: CaseCheckReport) -> None:
             "Claim ledger is missing public_release fields.",
             claim_ledger.name,
         )
-

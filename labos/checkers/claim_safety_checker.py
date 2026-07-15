@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .case_file_checker import iter_case_files
+from .case_file_checker import iter_public_case_text_files
 from .report import CaseCheckReport
 
 
@@ -55,7 +55,7 @@ def _is_safe_proven_context(line: str) -> bool:
 
 
 def check_claim_safety(case_path: Path, report: CaseCheckReport) -> None:
-    for path in iter_case_files(case_path):
+    for path in iter_public_case_text_files(case_path):
         section = ""
         for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
             stripped = line.strip()
