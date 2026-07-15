@@ -58,9 +58,9 @@ M13 adds optional Evidence Objects, Measurement References, and Prediction-Reali
 
 M14 adds deterministic qualitative screening for elevated-temperature deposited-layer integration on membranes or thin structures. It uses a Gold Case learning loop to expose missing thermomechanical evidence, process-fixture boundaries, scale-up evidence, and downstream compatibility requirements. It is a screening and learning milestone, not a validated thermomechanical solver, material database, or automatic calibration system.
 
-## M15: Independent Gold Case Generalization Test
+## M15: Independent Gold Case Generalization Benchmark
 
-M15 should test the M14 rule family against a second independent Gold Case or equivalent public-safe benchmark. The aim is to check generalization and false positives before any broader professional-kernel or Quick Case / Visual Thermal Canvas work.
+M15 adds a second public-safe, repository-level blind-to-outcome benchmark for the M14 rule family. It preserves a separately committed baseline before source evidence reveal, records actual false positives and false negatives, and does not modify M14 rules in response. The benchmark is in review; it does not establish general thermomechanical reliability or automatic learning. Any rule correction remains a separate follow-up after independent review.
 
 ## H1 Priorities
 

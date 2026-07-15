@@ -22,6 +22,7 @@ case initialization
 -> validation planning
 -> optional evidence capture and measurement references
 -> optional prediction-versus-reality comparison
+-> optional independently frozen Gold Case benchmark
 -> human-reviewed learning record
 -> red flags
 -> next best action
@@ -64,6 +65,8 @@ After validation planning, cases may optionally add evidence, measurements, and 
 ```bash
 python scripts/labos_case.py evidence-summary cases/example-incomplete-gan-rf-pa/
 ```
+
+For a Gold Case benchmark, freeze the completed blind canonical input and its deterministic export in a separate commit before adding source outcome evidence. Treat any missed screening concern or false positive as a benchmark result for later human-reviewed rule work; never rewrite the blind input or frozen export after evidence reveal.
 
 Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:
 

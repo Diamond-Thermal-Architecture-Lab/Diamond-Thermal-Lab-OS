@@ -20,6 +20,11 @@ REQUIRED_CASE_FILES = [
     "11_engineering_memory_entry.md",
 ]
 
+NON_CANONICAL_REVIEW_ARTIFACTS = {
+    "BLIND_INPUT_MANIFEST.md",
+    "GOLD_CASE_ASSESSMENT.md",
+}
+
 
 def check_required_files(case_path: Path, report: CaseCheckReport) -> None:
     if not case_path.exists() or not case_path.is_dir():
@@ -34,9 +39,14 @@ def check_required_files(case_path: Path, report: CaseCheckReport) -> None:
 def iter_case_files(case_path: Path) -> list[Path]:
     if not case_path.exists():
         return []
-    return sorted(path for path in case_path.iterdir() if path.is_file() and path.suffix.lower() in {".md", ".yml", ".yaml"})
+    return sorted(
+        path
+        for path in case_path.iterdir()
+        if path.is_file()
+        and path.name not in NON_CANONICAL_REVIEW_ARTIFACTS
+        and path.suffix.lower() in {".md", ".yml", ".yaml"}
+    )
 
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
-

@@ -1,0 +1,23 @@
+{
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "confidentiality_level": "public",
+  "evidence_id": "EVD-002",
+  "measurement_format_version": "1.0",
+  "measurement_id": "MSR-001",
+  "method": "Membrane-profile measurement reported in the source paper.",
+  "operating_conditions": "Reported approximately 1.5 um thermally grown SiO2 square membrane with approximately 256.7 um side length after release from a silicon frame.",
+  "quantity": "measured_central_membrane_deflection",
+  "raw_data_reference": "controlled-literature-reference:arXiv-2305.15794:reported-profile-table",
+  "raw_data_sha256": null,
+  "review_notes": "Literature-transcribed central deflection; raw profile data are not stored in this repository.",
+  "reviewed_by": "",
+  "sample_id": "ANON-SIO2-RELEASE-001",
+  "status": "completed",
+  "uncertainty": {
+    "basis": "Source-reported uncertainty for the transcribed central deflection; not an independent metrology certificate.",
+    "numeric_value": 0.1,
+    "unit": "um"
+  },
+  "unit": "um",
+  "value": -11.3
+}

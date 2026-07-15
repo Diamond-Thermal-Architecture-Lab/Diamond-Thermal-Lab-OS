@@ -7,6 +7,12 @@ import sys
 import unittest
 from pathlib import Path
 
+from labos.evidence.summary import summarize_case
+from labos.evidence.validator import (
+    validate_evidence,
+    validate_measurement_reference,
+    validate_prediction_reality_record,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CASE_ID = "literature-arxiv-2305-thermal-sio2-released-membrane"
@@ -67,6 +73,63 @@ class M15BlindBaselineTests(unittest.TestCase):
         )
         for restricted_term in ("arxiv:2305.15794", "-11.3", "-14.2", "-20.9", "-319 mpa", "-320 mpa", "-323 mpa"):
             self.assertNotIn(restricted_term, canonical_text)
+
+
+class M15EvidenceRevealTests(unittest.TestCase):
+    def test_evidence_reveal_does_not_change_frozen_baseline_artifacts(self) -> None:
+        actual = {
+            name: hashlib.sha256((BASELINE / name).read_bytes()).hexdigest()
+            for name in EXPECTED_BASELINE_HASHES
+        }
+        self.assertEqual(actual, EXPECTED_BASELINE_HASHES)
+
+    def test_source_documented_sidecars_have_reciprocal_links_and_pending_review(self) -> None:
+        evidence = CASE / "evidence"
+        measurements = CASE / "measurements"
+        self.assertEqual(validate_evidence(CASE, evidence / "EVD-001.json").status, "WARN")
+        self.assertEqual(validate_evidence(CASE, evidence / "EVD-002.json").status, "WARN")
+        parent = json.loads((evidence / "EVD-002.json").read_text(encoding="utf-8"))
+        self.assertEqual(parent["status"], "draft")
+        self.assertEqual(parent["reviewed_by"], "")
+        self.assertEqual(parent["measurement_reference_ids"], [f"MSR-{index:03d}" for index in range(1, 7)])
+        for index in range(1, 7):
+            path = measurements / f"MSR-{index:03d}.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(data["evidence_id"], "EVD-002")
+            self.assertEqual(data["status"], "completed")
+            self.assertIn(validate_measurement_reference(CASE, path).status, {"PASS", "WARN"})
+        summary = summarize_case(CASE)
+        self.assertIn("EVD-002.json", summary.unreviewed_evidence)
+
+    def test_prediction_reality_binds_to_phase_one_without_fabricated_prediction(self) -> None:
+        record_path = CASE / "prediction_reality" / "PRL-001.json"
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+        self.assertEqual(record["prediction"]["value"], None)
+        self.assertIn("9a9f3af3001b947226484f48b8db99f428556428", record["prediction"]["input_reference"])
+        self.assertIn("baseline_manifest.json", record["prediction"]["input_reference"])
+        self.assertEqual(validate_prediction_reality_record(CASE, record_path).status, "WARN")
+
+    def test_assessment_references_actual_frozen_rule_ids_and_limits(self) -> None:
+        assessment = (CASE / "GOLD_CASE_ASSESSMENT.md").read_text(encoding="utf-8")
+        frozen = json.loads((BASELINE / "triage_result.json").read_text(encoding="utf-8"))
+        for rule in frozen["triggered_rules"]:
+            self.assertIn(rule["rule_id"], assessment)
+        for rule_id in (f"TRIAGE-THERMOMECH-{index:03d}" for index in range(1, 8)):
+            self.assertIn(rule_id, assessment)
+        self.assertIn("one additional literature case still cannot validate", assessment.lower())
+        self.assertIn("must not be rewritten", assessment)
+
+    def test_noncanonical_benchmark_notes_do_not_change_case_check_scope(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "check", str(CASE)],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertNotIn("Diamond is referenced without interface-risk discussion", completed.stdout)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,30 @@
+{
+  "applicability": "Applies to the three reported self-supporting square thermally grown SiO2 membrane configurations on silicon frames. Values must not be generalized to other membrane thicknesses, lateral dimensions, process histories, holders, or materials without validation.",
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "confidentiality_level": "public",
+  "contradicts_claim_ids": [],
+  "evidence_format_version": "1.0",
+  "evidence_id": "EVD-002",
+  "evidence_level": "source_documented",
+  "evidence_type": "measurement",
+  "measurement_reference_ids": [
+    "MSR-001",
+    "MSR-002",
+    "MSR-003",
+    "MSR-004",
+    "MSR-005",
+    "MSR-006"
+  ],
+  "method_summary": "Published measurement results transcribed from membrane-profile observations and simulation-inferred residual-stress evaluation reported by Malhaire et al. No raw profile or simulation-inversion files are stored in this repository.",
+  "public_summary": "Published source-documented measurements report central membrane deflection across three square side lengths and simulation-inferred compressive residual-stress estimates. These are not independent Diamond Thermal Lab measurements.",
+  "review_notes": "Draft literature transcription pending final human review. This Evidence Object represents published measurement-derived data, not an independent Diamond Thermal Lab measurement.",
+  "reviewed_by": "",
+  "source": {
+    "reference": "arXiv:2305.15794; C. Malhaire et al.; Determination of compressive stress in thin films using micro-machined buckled membranes; 2023; published measurement transcription",
+    "sha256": null
+  },
+  "status": "draft",
+  "supports_claim_ids": [],
+  "title": "Literature-transcribed released SiO2 membrane deflection and simulation-inferred stress estimates",
+  "uncertainty_summary": "Values and uncertainties are transcribed from the source. Deflection uncertainty is source-reported. Stress estimates are simulation-inferred from measured profiles and the source reports a method-level relative error below approximately 5 percent. The repository does not contain raw measurement or inversion files."
+}

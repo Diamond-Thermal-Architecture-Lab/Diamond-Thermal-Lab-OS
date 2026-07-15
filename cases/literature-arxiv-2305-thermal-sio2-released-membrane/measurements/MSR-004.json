@@ -1,0 +1,23 @@
+{
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "confidentiality_level": "public",
+  "evidence_id": "EVD-002",
+  "measurement_format_version": "1.0",
+  "measurement_id": "MSR-004",
+  "method": "Simulation-inferred residual-stress estimate from measured membrane profiles reported in the source paper.",
+  "operating_conditions": "Reported approximately 1.5 um thermally grown SiO2 square membrane with approximately 256.7 um side length after release from a silicon frame.",
+  "quantity": "simulation_inferred_residual_stress",
+  "raw_data_reference": "controlled-literature-reference:arXiv-2305.15794:reported-stress-estimate-table",
+  "raw_data_sha256": null,
+  "review_notes": "Simulation-inferred literature stress estimate, not a direct independent stress measurement and not an independently reproduced Diamond Thermal Lab result.",
+  "reviewed_by": "",
+  "sample_id": "ANON-SIO2-RELEASE-001",
+  "status": "completed",
+  "uncertainty": {
+    "basis": "The source reports a method-level relative error below approximately 5 percent. No sample-specific numeric uncertainty is transcribed here; the estimate is simulation-inferred from measured profiles.",
+    "numeric_value": null,
+    "unit": "MPa"
+  },
+  "unit": "MPa",
+  "value": -319
+}

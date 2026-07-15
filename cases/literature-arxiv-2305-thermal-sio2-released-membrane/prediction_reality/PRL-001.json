@@ -1,0 +1,30 @@
+{
+  "candidate_error_sources": [
+    "model_form",
+    "geometry",
+    "boundary_condition"
+  ],
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "comparison_context": "The frozen blind baseline was created before literature outcomes were added. It produced categorical deterministic screening output and requested no thermomechanical evidence because the M14 applicability detector did not activate for the stated wet-oxidation released-membrane context. It produced no numerical membrane-deflection or residual-stress prediction.",
+  "confidentiality_level": "public",
+  "decision_impact": "The blind baseline cannot be numerically compared with the reported central deflection because it produced no numerical prediction. The absent comparable prediction and the non-activation of thermomechanical screening are benchmark findings, not evidence that the published membrane behavior is predictable or that any route is approved.",
+  "learning_disposition": "pending_review",
+  "prediction": {
+    "input_reference": "blind-baseline commit 9a9f3af3001b947226484f48b8db99f428556428; exports/literature-arxiv-2305-thermal-sio2-released-membrane-baseline/baseline_manifest.json",
+    "input_sha256": null,
+    "lower_bound": null,
+    "model_name": "Diamond Thermal Lab OS deterministic triage and Decision Board",
+    "model_version": "triage-ruleset-1.1 / decision-board-1.0",
+    "unit": "um",
+    "upper_bound": null,
+    "value": null
+  },
+  "prediction_evidence_ids": [],
+  "prediction_reality_format_version": "1.0",
+  "quantity": "measured_central_membrane_deflection",
+  "reality_measurement_id": "MSR-003",
+  "record_id": "PRL-001",
+  "review_notes": "Do not fabricate a numerical prediction value. This draft record preserves the missing quantitative prediction and incomplete applicability recognition as M15 benchmark findings pending human review.",
+  "reviewed_by": "",
+  "status": "draft"
+}
