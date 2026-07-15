@@ -1,0 +1,23 @@
+{
+  "applicability": "Applies to the reported thermally grown SiO2 released-membrane experiment on a silicon frame. It is source-documented context only and must not be generalized to different oxides, release geometries, thermal histories, holders, or acceptance criteria without validation.",
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "confidentiality_level": "public",
+  "contradicts_claim_ids": [],
+  "evidence_format_version": "1.0",
+  "evidence_id": "EVD-001",
+  "evidence_level": "source_documented",
+  "evidence_type": "literature",
+  "measurement_reference_ids": [],
+  "method_summary": "Published source describing micro-machined released SiO2 membranes, measured membrane profiles, and simulation-inferred residual-stress estimates. No raw profile, simulation, or stress-inversion files are stored in this repository.",
+  "public_summary": "The published experiment reports released thermally grown SiO2 membrane profiles across three square side lengths and simulation-inferred compressive residual-stress estimates. This is literature evidence, not an independently reproduced Diamond Thermal Lab result.",
+  "review_notes": "Draft literature transcription pending final human review.",
+  "reviewed_by": "",
+  "source": {
+    "reference": "arXiv:2305.15794; C. Malhaire et al.; Determination of compressive stress in thin films using micro-machined buckled membranes; 2023",
+    "sha256": null
+  },
+  "status": "draft",
+  "supports_claim_ids": [],
+  "title": "Literature source for released thermally grown SiO2 membrane profile and stress evidence",
+  "uncertainty_summary": "Reported values are literature-transcribed. The repository has no raw measurement or simulation-inversion files. The source estimates method-level relative error below approximately 5 percent; this is not an independent Diamond Thermal Lab uncertainty certificate."
+}

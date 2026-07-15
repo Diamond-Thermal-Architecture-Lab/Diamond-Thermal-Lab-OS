@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .case_file_checker import iter_case_files, read_text
+from .case_file_checker import iter_canonical_case_files, read_text
 from .pattern_reference_checker import has_validation_evidence, parse_claim_ledger
 from .report import CaseCheckReport
 
@@ -29,7 +29,7 @@ MANUFACTURABILITY_RISK_TERMS = (
 
 
 def _combined_case_text(case_path: Path) -> str:
-    return "\n".join(read_text(path) for path in iter_case_files(case_path)).lower()
+    return "\n".join(read_text(path) for path in iter_canonical_case_files(case_path)).lower()
 
 
 def _has_interface_risk_evidence(text: str) -> bool:
@@ -124,7 +124,7 @@ def _check_direct_gan_on_diamond_guardrails(case_path: Path, text: str, report: 
     )
     confidence_guardrail = _direct_claim_confidence_is_guarded(case_path)
 
-    for path in iter_case_files(case_path):
+    for path in iter_canonical_case_files(case_path):
         for line_number in _direct_first_step_lines(path):
             missing: list[str] = []
             if not validation_guardrail:

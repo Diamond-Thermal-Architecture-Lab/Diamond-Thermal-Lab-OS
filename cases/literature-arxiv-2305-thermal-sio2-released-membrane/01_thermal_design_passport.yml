@@ -1,0 +1,18 @@
+case_id: literature-arxiv-2305-thermal-sio2-released-membrane
+title: "Released SiO2 membrane thermomechanical screening benchmark"
+status: draft
+confidentiality_level: public
+likely_bottleneck: unknown pending thermomechanical screening evidence
+bottleneck_classification: unknown
+architecture_candidates:
+  - Released thermally grown SiO2 membrane process path; screening only.
+constraints:
+  - High-temperature oxidation and release-process conditions remain incompletely bounded.
+  - No route approval, customer claim, or engineering conclusion is authorized.
+assumptions:
+  - Membrane side lengths are known geometry inputs and do not establish a cross-size comparison basis.
+confidence_level: low
+recommended_near_term_route: deferred pending thermomechanical evidence
+recommended_long_term_route: deferred pending validation evidence
+next_best_action: define process history, boundary, profile, and acceptance evidence before stronger analysis.
+note: Blind baseline input only; no measured outcome is recorded.

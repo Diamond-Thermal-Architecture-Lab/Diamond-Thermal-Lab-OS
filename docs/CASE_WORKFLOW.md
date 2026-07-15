@@ -22,6 +22,7 @@ case initialization
 -> validation planning
 -> optional evidence capture and measurement references
 -> optional prediction-versus-reality comparison
+-> optional artifact-separated Gold Case benchmark
 -> human-reviewed learning record
 -> red flags
 -> next best action
@@ -64,6 +65,10 @@ After validation planning, cases may optionally add evidence, measurements, and 
 ```bash
 python scripts/labos_case.py evidence-summary cases/example-incomplete-gan-rf-pa/
 ```
+
+For a Gold Case benchmark, freeze the completed canonical input and its deterministic export in a separate commit before adding source outcome evidence. Treat any missed screening concern, false positive, scope mismatch, or Decision Board coherence defect as a benchmark result for later human-reviewed rule work; never rewrite the frozen input or export after evidence reveal.
+
+M15A is a retrospective, outcome-value-withheld scope-boundary benchmark rather than a knowledge-isolated in-scope generalization test. A future M15B benchmark should separate phase-one and reveal execution context, predeclare applicability and scoring, include a negative or boundary control, and keep rule changes out of the benchmark PR.
 
 Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:
 

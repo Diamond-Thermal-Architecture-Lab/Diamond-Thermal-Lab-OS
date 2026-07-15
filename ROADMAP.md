@@ -58,9 +58,13 @@ M13 adds optional Evidence Objects, Measurement References, and Prediction-Reali
 
 M14 adds deterministic qualitative screening for elevated-temperature deposited-layer integration on membranes or thin structures. It uses a Gold Case learning loop to expose missing thermomechanical evidence, process-fixture boundaries, scale-up evidence, and downstream compatibility requirements. It is a screening and learning milestone, not a validated thermomechanical solver, material database, or automatic calibration system.
 
-## M15: Independent Gold Case Generalization Test
+## M15A: Retrospective Thermomechanical Scope-Boundary Benchmark
 
-M15 should test the M14 rule family against a second independent Gold Case or equivalent public-safe benchmark. The aim is to check generalization and false positives before any broader professional-kernel or Quick Case / Visual Thermal Canvas work.
+M15A adds a second public-safe, artifact-separated benchmark for the M14 rule family using a thermally grown SiO2 released-membrane literature case. It is outcome-value-withheld and retrospective, not agent-blind or prospective. The case records a strict M14 process-sequence scope boundary, unsupported adjacent-scope transfer, generic triage false positives, and Decision Board coherence defects without modifying M14 rules or frozen baseline artifacts.
+
+## M15B: Planned Independent In-Scope Generalization Benchmark
+
+M15B remains planned. It should use a knowledge-isolated phase-one execution, predeclared applicability and scoring, an in-scope thermally significant layer-integration process, an independent negative or boundary control, and adversarial final review. It must not tune rules in the same benchmark PR and must not claim general thermomechanical validation from one or two literature cases.
 
 ## H1 Priorities
 

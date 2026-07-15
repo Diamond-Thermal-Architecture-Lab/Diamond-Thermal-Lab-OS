@@ -1,0 +1,42 @@
+{
+  "case_id": "literature-arxiv-2305-thermal-sio2-released-membrane",
+  "status": "READY_FOR_SCREENING",
+  "primary_classification": "design_space_unclear",
+  "secondary_classifications": [
+    "interface_limited_candidate"
+  ],
+  "confidence": "low",
+  "rationale": "Classification is conservative and rule-based; candidates are not confirmed bottlenecks.",
+  "critical_missing_data": [],
+  "top_uncertainty": "interface_limited_candidate",
+  "next_best_action": "Compare two or three candidate architectures with a screening model.",
+  "do_not_do_first": [
+    "Do not optimize diamond thickness before bounding interface resistance.",
+    "Do not treat pattern selection as a validated recommendation."
+  ],
+  "relevant_pattern_ids": [],
+  "triggered_rules": [
+    {
+      "rule_id": "TRIAGE-INTERFACE-001",
+      "severity": "WARN",
+      "finding": "Interface resistance is not bounded for an interface-sensitive route.",
+      "evidence": "case text and pattern context",
+      "action_enabled": "Bound or measure interface thermal resistance."
+    },
+    {
+      "rule_id": "TRIAGE-DESIGN-001",
+      "severity": "INFO",
+      "finding": "Multiple routes remain plausible without a validated winner.",
+      "evidence": "case inputs",
+      "action_enabled": "Compare two or three candidate architectures with a screening model."
+    }
+  ],
+  "validation_note": "This is a deterministic screening assessment, not a validated thermal conclusion.",
+  "ruleset_version": "1.1",
+  "thermomechanical_screening": {
+    "status": "not_applicable",
+    "known_inputs": [],
+    "missing_evidence": [],
+    "evidence_limitations": []
+  }
+}
