@@ -608,17 +608,25 @@ A control fails when any required condition above is not met.
 
 ## 16. Final Dispositions
 
+Scientific disposition is assigned only after the validity gate passes. If a
+benchmark-invalid or source-insufficiency disposition applies, do not assign
+`in_scope_generalization_supported`,
+`partial_in_scope_generalization`, or
+`in_scope_generalization_not_supported`.
+
+For the scientific dispositions below, let `N` be the number of applicable
+P2–P8 dimensions. The candidate-inclusion contract requires `N >= 3`.
+
 ### `in_scope_generalization_supported`
 
 Requires:
 
-* validity gate passes;
-* P1 passes;
+* the validity gate passes;
+* P1 is `PASS`;
 * C1 and C2 pass;
-* no applicable P2–P8 dimension fails;
-* let `N` be the number of applicable P2–P8 dimensions, where `N >= 3`;
-* at least `ceil(N / 2)` applicable P2–P8 dimensions pass;
-* all remaining applicable P2–P8 dimensions are partial.
+* no applicable P2–P8 dimension is `FAIL`;
+* at least `ceil(N / 2)` applicable P2–P8 dimensions are `PASS`;
+* every remaining applicable P2–P8 dimension is `PARTIAL`.
 
 This supports generalization only for the tested case class.
 
@@ -626,21 +634,43 @@ This supports generalization only for the tested case class.
 
 Requires:
 
-* validity gate passes;
-* P1 passes;
-* at least one applicable P2–P8 dimension passes;
-* but one or more applicable P2–P8 dimensions fail, fewer than
-  `ceil(N / 2)` pass, or exactly one control fails.
+* the validity gate passes;
+* the criteria for `in_scope_generalization_not_supported` do not apply;
+* the criteria for `in_scope_generalization_supported` are not all satisfied;
+* P1 is `PASS` or `PARTIAL`;
+* at least one applicable P2–P8 dimension is `PASS` or `PARTIAL`;
+* C1 and C2 do not both fail.
+
+This disposition includes, without limitation:
+
+* fewer than `ceil(N / 2)` applicable dimensions being `PASS`;
+* one or more applicable dimensions being `FAIL` while the complete applicable
+  set is not all `FAIL`;
+* all applicable dimensions being `PARTIAL`;
+* exactly one control failing;
+* P1 being `PARTIAL` rather than `PASS`.
 
 ### `in_scope_generalization_not_supported`
 
-Applies when:
+Applies when the validity gate passes and at least one of the following is true:
 
-* a human-verified in-scope primary case receives
+* a human-verified in-scope primary case returns
   `thermomechanical_screening.status = not_applicable`;
-* P1 fails;
-* all applicable P2–P8 dimensions fail;
-* or both controls fail.
+* P1 is `FAIL`;
+* every applicable P2–P8 dimension is `FAIL`;
+* C1 and C2 both fail.
+
+### Scientific Disposition Precedence
+
+Apply scientific outcomes in this order:
+
+1. benchmark invalidity or source insufficiency;
+2. `in_scope_generalization_not_supported`;
+3. `in_scope_generalization_supported`;
+4. `partial_in_scope_generalization`.
+
+The conditions are intended to produce exactly one primary scientific
+disposition for every valid and sufficiently evidenced benchmark.
 
 ### Governance Disposition
 
