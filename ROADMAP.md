@@ -66,6 +66,10 @@ M15A adds a second public-safe, artifact-separated benchmark for the M14 rule fa
 
 M15B remains planned. It should use a knowledge-isolated phase-one execution, predeclared applicability and scoring, an in-scope thermally significant layer-integration process, an independent negative or boundary control, and adversarial final review. It must not tune rules in the same benchmark PR and must not claim general thermomechanical validation from one or two literature cases.
 
+The governing pre-registration protocol is
+[`[docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md](https://chatgpt.com/g/g-p-6a4608ceaac481919fb248cb5e015e4a/c/docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)`](docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)
+and must be frozen before final candidate selection or phase-one execution.
+
 ## H1 Priorities
 
 - Real Gold Cases with reviewed public-safe evidence.
