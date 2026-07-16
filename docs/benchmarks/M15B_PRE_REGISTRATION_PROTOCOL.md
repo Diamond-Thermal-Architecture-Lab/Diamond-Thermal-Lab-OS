@@ -6,6 +6,10 @@
 * Milestone: `M15B`
 * Status: `ready_for_protocol_freeze`
 * Repository baseline at protocol design: `226a6f678b105e7310543b71ca441d698b217fea`
+* Execution baseline: a separately recorded commit created after this protocol
+  is merged and after any independently reviewed generic benchmark
+  infrastructure is complete, but before candidate screening begins. Once
+  recorded, that execution baseline is immutable for M15B.
 * Governing rule family: frozen M14 `TRIAGE-THERMOMECH-001` through `TRIAGE-THERMOMECH-007`
 * Final primary literature case: not selected
 * M14 rule modification permitted during benchmark: no
@@ -137,6 +141,30 @@ Only `in_scope` may be the primary case.
 
 `ambiguous_scope` must be rejected unless resolved from source process facts before the Blind Input Packet is created.
 
+### 5.7 Execution-Baseline Gate
+
+Before candidate screening begins, the project must record one M15B execution
+baseline commit.
+
+That commit must:
+
+* descend from the merged protocol commit;
+* include any reusable benchmark infrastructure approved without knowledge of
+  the final candidate;
+* preserve M14 applicability and rule semantics;
+* contain no candidate-specific terms, source-specific parser, threshold or
+  rule tuning;
+* have successful exact-head CI.
+
+After it is recorded:
+
+* candidate screening must not cause production-code changes;
+* the phase-one branch must be created from that exact execution baseline;
+* files under `labos/`, `scripts/`, `.github/workflows/`, schema paths and
+  dependency manifests must remain byte-identical throughout the benchmark PR;
+* any required semantic production-code change cancels the current benchmark
+  run and requires a new protocol review or a later separate milestone.
+
 ## 6. Candidate Inclusion Criteria
 
 The primary candidate must:
@@ -148,7 +176,10 @@ The primary candidate must:
 5. Provide independent revealed evidence after phase one.
 6. Have a traceable primary source.
 7. Allow source identity to be withheld without destroying engineering meaning.
-8. Have enough information to evaluate at least three of M14’s evidence-gap dimensions.
+8. Pre-register at least three applicable P2–P8 dimensions, including at least
+   two genuine source-faithful missing or unresolved evidence needs. No evidence
+   gap may be manufactured by deleting or withholding a source-provided
+   pre-outcome fact that is admissible under this protocol.
 9. Remain public-safe.
 10. Not require proprietary process or customer information.
 
@@ -443,6 +474,28 @@ Before Role D begins, Role C must prepare:
 
 These files are not provided to Role D.
 
+Before phase-one freeze, the four sealed documents must remain outside the Git
+repository, outside the benchmark working tree, and outside every file path,
+attachment, conversation or execution context accessible to Role D.
+
+They must not be:
+
+* committed or staged;
+* included in the benchmark branch or pull request;
+* placed in a repository-local temporary directory;
+* uploaded to the Role D session;
+* quoted or summarized in the Role D prompt.
+
+Only `SEALED_REGISTRATION_MANIFEST.json` is committed before reveal. The manifest
+records each sealed filename, SHA256, byte length, registration timestamp and
+protocol version. It must not contain source identity, outcome values, expected
+applicability status, expected rule IDs, expected scores or result-derived
+explanations.
+
+Role C retains the exact sealed bytes in controlled storage inaccessible to Role
+D. The sealed bytes are released only to Roles E and F after the phase-one
+commit and all frozen phase-one hashes exist.
+
 Their SHA256 hashes are committed in:
 
 `SEALED_REGISTRATION_MANIFEST.json`
@@ -501,11 +554,18 @@ Failure of this gate invalidates the benchmark rather than scoring M14.
 | -- | ------------------------------------------ | --------------------- |
 | C1 | M15A boundary control                      | required control      |
 | C2 | Negative-control applicability             | required control      |
-| G1 | No fabricated prediction or route approval | mandatory             |
+| G1 | No fabricated prediction or route approval | separate governance result |
 | S1 | Generic triage coherence                   | secondary observation |
 | S2 | Decision Board coherence                   | secondary observation |
 
-S1 and S2 must be reported but do not alter the primary M14 thermomechanical conclusion.
+G1 is reported separately as `governance_pass` or `governance_blocked`. It does
+not change the P1–P8 scientific disposition. A governance blocker prevents route
+approval, automatic learning, calibration, engineering-memory promotion and
+customer-facing use, but it does not relabel otherwise valid M14 evidence-gap
+observations.
+
+S1 and S2 must be reported but do not alter the primary M14 thermomechanical
+conclusion.
 
 ### 15.4 Result Definitions
 
@@ -529,6 +589,23 @@ The sealed relevance registration declared the dimension irrelevant before phase
 
 The dimension cannot be evaluated because benchmark validity was compromised.
 
+### 15.5 Control Pass Criteria
+
+`C1` passes only when:
+
+* all M15A frozen bytes and hashes remain unchanged;
+* its deterministic output remains identical to its frozen baseline;
+* its strict-scope interpretation remains `generalization_not_evaluable`.
+
+`C2` passes only when:
+
+* the negative control returns
+  `thermomechanical_screening.status = not_applicable`;
+* it emits none of `TRIAGE-THERMOMECH-001` through
+  `TRIAGE-THERMOMECH-007`.
+
+A control fails when any required condition above is not met.
+
 ## 16. Final Dispositions
 
 ### `in_scope_generalization_supported`
@@ -538,10 +615,10 @@ Requires:
 * validity gate passes;
 * P1 passes;
 * C1 and C2 pass;
-* G1 passes;
 * no applicable P2–P8 dimension fails;
-* at least half of applicable P2–P8 dimensions pass;
-* remaining applicable dimensions are partial.
+* let `N` be the number of applicable P2–P8 dimensions, where `N >= 3`;
+* at least `ceil(N / 2)` applicable P2–P8 dimensions pass;
+* all remaining applicable P2–P8 dimensions are partial.
 
 This supports generalization only for the tested case class.
 
@@ -551,18 +628,41 @@ Requires:
 
 * validity gate passes;
 * P1 passes;
-* G1 passes;
 * at least one applicable P2–P8 dimension passes;
-* but one or more applicable dimensions fail, or fewer than half pass, or one control fails.
+* but one or more applicable P2–P8 dimensions fail, fewer than
+  `ceil(N / 2)` pass, or exactly one control fails.
 
 ### `in_scope_generalization_not_supported`
 
 Applies when:
 
-* a human-verified in-scope primary case receives non-applicable status;
-* or all applicable P2–P8 dimensions fail;
-* or both controls fail;
-* or the system fabricates a numerical prediction or route approval.
+* a human-verified in-scope primary case receives
+  `thermomechanical_screening.status = not_applicable`;
+* P1 fails;
+* all applicable P2–P8 dimensions fail;
+* or both controls fail.
+
+### Governance Disposition
+
+`governance_pass`
+
+No numerical prediction, route approval, customer-facing performance claim,
+automatic calibration, automatic learning or engineering-memory promotion was
+fabricated from the benchmark output.
+
+`governance_blocked`
+
+At least one prohibited governance action or claim appeared.
+
+The final assessment must report both:
+
+* one primary scientific disposition;
+* one governance disposition.
+
+`governance_blocked` is not benchmark invalidity and does not rewrite the
+primary M14 scientific disposition. It blocks all downstream approval, learning,
+calibration, promotion and customer-facing use until addressed in a separate
+reviewed PR.
 
 ### `benchmark_invalid_due_to_leakage`
 
@@ -594,6 +694,13 @@ Stop when:
 * the source was used to tune M14;
 * no independent reveal is possible;
 * the sealed registration cannot be completed.
+* the generic benchmark infrastructure was not frozen before candidate
+  screening;
+* the M15B execution baseline commit was not recorded before candidate
+  screening;
+* the recorded execution baseline contains an unreviewed M14 semantic change;
+* the phase-one working tree does not match the recorded execution baseline for
+  production code, workflows, schemas or dependency manifests;
 
 ### 17.2 Invalidate After Phase One
 
@@ -608,6 +715,8 @@ Invalidate when:
 * M14 changes before evidence reveal;
 * sealed files do not match precommitted hashes;
 * the primary case is later found out of scope.
+* production code, workflows, schemas or dependency manifests differ from the
+  recorded execution baseline;
 
 ### 17.3 Recoverable Defects
 
@@ -639,6 +748,10 @@ Phase one must freeze:
 * dependency-manifest hashes;
 * main baseline commit;
 * phase-one commit;
+* protocol merge commit SHA;
+* M15B execution baseline commit SHA;
+* deterministic production-code tree hash;
+* workflow tree hash;
 * SHA256 of every frozen artifact.
 
 The baseline manifest must not hash itself unless a second-level manifest is explicitly used.
@@ -728,6 +841,39 @@ Output:
 * protocol commit SHA.
 
 No final source selection occurs before this phase completes.
+
+### Phase 0.5 — Generic Benchmark Infrastructure Freeze
+
+Owner:
+
+Assistant for design and review; Codex only for approved repository
+implementation.
+
+Allowed work:
+
+* reusable deterministic hashing;
+* sealed-manifest validation;
+* source-identity and outcome-leakage test helpers;
+* execution-baseline verification;
+* generic no-`.git` and shallow-checkout test support.
+
+Prohibited work:
+
+* candidate-specific strings;
+* candidate facts;
+* source-specific parsing;
+* M14 applicability or rule changes;
+* result-specific scoring logic.
+
+Output:
+
+* independently reviewed infrastructure PR;
+* successful exact-head CI;
+* recorded immutable M15B execution baseline commit and hashes.
+
+Gate:
+
+This phase must complete before candidate literature screening begins.
 
 ### Phase 1 — Candidate Screening
 
@@ -838,8 +984,14 @@ Any rule or Decision Board correction becomes a separate milestone and PR.
 * sidecar reciprocal linkage;
 * exact-head deterministic JSON;
 * unchanged M13/M14/M15A frozen baselines.
+* sealed source documents are absent from the repository and Role D packet
+  before reveal;
+* the production-code tree matches the recorded execution baseline;
+* workflow, schema and dependency hashes match the recorded execution baseline;
+* primary scientific and governance dispositions are represented separately;
 
-Generic infrastructure must be frozen before final candidate phase-one execution.
+Generic infrastructure must be frozen before candidate literature screening
+begins.
 
 ### Benchmark-Specific Tests
 
@@ -863,6 +1015,11 @@ Generic infrastructure must be frozen before final candidate phase-one execution
 * no dependency change;
 * no network dependency;
 * no Git-history dependency.
+* at least three P2–P8 dimensions were pre-registered as applicable;
+* at least two genuine source-faithful evidence gaps were pre-registered;
+* no evidence gap was manufactured by deleting admissible source-provided facts;
+* sealed source documents remain absent until reveal;
+* the final assessment reports separate scientific and governance dispositions;
 
 ## 23. Independent Review Gate
 

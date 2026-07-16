@@ -71,7 +71,7 @@ For a Gold Case benchmark, freeze the completed canonical input and its determin
 M15A is a retrospective, outcome-value-withheld scope-boundary benchmark rather than a knowledge-isolated in-scope generalization test. A future M15B benchmark should separate phase-one and reveal execution context, predeclare applicability and scoring, include a negative or boundary control, and keep rule changes out of the benchmark PR.
 
 M15B execution is governed by
-[`[M15B_PRE_REGISTRATION_PROTOCOL.md](https://chatgpt.com/g/g-p-6a4608ceaac481919fb248cb5e015e4a/c/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)`](benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md).
+[`M15B_PRE_REGISTRATION_PROTOCOL.md`](benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md).
 Candidate selection, sealed relevance registration, Blind Input Packet
 construction, phase-one execution, evidence reveal, and scoring must follow that
 protocol in order.
