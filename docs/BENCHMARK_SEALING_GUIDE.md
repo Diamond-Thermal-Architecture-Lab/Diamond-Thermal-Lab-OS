@@ -55,7 +55,7 @@ The manifest is a non-semantic integrity record, not a secrecy guarantee. It pro
 
 ## 13. Deferred Leakage Scanner
 
-Private leakage-token policy loading and source-identity or outcome-content scanning are not implemented in this PR.
+Private leakage-policy schema and validation are documented in `BENCHMARK_LEAKAGE_POLICY_GUIDE.md`. Content scanning and leakage-audit reports remain deferred to Phase 0.5B2B.
 
 ## 14. Deferred Execution Baseline
 

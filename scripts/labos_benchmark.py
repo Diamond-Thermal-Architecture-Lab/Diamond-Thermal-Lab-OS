@@ -19,6 +19,10 @@ from labos.benchmarks.integrity import (  # noqa: E402
     normalized_lf_bytes,
     sha256_bytes,
 )
+from labos.benchmarks.leakage_policy import (  # noqa: E402
+    load_private_leakage_policy,
+    summarize_private_leakage_policy,
+)
 from labos.benchmarks.sealed_manifest import (  # noqa: E402
     build_sealed_manifest,
     find_sealed_presence,
@@ -201,6 +205,26 @@ def cmd_check_sealed_absence(args: argparse.Namespace) -> int:
     return 0 if not findings else 1
 
 
+def cmd_validate_private_leakage_policy(args: argparse.Namespace) -> int:
+    loaded = load_private_leakage_policy(
+        repo_root=Path(args.repo_root),
+        policy_root=Path(args.policy_root),
+        additional_forbidden_roots=[Path(path) for path in args.forbidden_root],
+    )
+    summary = summarize_private_leakage_policy(loaded)
+    result = asdict(summary)
+    if args.json:
+        _print_json(result)
+    else:
+        print(
+            "valid private leakage policy: "
+            f"version={summary.policy_version} "
+            f"tokens={summary.token_count} "
+            f"sha256={summary.sha256}"
+        )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Lab OS benchmark integrity helpers.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -258,6 +282,13 @@ def build_parser() -> argparse.ArgumentParser:
     check_absence.add_argument("--ignore-directory", action="append", default=[".git", "__pycache__"])
     check_absence.add_argument("--json", action="store_true")
     check_absence.set_defaults(func=cmd_check_sealed_absence)
+
+    validate_policy = subparsers.add_parser("validate-private-leakage-policy")
+    validate_policy.add_argument("--repo-root", required=True)
+    validate_policy.add_argument("--policy-root", required=True)
+    validate_policy.add_argument("--forbidden-root", action="append", default=[])
+    validate_policy.add_argument("--json", action="store_true")
+    validate_policy.set_defaults(func=cmd_validate_private_leakage_policy)
 
     return parser
 
