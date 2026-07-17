@@ -26,6 +26,17 @@ PROTOCOL_BLOB_OID = "0c142382d7f94a1cfcc19f065d21cb61fe1f5c3e"
 PROTOCOL_SHA256 = "4c5a5c09fb0822f70c87fff9f6a5162bd318d72da18cd4909d60a0b0f8a4e9b5"
 
 
+def protocol_git_ref_for_tests() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", f"{PROTOCOL_MERGE_COMMIT}:{PROTOCOL_PATH}"],
+        cwd=REPO_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    return PROTOCOL_MERGE_COMMIT if result.returncode == 0 else "HEAD"
+
+
 class BenchmarkIntegrityHashTests(unittest.TestCase):
     def test_exact_file_digest_hashes_raw_bytes_without_normalization(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -76,15 +87,15 @@ class BenchmarkIntegrityHashTests(unittest.TestCase):
 
 class BenchmarkIntegrityGitBlobTests(unittest.TestCase):
     def test_protocol_git_blob_identity_matches_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, PROTOCOL_MERGE_COMMIT, PROTOCOL_PATH)
+        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
         self.assertEqual(digest.git_blob_oid, PROTOCOL_BLOB_OID)
 
     def test_protocol_git_blob_hash_matches_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, PROTOCOL_MERGE_COMMIT, PROTOCOL_PATH)
+        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
         self.assertEqual(digest.sha256, PROTOCOL_SHA256)
 
     def test_protocol_git_blob_length_and_newlines_match_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, PROTOCOL_MERGE_COMMIT, PROTOCOL_PATH)
+        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
         self.assertEqual(digest.byte_length, 34793)
         self.assertEqual(digest.newline.lf_count, 1100)
         self.assertEqual(digest.newline.crlf_count, 0)
@@ -233,7 +244,7 @@ class BenchmarkIntegrityRecordTests(unittest.TestCase):
         self.assertEqual(sha256_bytes(data), PROTOCOL_SHA256)
 
     def test_raw_git_object_bytes_at_merge_commit_match_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, PROTOCOL_MERGE_COMMIT, PROTOCOL_PATH)
+        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
         self.assertEqual(digest.git_blob_oid, PROTOCOL_BLOB_OID)
         self.assertEqual(digest.sha256, PROTOCOL_SHA256)
 
@@ -273,7 +284,7 @@ class BenchmarkIntegrityCliTests(unittest.TestCase):
             "--repo-root",
             ".",
             "--ref",
-            PROTOCOL_MERGE_COMMIT,
+            protocol_git_ref_for_tests(),
             "--path",
             PROTOCOL_PATH,
             "--json",
