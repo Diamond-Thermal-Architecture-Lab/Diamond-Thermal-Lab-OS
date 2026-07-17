@@ -24,9 +24,33 @@ PROTOCOL_PATH = "docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md"
 PROTOCOL_MERGE_COMMIT = "e35476d5fe4ccfa94f8438a7ef1fbf569fd67aa2"
 PROTOCOL_BLOB_OID = "0c142382d7f94a1cfcc19f065d21cb61fe1f5c3e"
 PROTOCOL_SHA256 = "4c5a5c09fb0822f70c87fff9f6a5162bd318d72da18cd4909d60a0b0f8a4e9b5"
+APPROVED_PROTOCOL_RECORD = {
+    "artifact_kind": "committed_git_object",
+    "bare_cr_count": 0,
+    "byte_length": 34793,
+    "content_sha256": PROTOCOL_SHA256,
+    "crlf_count": 0,
+    "final_newline": True,
+    "git_blob_oid": PROTOCOL_BLOB_OID,
+    "lf_count": 1100,
+    "path": PROTOCOL_PATH,
+    "protocol_merge_commit": PROTOCOL_MERGE_COMMIT,
+    "record_version": "1.0",
+    "utf8_bom": False,
+}
 
 
-def protocol_git_ref_for_tests() -> str:
+def git_object_available(name: str) -> bool:
+    result = subprocess.run(
+        ["git", "cat-file", "-e", name],
+        cwd=REPO_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return result.returncode == 0
+
+
+def historical_protocol_commit_available() -> bool:
     result = subprocess.run(
         ["git", "rev-parse", f"{PROTOCOL_MERGE_COMMIT}:{PROTOCOL_PATH}"],
         cwd=REPO_ROOT,
@@ -34,7 +58,19 @@ def protocol_git_ref_for_tests() -> str:
         stderr=subprocess.PIPE,
         text=True,
     )
-    return PROTOCOL_MERGE_COMMIT if result.returncode == 0 else "HEAD"
+    return result.returncode == 0
+
+
+def read_git_blob_bytes(blob_oid: str) -> bytes:
+    result = subprocess.run(
+        ["git", "cat-file", "blob", blob_oid],
+        cwd=REPO_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode != 0:
+        raise ValueError(result.stderr.decode("utf-8", errors="replace"))
+    return result.stdout
 
 
 class BenchmarkIntegrityHashTests(unittest.TestCase):
@@ -86,22 +122,39 @@ class BenchmarkIntegrityHashTests(unittest.TestCase):
 
 
 class BenchmarkIntegrityGitBlobTests(unittest.TestCase):
-    def test_protocol_git_blob_identity_matches_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
+    def test_current_head_protocol_git_blob_identity_matches_record(self) -> None:
+        digest = digest_git_blob(REPO_ROOT, "HEAD", PROTOCOL_PATH)
         self.assertEqual(digest.git_blob_oid, PROTOCOL_BLOB_OID)
-
-    def test_protocol_git_blob_hash_matches_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
         self.assertEqual(digest.sha256, PROTOCOL_SHA256)
 
-    def test_protocol_git_blob_length_and_newlines_match_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
+    def test_current_head_protocol_git_blob_length_and_newlines_match_record(self) -> None:
+        digest = digest_git_blob(REPO_ROOT, "HEAD", PROTOCOL_PATH)
         self.assertEqual(digest.byte_length, 34793)
         self.assertEqual(digest.newline.lf_count, 1100)
         self.assertEqual(digest.newline.crlf_count, 0)
         self.assertEqual(digest.newline.bare_cr_count, 0)
         self.assertFalse(digest.newline.utf8_bom)
         self.assertTrue(digest.newline.final_newline)
+
+    def test_known_protocol_blob_bytes_match_record_when_available(self) -> None:
+        if not git_object_available(PROTOCOL_BLOB_OID):
+            self.skipTest("approved protocol blob object is unavailable in this checkout")
+        data = read_git_blob_bytes(PROTOCOL_BLOB_OID)
+        metadata = analyze_newlines(data)
+        self.assertEqual(sha256_bytes(data), PROTOCOL_SHA256)
+        self.assertEqual(len(data), 34793)
+        self.assertEqual(metadata.lf_count, 1100)
+        self.assertEqual(metadata.crlf_count, 0)
+        self.assertEqual(metadata.bare_cr_count, 0)
+        self.assertFalse(metadata.utf8_bom)
+        self.assertTrue(metadata.final_newline)
+
+    def test_historical_merge_commit_mapping_matches_protocol_blob_when_available(self) -> None:
+        if not historical_protocol_commit_available():
+            self.skipTest("historical protocol merge commit unavailable in this checkout")
+        digest = digest_git_blob(REPO_ROOT, PROTOCOL_MERGE_COMMIT, PROTOCOL_PATH)
+        self.assertEqual(digest.git_blob_oid, PROTOCOL_BLOB_OID)
+        self.assertEqual(digest.sha256, PROTOCOL_SHA256)
 
     def test_invalid_ref_fails_clearly(self) -> None:
         with self.assertRaises(ValueError):
@@ -212,8 +265,102 @@ class BenchmarkIntegrityTreeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 digest_tree(root)
 
+    def test_symlinked_tree_root_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            target = parent / "target"
+            target.mkdir()
+            link = parent / "root-link"
+            try:
+                link.symlink_to(target, target_is_directory=True)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            with self.assertRaises(ValueError):
+                digest_tree(link)
+
+    def test_broken_symlinked_tree_root_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            link = parent / "broken-root"
+            try:
+                link.symlink_to(parent / "missing", target_is_directory=True)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            with self.assertRaises(ValueError):
+                digest_tree(link)
+
+    def test_explicit_symlink_file_include_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "target.txt"
+            target.write_bytes(b"target")
+            link = root / "link.txt"
+            try:
+                link.symlink_to(target)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            with self.assertRaises(ValueError):
+                digest_tree(root, include_paths=["link.txt"])
+
+    def test_explicit_symlink_file_include_pointing_outside_root_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            outside = Path(tmp) / "outside"
+            root.mkdir()
+            outside.write_bytes(b"outside")
+            link = root / "link.txt"
+            try:
+                link.symlink_to(outside)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            with self.assertRaises(ValueError):
+                digest_tree(root, include_paths=["link.txt"])
+
+    def test_explicit_symlink_directory_include_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "target"
+            target.mkdir()
+            (target / "a.txt").write_bytes(b"a")
+            link = root / "link"
+            try:
+                link.symlink_to(target, target_is_directory=True)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            with self.assertRaises(ValueError):
+                digest_tree(root, include_paths=["link"])
+
+    def test_intermediate_symlink_directory_include_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "target"
+            target.mkdir()
+            (target / "a.txt").write_bytes(b"a")
+            link = root / "link"
+            try:
+                link.symlink_to(target, target_is_directory=True)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            with self.assertRaises(ValueError):
+                digest_tree(root, include_paths=["link/a.txt"])
+
+    def test_broken_include_symlink_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            link = root / "broken.txt"
+            try:
+                link.symlink_to(root / "missing.txt")
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            with self.assertRaises(ValueError):
+                digest_tree(root, include_paths=["broken.txt"])
+
 
 class BenchmarkIntegrityRecordTests(unittest.TestCase):
+    def test_protocol_record_object_equals_approved_record(self) -> None:
+        record = json.loads((REPO_ROOT / "docs/benchmarks/M15B_PROTOCOL_INTEGRITY_RECORD.json").read_text())
+        self.assertEqual(record, APPROVED_PROTOCOL_RECORD)
+
     def test_protocol_record_has_exact_approved_key_set(self) -> None:
         record = json.loads((REPO_ROOT / "docs/benchmarks/M15B_PROTOCOL_INTEGRITY_RECORD.json").read_text())
         self.assertEqual(
@@ -243,8 +390,8 @@ class BenchmarkIntegrityRecordTests(unittest.TestCase):
         data = (REPO_ROOT / PROTOCOL_PATH).read_bytes()
         self.assertEqual(sha256_bytes(data), PROTOCOL_SHA256)
 
-    def test_raw_git_object_bytes_at_merge_commit_match_record(self) -> None:
-        digest = digest_git_blob(REPO_ROOT, protocol_git_ref_for_tests(), PROTOCOL_PATH)
+    def test_current_head_raw_git_object_bytes_match_record(self) -> None:
+        digest = digest_git_blob(REPO_ROOT, "HEAD", PROTOCOL_PATH)
         self.assertEqual(digest.git_blob_oid, PROTOCOL_BLOB_OID)
         self.assertEqual(digest.sha256, PROTOCOL_SHA256)
 
@@ -273,18 +420,59 @@ class BenchmarkIntegrityCliTests(unittest.TestCase):
         self.assertEqual(result["mode"], "exact_bytes")
         self.assertEqual(result["sha256"], PROTOCOL_SHA256)
 
+    def test_hash_file_json_path_uses_posix_separator(self) -> None:
+        result = self.run_cli("hash-file", str(REPO_ROOT / PROTOCOL_PATH), "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("\\", json.loads(result.stdout)["path"])
+
     def test_hash_file_normalized_lf_json_identifies_diagnostic_mode(self) -> None:
         result = self.run_cli("hash-file", PROTOCOL_PATH, "--normalized-lf", "--json")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["mode"], "normalized_lf_diagnostic")
 
-    def test_hash_git_object_json_reports_approved_protocol_identity(self) -> None:
+    def test_hash_file_normalized_lf_json_path_uses_posix_separator(self) -> None:
+        result = self.run_cli("hash-file", str(REPO_ROOT / PROTOCOL_PATH), "--normalized-lf", "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("\\", json.loads(result.stdout)["path"])
+
+    def test_hash_file_normalized_lf_symlink_returns_exit_code_2_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "target.txt"
+            target.write_text("target\n", encoding="utf-8")
+            link = root / "link.txt"
+            try:
+                link.symlink_to(target)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink not available: {exc}")
+            result = self.run_cli("hash-file", str(link), "--normalized-lf", "--json")
+            self.assertEqual(result.returncode, 2)
+
+    def test_hash_git_object_json_reports_current_head_protocol_identity(self) -> None:
         result = self.run_cli(
             "hash-git-object",
             "--repo-root",
             ".",
             "--ref",
-            protocol_git_ref_for_tests(),
+            "HEAD",
+            "--path",
+            PROTOCOL_PATH,
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["git_blob_oid"], PROTOCOL_BLOB_OID)
+        self.assertEqual(payload["sha256"], PROTOCOL_SHA256)
+
+    def test_hash_git_object_json_reports_historical_protocol_identity_when_available(self) -> None:
+        if not historical_protocol_commit_available():
+            self.skipTest("historical protocol merge commit unavailable in this checkout")
+        result = self.run_cli(
+            "hash-git-object",
+            "--repo-root",
+            ".",
+            "--ref",
+            PROTOCOL_MERGE_COMMIT,
             "--path",
             PROTOCOL_PATH,
             "--json",
@@ -300,6 +488,11 @@ class BenchmarkIntegrityCliTests(unittest.TestCase):
         self.assertEqual(first.returncode, 0, first.stderr)
         self.assertEqual(first.stdout, second.stdout)
         self.assertEqual(json.loads(first.stdout)["algorithm"], TREE_HASH_ALGORITHM)
+
+    def test_hash_tree_json_root_uses_posix_separator(self) -> None:
+        result = self.run_cli("hash-tree", str(REPO_ROOT / "labos" / "benchmarks"), "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("\\", json.loads(result.stdout)["root"])
 
     def test_invalid_cli_path_returns_exit_code_2(self) -> None:
         result = self.run_cli("hash-file", "missing-file.txt", "--json")

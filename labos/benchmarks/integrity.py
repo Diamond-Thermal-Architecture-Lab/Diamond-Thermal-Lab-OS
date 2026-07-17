@@ -86,7 +86,7 @@ def digest_file(path: Path, *, display_path: str | None = None) -> FileDigest:
         raise ValueError(f"not a regular file: {path}")
     data = path.read_bytes()
     return FileDigest(
-        path=(display_path if display_path is not None else _posix_path(path)),
+        path=_display_path(display_path) if display_path is not None else _posix_path(path),
         byte_length=len(data),
         sha256=sha256_bytes(data),
         newline=analyze_newlines(data),
@@ -102,6 +102,8 @@ def normalized_lf_bytes(data: bytes) -> bytes:
 def normalized_lf_sha256(path: Path) -> str:
     if path.is_symlink():
         raise ValueError(f"refusing to hash symlinked file: {path}")
+    if not path.is_file():
+        raise ValueError(f"not a regular file: {path}")
     return sha256_bytes(normalized_lf_bytes(path.read_bytes()))
 
 
@@ -151,9 +153,10 @@ def digest_tree(
     ignored_directory_names: Iterable[str] = (),
     ignored_file_suffixes: Iterable[str] = (),
 ) -> TreeDigest:
-    root = root.resolve()
-    if root.is_symlink():
-        raise ValueError(f"refusing to hash symlinked root: {root}")
+    supplied_root = root
+    if supplied_root.is_symlink():
+        raise ValueError(f"refusing to hash symlinked root: {supplied_root}")
+    root = supplied_root.resolve()
     if not root.is_dir():
         raise ValueError(f"tree root is not a directory: {root}")
 
@@ -165,9 +168,7 @@ def digest_tree(
     include_values = list(include_paths) if include_paths is not None else ["."]
     for include_value in include_values:
         include_path_text = "." if include_value == "." else _validate_relative_input(include_value)
-        include_path = _resolve_inside(root, include_path_text)
-        if include_path.is_symlink():
-            raise ValueError(f"refusing to hash symlinked include: {include_value}")
+        include_path = _join_without_symlinks(root, include_path_text)
         if not include_path.exists():
             raise ValueError(f"included path does not exist: {include_value}")
         if include_path.is_file():
@@ -185,19 +186,21 @@ def digest_tree(
                 continue
             for dirname in list(dirnames):
                 child = current_dir / dirname
+                if child.is_symlink():
+                    child_rel = _relative_posix(root, child)
+                    raise ValueError(f"refusing to hash symlinked directory: {child_rel}")
                 child_rel = _relative_posix(root, child)
                 if dirname in ignored_dirs or _is_excluded(child_rel, excludes):
                     dirnames.remove(dirname)
                     continue
-                if child.is_symlink():
-                    raise ValueError(f"refusing to hash symlinked directory: {child_rel}")
             for filename in filenames:
                 child = current_dir / filename
+                if child.is_symlink():
+                    rel = _relative_posix(root, child)
+                    raise ValueError(f"refusing to hash symlinked file: {rel}")
                 rel = _relative_posix(root, child)
                 if _is_excluded(rel, excludes) or _is_ignored(rel, ignored_dirs, ignored_suffixes):
                     continue
-                if child.is_symlink():
-                    raise ValueError(f"refusing to hash symlinked file: {rel}")
                 if not child.is_file():
                     continue
                 selected.setdefault(rel, child)
@@ -232,17 +235,25 @@ def _validate_relative_input(path_text: str) -> str:
     return PurePosixPath(path_text).as_posix()
 
 
-def _resolve_inside(root: Path, path_text: str) -> Path:
-    candidate = (root / Path(*PurePosixPath(path_text).parts)).resolve()
+def _join_without_symlinks(root: Path, path_text: str) -> Path:
+    if path_text == ".":
+        return root
+    current = root
+    for part in PurePosixPath(path_text).parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValueError(f"refusing to hash symlinked path component: {path_text}")
+        if not current.exists():
+            return current
+    resolved = current.resolve()
     try:
-        candidate.relative_to(root)
+        resolved.relative_to(root)
     except ValueError as exc:
         raise ValueError(f"path escapes root: {path_text}") from exc
-    return candidate
+    return current
 
 
 def _relative_posix(root: Path, path: Path) -> str:
-    path = path.resolve()
     try:
         rel = path.relative_to(root)
     except ValueError as exc:
@@ -251,7 +262,11 @@ def _relative_posix(root: Path, path: Path) -> str:
 
 
 def _posix_path(path: Path) -> str:
-    return PurePosixPath(*path.parts).as_posix()
+    return path.as_posix()
+
+
+def _display_path(path_text: str) -> str:
+    return Path(path_text).as_posix()
 
 
 def _is_excluded(rel: str, excludes: tuple[str, ...]) -> bool:

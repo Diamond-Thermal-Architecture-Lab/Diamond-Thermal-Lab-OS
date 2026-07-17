@@ -48,12 +48,17 @@ def _digest_to_json(mode: str, path: str, data: bytes) -> dict[str, object]:
 
 def cmd_hash_file(args: argparse.Namespace) -> int:
     path = Path(args.path)
+    display_path = path.as_posix()
     if args.normalized_lf:
+        if path.is_symlink():
+            raise ValueError(f"refusing to hash symlinked file: {path}")
+        if not path.is_file():
+            raise ValueError(f"not a regular file: {path}")
         raw = path.read_bytes()
         data = normalized_lf_bytes(raw)
-        result = _digest_to_json("normalized_lf_diagnostic", args.path, data)
+        result = _digest_to_json("normalized_lf_diagnostic", display_path, data)
     else:
-        digest = digest_file(path, display_path=args.path)
+        digest = digest_file(path, display_path=display_path)
         result = {
             "byte_length": digest.byte_length,
             "mode": "exact_bytes",
@@ -98,7 +103,7 @@ def cmd_hash_tree(args: argparse.Namespace) -> int:
         "algorithm": digest.algorithm,
         "file_count": len(digest.files),
         "files": [asdict(record) for record in digest.files],
-        "root": args.root,
+        "root": Path(args.root).as_posix(),
         "sha256": digest.sha256,
     }
     if args.json:
