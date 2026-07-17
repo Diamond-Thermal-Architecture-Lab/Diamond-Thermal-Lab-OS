@@ -13,8 +13,8 @@ from labos.benchmarks.integrity import sha256_bytes
 
 M15B_SEALED_FILENAMES = (
     "RELEVANCE_REGISTRATION.md",
-    "SCORING_REGISTRATION.md",
     "SCOPE_REGISTRATION.md",
+    "SCORING_REGISTRATION.md",
     "SOURCE_DOSSIER.md",
 )
 
@@ -204,7 +204,25 @@ def write_new_sealed_manifest(path: Path, manifest: SealedManifest, *, sealed_ro
     if _paths_overlap(output_resolved, resolved_sealed_root):
         raise ValueError("manifest output path must be outside sealed_root")
     data = serialize_sealed_manifest(manifest)
-    path.write_bytes(data)
+    created_output = False
+    try:
+        with path.open("xb") as output:
+            created_output = True
+            output.write(data)
+            output.flush()
+            os.fsync(output.fileno())
+    except FileExistsError as exc:
+        raise ValueError(f"manifest output already exists: {path}") from exc
+    except OSError as exc:
+        if not created_output:
+            raise
+        try:
+            path.unlink()
+        except OSError as cleanup_exc:
+            raise OSError(
+                f"failed to write manifest output {path} and failed to remove partial output: {cleanup_exc}"
+            ) from exc
+        raise
 
 
 def verify_sealed_manifest(

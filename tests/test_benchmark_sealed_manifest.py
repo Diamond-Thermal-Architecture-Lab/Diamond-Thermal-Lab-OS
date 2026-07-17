@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from labos.benchmarks.sealed_manifest import (
@@ -114,6 +115,18 @@ class SealedManifestTests(unittest.TestCase):
                 self.write_artifact(sealed, name)
             manifest = build_sealed_manifest(repo_root=repo, sealed_root=sealed, artifact_filenames=reversed(M15B_SEALED_FILENAMES), protocol_version="1.0", registered_at_utc=TIMESTAMP)
             self.assertEqual({record.filename for record in manifest.sealed_artifacts}, set(M15B_SEALED_FILENAMES))
+
+    def test_m15b_filenames_have_exact_lexicographic_tuple_order(self) -> None:
+        self.assertEqual(
+            M15B_SEALED_FILENAMES,
+            (
+                "RELEVANCE_REGISTRATION.md",
+                "SCOPE_REGISTRATION.md",
+                "SCORING_REGISTRATION.md",
+                "SOURCE_DOSSIER.md",
+            ),
+        )
+        self.assertEqual(M15B_SEALED_FILENAMES, tuple(sorted(M15B_SEALED_FILENAMES)))
 
     def test_manifest_parse_accepts_exact_m15b_expected_filename_set(self) -> None:
         temporary, repo, sealed = self.make_roots()
@@ -284,6 +297,25 @@ class SealedManifestTests(unittest.TestCase):
             with self.assertRaises(ValueError): write_new_sealed_manifest(output, manifest, sealed_root=sealed)
             self.assertEqual(output.read_bytes(), b"existing")
 
+    def test_exclusive_create_preserves_concurrent_output_after_stale_precheck(self) -> None:
+        temporary, repo, sealed = self.make_roots()
+        with temporary:
+            self.write_artifact(sealed)
+            manifest = self.build_one(repo, sealed)
+            output = repo / "manifest.json"
+            original_open = Path.open
+
+            def create_then_open(path: Path, mode: str = "r", *args: object, **kwargs: object):
+                if path == output and mode == "xb" and not output.exists():
+                    with open(output, "wb") as concurrent_output:
+                        concurrent_output.write(b"concurrent creator bytes")
+                return original_open(path, mode, *args, **kwargs)
+
+            with mock.patch.object(Path, "open", new=create_then_open):
+                with self.assertRaises(ValueError):
+                    write_new_sealed_manifest(output, manifest, sealed_root=sealed)
+            self.assertEqual(output.read_bytes(), b"concurrent creator bytes")
+
     def test_output_inside_sealed_root_is_rejected(self) -> None:
         temporary, repo, sealed = self.make_roots()
         with temporary:
@@ -297,6 +329,20 @@ class SealedManifestTests(unittest.TestCase):
             output = repo / "manifest.json"; write_new_sealed_manifest(output, manifest, sealed_root=sealed)
             self.assertTrue(output.read_bytes().endswith(b"\n")); self.assertFalse(output.read_bytes().endswith(b"\n\n"))
             self.assertEqual(output.read_bytes(), serialize_sealed_manifest(manifest))
+            self.assertEqual(list(repo.iterdir()), [output])
+
+    def test_write_failure_removes_partial_output_created_by_this_invocation(self) -> None:
+        temporary, repo, sealed = self.make_roots()
+        with temporary:
+            artifact = self.write_artifact(sealed, data=b"sealed artifact bytes")
+            manifest = self.build_one(repo, sealed)
+            output = repo / "manifest.json"
+            with mock.patch("labos.benchmarks.sealed_manifest.os.fsync", side_effect=OSError("simulated fsync failure")):
+                with self.assertRaises(OSError):
+                    write_new_sealed_manifest(output, manifest, sealed_root=sealed)
+            self.assertFalse(output.exists())
+            self.assertEqual(artifact.read_bytes(), b"sealed artifact bytes")
+            self.assertEqual(list(sealed.iterdir()), [artifact])
 
     def test_unchanged_sealed_bytes_pass_verification(self) -> None:
         temporary, repo, sealed = self.make_roots()

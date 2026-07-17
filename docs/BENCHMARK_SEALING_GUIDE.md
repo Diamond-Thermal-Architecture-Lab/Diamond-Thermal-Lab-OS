@@ -26,7 +26,7 @@ Manifest JSON is UTF-8, uses two-space indentation and sorted object keys, order
 
 ## 7. Write-Once Registration
 
-Manifest creation requires an explicit timestamp. The CLI refuses an existing output path, an unsafe output path, or an output inside sealed storage; it has no overwrite option.
+Manifest creation requires an explicit timestamp. The final output uses exclusive creation, so a concurrent creator cannot be overwritten. The CLI refuses an existing output path, an unsafe output path, or an output inside sealed storage; it has no overwrite option. A failed write removes only the partial output created by that invocation. An existing manifest is never removed or modified.
 
 ## 8. Reveal-Time Verification
 
@@ -47,7 +47,7 @@ python scripts/labos_benchmark.py check-sealed-absence --root . --filename RELEV
 
 ## 11. M15B Required Filenames
 
-The candidate-independent required filenames are `RELEVANCE_REGISTRATION.md`, `SCORING_REGISTRATION.md`, `SCOPE_REGISTRATION.md`, and `SOURCE_DOSSIER.md`. No files with these names are created by this PR.
+The candidate-independent required filenames are `RELEVANCE_REGISTRATION.md`, `SCOPE_REGISTRATION.md`, `SCORING_REGISTRATION.md`, and `SOURCE_DOSSIER.md`. No files with these names are created by this PR.
 
 ## 12. Security Limits
 
