@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
+from scripts import labos_benchmark
 from labos.benchmarks.leakage_policy import (
     LEAKAGE_CATEGORIES,
     LEAKAGE_MATCH_MODES,
@@ -26,6 +29,8 @@ from labos.benchmarks.leakage_policy import (
 SECRET = "synthetic-private-token"
 ALT_SECRET = "SYNTHETIC-OUTCOME-0001"
 SOURCE_MARKER = "synthetic-source-marker"
+PRIVATE_PATH_MARKER = "SYNTHETIC_PRIVATE_PATH_MARKER"
+FILESYSTEM_SECRET = "SYNTHETIC_FILESYSTEM_ERROR_SECRET"
 
 
 def policy_bytes(tokens: list[dict[str, object]] | None = None, *, suffix: bytes = b"") -> bytes:
@@ -77,6 +82,14 @@ class PrivateLeakagePolicyTest(unittest.TestCase):
         path = policy_root / PRIVATE_LEAKAGE_POLICY_FILENAME
         path.write_bytes(data if data is not None else policy_bytes())
         return path
+
+    def assertOperationalFailureSafe(
+        self,
+        context: unittest.case._AssertRaisesContext[ValueError],
+    ) -> None:
+        message = str(context.exception)
+        for marker in (PRIVATE_PATH_MARKER, FILESYSTEM_SECRET, SECRET):
+            self.assertNotIn(marker, message)
 
     def run_cli(self, *args: str) -> subprocess.CompletedProcess[bytes]:
         return subprocess.run(
@@ -453,6 +466,70 @@ class PrivateLeakagePolicyTest(unittest.TestCase):
                     load_private_leakage_policy(repo_root=repo, policy_root=policy)
             self.assertNotIn(str(policy), str(context.exception))
             self.assertNotIn("private-path-secret", str(context.exception))
+
+    def test_directory_resolution_oserror_is_sanitized(self) -> None:
+        temporary, repo, policy = self.make_roots()
+        with temporary:
+            self.write_policy(policy)
+            error = OSError(f"{PRIVATE_PATH_MARKER} {FILESYSTEM_SECRET}")
+            with mock.patch.object(Path, "resolve", side_effect=error):
+                with self.assertRaises(ValueError) as context:
+                    load_private_leakage_policy(repo_root=repo, policy_root=policy)
+            self.assertOperationalFailureSafe(context)
+
+    def test_directory_resolution_runtimeerror_is_sanitized(self) -> None:
+        temporary, repo, policy = self.make_roots()
+        with temporary:
+            self.write_policy(policy)
+            error = RuntimeError(f"{PRIVATE_PATH_MARKER} {FILESYSTEM_SECRET}")
+            with mock.patch.object(Path, "resolve", side_effect=error):
+                with self.assertRaises(ValueError) as context:
+                    load_private_leakage_policy(repo_root=repo, policy_root=policy)
+            self.assertOperationalFailureSafe(context)
+
+    def test_directory_probe_oserror_is_sanitized(self) -> None:
+        temporary, repo, policy = self.make_roots()
+        with temporary:
+            self.write_policy(policy)
+            error = OSError(f"{PRIVATE_PATH_MARKER} {FILESYSTEM_SECRET}")
+            with mock.patch.object(Path, "exists", side_effect=error):
+                with self.assertRaises(ValueError) as context:
+                    load_private_leakage_policy(repo_root=repo, policy_root=policy)
+            self.assertOperationalFailureSafe(context)
+
+    def test_policy_file_probe_oserror_is_sanitized(self) -> None:
+        temporary, repo, policy = self.make_roots()
+        with temporary:
+            self.write_policy(policy)
+            error = OSError(f"{PRIVATE_PATH_MARKER} {FILESYSTEM_SECRET}")
+            with mock.patch.object(Path, "is_file", side_effect=error):
+                with self.assertRaises(ValueError) as context:
+                    load_private_leakage_policy(repo_root=repo, policy_root=policy)
+            self.assertOperationalFailureSafe(context)
+
+    def test_cli_operational_error_returns_two_without_private_details(self) -> None:
+        temporary, repo, policy = self.make_roots()
+        with temporary:
+            self.write_policy(policy)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            error = RuntimeError(f"{PRIVATE_PATH_MARKER} {FILESYSTEM_SECRET} {SECRET}")
+            with mock.patch.object(Path, "resolve", side_effect=error):
+                with redirect_stdout(stdout), redirect_stderr(stderr):
+                    result = labos_benchmark.main(
+                        [
+                            "validate-private-leakage-policy",
+                            "--repo-root",
+                            str(repo),
+                            "--policy-root",
+                            str(policy),
+                        ]
+                    )
+            self.assertEqual(result, 2)
+            self.assertEqual(stdout.getvalue(), "")
+            for marker in (PRIVATE_PATH_MARKER, FILESYSTEM_SECRET, SECRET):
+                self.assertNotIn(marker, stderr.getvalue())
+            self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_cli_valid_policy_returns_zero(self) -> None:
         temporary, repo, policy = self.make_roots()

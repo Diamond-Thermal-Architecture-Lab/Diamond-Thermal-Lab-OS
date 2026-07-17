@@ -85,19 +85,22 @@ def load_private_leakage_policy(
     policy_root: Path,
     additional_forbidden_roots: Iterable[Path] = (),
 ) -> LoadedPrivateLeakagePolicy:
-    resolved_policy_root = _validate_external_policy_storage(
-        repo_root=repo_root,
-        policy_root=policy_root,
-        additional_forbidden_roots=additional_forbidden_roots,
-    )
-    policy_path = resolved_policy_root / PRIVATE_LEAKAGE_POLICY_FILENAME
-    data = _read_policy_bytes(policy_path)
-    policy = parse_private_leakage_policy_bytes(data)
-    return LoadedPrivateLeakagePolicy(
-        policy=policy,
-        byte_length=len(data),
-        sha256=sha256_bytes(data),
-    )
+    try:
+        resolved_policy_root = _validate_external_policy_storage(
+            repo_root=repo_root,
+            policy_root=policy_root,
+            additional_forbidden_roots=additional_forbidden_roots,
+        )
+        policy_path = resolved_policy_root / PRIVATE_LEAKAGE_POLICY_FILENAME
+        data = _read_policy_bytes(policy_path)
+        policy = parse_private_leakage_policy_bytes(data)
+        return LoadedPrivateLeakagePolicy(
+            policy=policy,
+            byte_length=len(data),
+            sha256=sha256_bytes(data),
+        )
+    except (OSError, RuntimeError) as exc:
+        raise ValueError("private leakage policy could not be safely loaded") from exc
 
 
 def summarize_private_leakage_policy(
@@ -220,24 +223,27 @@ def _validate_external_policy_storage(
 
 
 def _resolve_existing_directory(path: Path, label: str) -> Path:
-    if path.is_symlink():
-        raise ValueError(f"{label} must be a non-symlink directory")
-    if not path.exists() or not path.is_dir():
-        raise ValueError(f"{label} must be an existing directory")
-    return path.resolve()
+    try:
+        if path.is_symlink():
+            raise ValueError(f"{label} must be a non-symlink directory")
+        if not path.exists() or not path.is_dir():
+            raise ValueError(f"{label} must be an existing directory")
+        return path.resolve()
+    except (OSError, RuntimeError) as exc:
+        raise ValueError(f"{label} could not be safely inspected") from exc
 
 
 def _read_policy_bytes(path: Path) -> bytes:
-    if path.is_symlink():
-        raise ValueError("private leakage policy file is not a regular non-symlink file")
-    if not path.exists():
-        raise ValueError("private leakage policy file is missing")
-    if not path.is_file():
-        raise ValueError("private leakage policy file is not a regular non-symlink file")
     try:
+        if path.is_symlink():
+            raise ValueError("private leakage policy file is not a regular non-symlink file")
+        if not path.exists():
+            raise ValueError("private leakage policy file is missing")
+        if not path.is_file():
+            raise ValueError("private leakage policy file is not a regular non-symlink file")
         data = path.read_bytes()
-    except OSError as exc:
-        raise ValueError("private leakage policy file could not be read") from exc
+    except (OSError, RuntimeError) as exc:
+        raise ValueError("private leakage policy file could not be safely inspected or read") from exc
     if not data:
         raise ValueError("private leakage policy file is empty")
     return data
