@@ -76,6 +76,12 @@ Candidate selection, sealed relevance registration, Blind Input Packet
 construction, phase-one execution, evidence reveal, and scoring must follow that
 protocol in order.
 
+Candidate-independent benchmark hash authority, committed Git-object identity,
+and deterministic tree hashing are documented in
+[`BENCHMARK_INTEGRITY_GUIDE.md`](BENCHMARK_INTEGRITY_GUIDE.md).
+Sealed-manifest, leakage-audit, and execution-baseline infrastructure remain
+separate Phase 0.5 gates before candidate screening.
+
 Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:
 
 ```bash
