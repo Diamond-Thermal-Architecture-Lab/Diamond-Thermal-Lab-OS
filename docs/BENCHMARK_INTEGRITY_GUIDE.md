@@ -64,4 +64,4 @@ This Phase 0.5A PR does not implement sealed manifests, leakage scanning, execut
 
 ## 11. Deferred Infrastructure
 
-Later Phase 0.5 work should add sealed-manifest validation, private leakage-policy scanning, and execution-baseline records in separate reviewed PRs before candidate screening begins.
+Later Phase 0.5 work should add private leakage-policy scanning and execution-baseline records in separate reviewed PRs before candidate screening begins.

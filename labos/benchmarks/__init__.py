@@ -15,6 +15,22 @@ from labos.benchmarks.integrity import (
     normalized_lf_sha256,
     sha256_bytes,
 )
+from labos.benchmarks.sealed_manifest import (
+    M15B_SEALED_FILENAMES,
+    SealedArtifactRecord,
+    SealedManifest,
+    SealedPresenceFinding,
+    SealedVerificationFinding,
+    build_sealed_manifest,
+    find_sealed_presence,
+    load_sealed_manifest,
+    parse_sealed_manifest_bytes,
+    serialize_sealed_manifest,
+    validate_registered_at_utc,
+    validate_sealed_filename,
+    verify_sealed_manifest,
+    write_new_sealed_manifest,
+)
 
 __all__ = [
     "TREE_HASH_ALGORITHM",
@@ -30,4 +46,18 @@ __all__ = [
     "normalized_lf_bytes",
     "normalized_lf_sha256",
     "sha256_bytes",
+    "M15B_SEALED_FILENAMES",
+    "SealedArtifactRecord",
+    "SealedManifest",
+    "SealedPresenceFinding",
+    "SealedVerificationFinding",
+    "build_sealed_manifest",
+    "find_sealed_presence",
+    "load_sealed_manifest",
+    "parse_sealed_manifest_bytes",
+    "serialize_sealed_manifest",
+    "validate_registered_at_utc",
+    "validate_sealed_filename",
+    "verify_sealed_manifest",
+    "write_new_sealed_manifest",
 ]
