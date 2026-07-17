@@ -19,6 +19,13 @@ from labos.benchmarks.integrity import (  # noqa: E402
     normalized_lf_bytes,
     sha256_bytes,
 )
+from labos.benchmarks.sealed_manifest import (  # noqa: E402
+    build_sealed_manifest,
+    find_sealed_presence,
+    load_sealed_manifest,
+    verify_sealed_manifest,
+    write_new_sealed_manifest,
+)
 
 
 def _print_json(data: dict) -> None:
@@ -113,6 +120,87 @@ def cmd_hash_tree(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_build_sealed_manifest(args: argparse.Namespace) -> int:
+    manifest = build_sealed_manifest(
+        repo_root=Path(args.repo_root),
+        sealed_root=Path(args.sealed_root),
+        artifact_filenames=args.artifact_filename,
+        protocol_version=args.protocol_version,
+        registered_at_utc=args.registered_at,
+        additional_forbidden_roots=[Path(path) for path in args.forbidden_root],
+    )
+    output = Path(args.output)
+    write_new_sealed_manifest(output, manifest, sealed_root=Path(args.sealed_root))
+    _print_json(
+        {
+            "artifact_count": len(manifest.sealed_artifacts),
+            "filenames": [record.filename for record in manifest.sealed_artifacts],
+            "manifest_version": manifest.manifest_version,
+            "output": output.as_posix(),
+            "protocol_version": manifest.protocol_version,
+            "registered_at_utc": manifest.registered_at_utc,
+        }
+    )
+    return 0
+
+
+def cmd_validate_sealed_manifest(args: argparse.Namespace) -> int:
+    expected = args.expected_filename if args.expected_filename else None
+    manifest = load_sealed_manifest(Path(args.manifest), expected_filenames=expected)
+    result = {
+        "artifact_count": len(manifest.sealed_artifacts),
+        "filenames": [record.filename for record in manifest.sealed_artifacts],
+        "manifest_version": manifest.manifest_version,
+        "protocol_version": manifest.protocol_version,
+        "registered_at_utc": manifest.registered_at_utc,
+        "valid": True,
+    }
+    if args.json:
+        _print_json(result)
+    else:
+        print(f"valid sealed manifest: {len(manifest.sealed_artifacts)} artifacts")
+    return 0
+
+
+def cmd_verify_sealed_manifest(args: argparse.Namespace) -> int:
+    expected = args.expected_filename if args.expected_filename else None
+    manifest = load_sealed_manifest(Path(args.manifest), expected_filenames=expected)
+    findings = verify_sealed_manifest(
+        manifest,
+        repo_root=Path(args.repo_root),
+        sealed_root=Path(args.sealed_root),
+        additional_forbidden_roots=[Path(path) for path in args.forbidden_root],
+    )
+    result = {
+        "finding_count": len(findings),
+        "findings": [asdict(finding) for finding in findings],
+        "valid": not findings,
+    }
+    if args.json:
+        _print_json(result)
+    else:
+        print("sealed manifest verification passed" if not findings else f"sealed manifest verification found {len(findings)} issue(s)")
+    return 0 if not findings else 1
+
+
+def cmd_check_sealed_absence(args: argparse.Namespace) -> int:
+    findings = find_sealed_presence(
+        roots=[Path(path) for path in args.root],
+        forbidden_filenames=args.filename,
+        ignored_directory_names=args.ignore_directory,
+    )
+    result = {
+        "clean": not findings,
+        "finding_count": len(findings),
+        "findings": [asdict(finding) for finding in findings],
+    }
+    if args.json:
+        _print_json(result)
+    else:
+        print("sealed filename absence check passed" if not findings else f"sealed filename absence check found {len(findings)} issue(s)")
+    return 0 if not findings else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Lab OS benchmark integrity helpers.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -138,6 +226,38 @@ def build_parser() -> argparse.ArgumentParser:
     hash_tree.add_argument("--ignore-suffix", action="append", default=[".pyc", ".pyo"])
     hash_tree.add_argument("--json", action="store_true")
     hash_tree.set_defaults(func=cmd_hash_tree)
+
+    build_manifest = subparsers.add_parser("build-sealed-manifest")
+    build_manifest.add_argument("--repo-root", required=True)
+    build_manifest.add_argument("--sealed-root", required=True)
+    build_manifest.add_argument("--protocol-version", required=True)
+    build_manifest.add_argument("--registered-at", required=True)
+    build_manifest.add_argument("--artifact-filename", action="append", required=True)
+    build_manifest.add_argument("--output", required=True)
+    build_manifest.add_argument("--forbidden-root", action="append", default=[])
+    build_manifest.set_defaults(func=cmd_build_sealed_manifest)
+
+    validate_manifest = subparsers.add_parser("validate-sealed-manifest")
+    validate_manifest.add_argument("manifest")
+    validate_manifest.add_argument("--expected-filename", action="append", default=[])
+    validate_manifest.add_argument("--json", action="store_true")
+    validate_manifest.set_defaults(func=cmd_validate_sealed_manifest)
+
+    verify_manifest = subparsers.add_parser("verify-sealed-manifest")
+    verify_manifest.add_argument("manifest")
+    verify_manifest.add_argument("--repo-root", required=True)
+    verify_manifest.add_argument("--sealed-root", required=True)
+    verify_manifest.add_argument("--forbidden-root", action="append", default=[])
+    verify_manifest.add_argument("--expected-filename", action="append", default=[])
+    verify_manifest.add_argument("--json", action="store_true")
+    verify_manifest.set_defaults(func=cmd_verify_sealed_manifest)
+
+    check_absence = subparsers.add_parser("check-sealed-absence")
+    check_absence.add_argument("--root", action="append", required=True)
+    check_absence.add_argument("--filename", action="append", required=True)
+    check_absence.add_argument("--ignore-directory", action="append", default=[".git", "__pycache__"])
+    check_absence.add_argument("--json", action="store_true")
+    check_absence.set_defaults(func=cmd_check_sealed_absence)
 
     return parser
 

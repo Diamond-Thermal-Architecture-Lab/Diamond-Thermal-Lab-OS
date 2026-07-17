@@ -82,6 +82,13 @@ and deterministic tree hashing are documented in
 Sealed-manifest, leakage-audit, and execution-baseline infrastructure remain
 separate Phase 0.5 gates before candidate screening.
 
+External sealed-artifact hashing, strict registration-manifest validation,
+reveal-time byte verification, and sealed-filename absence auditing are
+documented in
+[`BENCHMARK_SEALING_GUIDE.md`](BENCHMARK_SEALING_GUIDE.md).
+Private leakage-policy scanning and execution-baseline verification remain
+separate Phase 0.5 gates before candidate screening.
+
 Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:
 
 ```bash
