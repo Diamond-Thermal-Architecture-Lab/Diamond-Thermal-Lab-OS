@@ -1,0 +1,14 @@
+{
+  "artifact_kind": "committed_git_object",
+  "bare_cr_count": 0,
+  "byte_length": 34793,
+  "content_sha256": "4c5a5c09fb0822f70c87fff9f6a5162bd318d72da18cd4909d60a0b0f8a4e9b5",
+  "crlf_count": 0,
+  "final_newline": true,
+  "git_blob_oid": "0c142382d7f94a1cfcc19f065d21cb61fe1f5c3e",
+  "lf_count": 1100,
+  "path": "docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md",
+  "protocol_merge_commit": "e35476d5fe4ccfa94f8438a7ef1fbf569fd67aa2",
+  "record_version": "1.0",
+  "utf8_bom": false
+}
