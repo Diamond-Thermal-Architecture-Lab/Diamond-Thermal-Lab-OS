@@ -23,6 +23,11 @@ from labos.benchmarks.leakage_policy import (  # noqa: E402
     load_private_leakage_policy,
     summarize_private_leakage_policy,
 )
+from labos.benchmarks.leakage_scan import (  # noqa: E402
+    LeakageScanRoot,
+    scan_private_leakage,
+    serialize_leakage_audit_report,
+)
 from labos.benchmarks.sealed_manifest import (  # noqa: E402
     build_sealed_manifest,
     find_sealed_presence,
@@ -225,6 +230,36 @@ def cmd_validate_private_leakage_policy(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_scan_private_leakage(args: argparse.Namespace) -> int:
+    roots: list[LeakageScanRoot] = []
+    for value in args.scan_root:
+        if "=" not in value:
+            raise ValueError("invalid scan root specification")
+        root_id, path = value.split("=", 1)
+        if not root_id or not path:
+            raise ValueError("invalid scan root specification")
+        roots.append(LeakageScanRoot(root_id=root_id, path=Path(path)))
+    report = scan_private_leakage(
+        repo_root=Path(args.repo_root),
+        policy_root=Path(args.policy_root),
+        scan_roots=roots,
+        additional_forbidden_roots=[Path(path) for path in args.forbidden_root],
+    )
+    if args.json:
+        sys.stdout.buffer.write(serialize_leakage_audit_report(report))
+    else:
+        print(
+            "audit "
+            f"status={report.status} "
+            f"policy_sha256={report.policy_sha256} "
+            f"roots={report.root_count} "
+            f"entries={report.entry_count} "
+            f"decoded_files={report.decoded_file_count} "
+            f"findings={report.finding_count}"
+        )
+    return 0 if report.status == "pass" else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Lab OS benchmark integrity helpers.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -289,6 +324,14 @@ def build_parser() -> argparse.ArgumentParser:
     validate_policy.add_argument("--forbidden-root", action="append", default=[])
     validate_policy.add_argument("--json", action="store_true")
     validate_policy.set_defaults(func=cmd_validate_private_leakage_policy)
+
+    scan_policy = subparsers.add_parser("scan-private-leakage")
+    scan_policy.add_argument("--repo-root", required=True)
+    scan_policy.add_argument("--policy-root", required=True)
+    scan_policy.add_argument("--scan-root", action="append", required=True)
+    scan_policy.add_argument("--forbidden-root", action="append", default=[])
+    scan_policy.add_argument("--json", action="store_true")
+    scan_policy.set_defaults(func=cmd_scan_private_leakage)
 
     return parser
 

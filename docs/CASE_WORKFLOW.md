@@ -92,8 +92,11 @@ separate Phase 0.5 gates before candidate screening.
 Private external leakage-policy validation, exact policy-byte identity, opaque
 token IDs, and public-safe validation summaries are documented in
 [`BENCHMARK_LEAKAGE_POLICY_GUIDE.md`](BENCHMARK_LEAKAGE_POLICY_GUIDE.md).
-Role D content scanning, leakage-audit report generation, and execution-baseline
-verification remain separate Phase 0.5 gates before candidate screening.
+
+Explicit-root private leakage scanning and public-safe audit reports are
+documented in [`BENCHMARK_LEAKAGE_SCAN_GUIDE.md`](BENCHMARK_LEAKAGE_SCAN_GUIDE.md).
+Execution-scope and execution-baseline verification remain separate Phase 0.5
+gates before candidate screening.
 
 Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:
 
