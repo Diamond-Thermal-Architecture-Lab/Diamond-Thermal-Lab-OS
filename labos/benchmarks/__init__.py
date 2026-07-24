@@ -27,6 +27,17 @@ from labos.benchmarks.leakage_policy import (
     parse_private_leakage_policy_bytes,
     summarize_private_leakage_policy,
 )
+from labos.benchmarks.leakage_scan import (
+    LEAKAGE_AUDIT_CODES,
+    LEAKAGE_AUDIT_REPORT_VERSION,
+    MAX_SCANNABLE_FILE_BYTES,
+    LeakageAuditFinding,
+    LeakageAuditReport,
+    LeakageScanRoot,
+    parse_leakage_audit_report_bytes,
+    scan_private_leakage,
+    serialize_leakage_audit_report,
+)
 from labos.benchmarks.sealed_manifest import (
     M15B_SEALED_FILENAMES,
     SealedArtifactRecord,
@@ -68,6 +79,15 @@ __all__ = [
     "load_private_leakage_policy",
     "parse_private_leakage_policy_bytes",
     "summarize_private_leakage_policy",
+    "LEAKAGE_AUDIT_CODES",
+    "LEAKAGE_AUDIT_REPORT_VERSION",
+    "MAX_SCANNABLE_FILE_BYTES",
+    "LeakageAuditFinding",
+    "LeakageAuditReport",
+    "LeakageScanRoot",
+    "parse_leakage_audit_report_bytes",
+    "scan_private_leakage",
+    "serialize_leakage_audit_report",
     "M15B_SEALED_FILENAMES",
     "SealedArtifactRecord",
     "SealedManifest",

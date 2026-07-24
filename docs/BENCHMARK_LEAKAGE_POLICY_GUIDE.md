@@ -121,9 +121,9 @@ The command validates storage separation, loads `PRIVATE_LEAKAGE_POLICY.json`, v
 
 Policy validation is not a secrecy guarantee. It does not prove that private information is absent from unavailable files, logs, prompts, attachments, shells, external storage, or prior conversations. It must be paired with role separation, controlled storage, later leakage scanning, and human review.
 
-## 15. Deferred Content Scanner
+## 15. Leakage Scanner
 
-Phase 0.5B2B will add the scanner and safe public audit report. This PR does not scan files, paths, packets, prompts, or conversations and does not generate a leakage-audit report.
+Phase 0.5B2B provides explicit-root scanning, relative-path scanning, strict UTF-8 content scanning, and safe public audit-report generation. It does not scan prompts, conversations, or locations outside caller-supplied roots.
 
 ## 16. Deferred Execution Baseline
 
