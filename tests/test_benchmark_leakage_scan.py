@@ -305,8 +305,10 @@ class LeakageScanTest(unittest.TestCase):
             real_scandir = os.scandir
             substituted = False
 
-            def replace_before_nested_enumeration(path: os.PathLike[str] | str):
+            def replace_before_nested_enumeration(path: os.PathLike[str] | str | int):
                 nonlocal substituted
+                if isinstance(path, int):
+                    return real_scandir(path)
                 if Path(path) == nested and not substituted:
                     substituted = True
                     shutil.rmtree(nested)
@@ -342,8 +344,10 @@ class LeakageScanTest(unittest.TestCase):
             real_scandir = os.scandir
             substituted = False
 
-            def replace_before_root_enumeration(path: os.PathLike[str] | str):
+            def replace_before_root_enumeration(path: os.PathLike[str] | str | int):
                 nonlocal substituted
+                if isinstance(path, int):
+                    return real_scandir(path)
                 if Path(path) == root and not substituted:
                     substituted = True
                     shutil.rmtree(root)
