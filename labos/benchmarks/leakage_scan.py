@@ -88,15 +88,24 @@ def scan_private_leakage(
             repo_root=repo_root,
             policy_root=policy_root,
             additional_forbidden_roots=tuple(additional_forbidden_roots)
-            + tuple(path for _, path in roots),
+            + tuple(path for _, path, _ in roots),
         )
     except (OSError, RuntimeError, UnicodeError) as exc:
         raise ValueError("private leakage audit could not be safely initialized") from exc
 
     findings: dict[tuple[str, str, str, str | None], LeakageAuditFinding] = {}
     counts = _ScanCounts()
-    for root_id, root_path in roots:
-        _scan_directory(root_id, root_path, "", loaded, findings, counts)
+    for root_id, root_path, snapshot in roots:
+        _scan_directory(
+            root_id,
+            root_path,
+            "",
+            loaded,
+            findings,
+            counts,
+            expected_snapshot=snapshot,
+            root_level=True,
+        )
     ordered = tuple(sorted(findings.values(), key=_finding_sort_key))
     report = LeakageAuditReport(
         report_version=LEAKAGE_AUDIT_REPORT_VERSION,
@@ -205,12 +214,14 @@ _FINDING_KEYS = frozenset(
 )
 
 
-def _validate_scan_roots(scan_roots: Iterable[LeakageScanRoot]) -> tuple[tuple[str, Path], ...]:
+def _validate_scan_roots(
+    scan_roots: Iterable[LeakageScanRoot],
+) -> tuple[tuple[str, Path, os.stat_result], ...]:
     try:
         supplied = tuple(scan_roots)
         if not supplied:
             raise ValueError("at least one scan root is required")
-        records: list[tuple[str, Path]] = []
+        records: list[tuple[str, Path, os.stat_result]] = []
         prior_id = ""
         for item in supplied:
             if not isinstance(item, LeakageScanRoot) or not isinstance(item.root_id, str):
@@ -219,14 +230,22 @@ def _validate_scan_roots(scan_roots: Iterable[LeakageScanRoot]) -> tuple[tuple[s
                 raise ValueError("scan root configuration is invalid")
             prior_id = item.root_id
             path = item.path
-            if not isinstance(path, Path) or path.is_symlink() or not path.exists() or not path.is_dir():
+            if not isinstance(path, Path):
                 raise ValueError("scan root configuration is invalid")
-            records.append((item.root_id, path.resolve()))
-        for index, (_, first) in enumerate(records):
-            for _, second in records[index + 1 :]:
+            initial = _directory_snapshot(path)
+            resolved = path.resolve()
+            current = _directory_snapshot(path)
+            resolved_snapshot = _directory_snapshot(resolved)
+            if not _same_object_identity(initial, current) or not _same_object_identity(initial, resolved_snapshot):
+                raise ValueError("scan root configuration is invalid")
+            records.append((item.root_id, resolved, resolved_snapshot))
+        for index, (_, first, _) in enumerate(records):
+            for _, second, _ in records[index + 1 :]:
                 if _paths_overlap(first, second):
                     raise ValueError("scan roots must be disjoint")
         return tuple(records)
+    except (_DirectorySymlink, _DirectoryNonDirectory, _DirectoryChanged):
+        raise ValueError("scan root configuration is invalid")
     except (OSError, RuntimeError) as exc:
         raise ValueError("scan root configuration could not be safely inspected") from exc
 
@@ -238,10 +257,35 @@ def _scan_directory(
     loaded: LoadedPrivateLeakagePolicy,
     findings: dict[tuple[str, str, str, str | None], LeakageAuditFinding],
     counts: _ScanCounts,
+    *,
+    expected_snapshot: os.stat_result | None,
+    root_level: bool,
 ) -> None:
     try:
+        before = _directory_snapshot(directory, expected_snapshot)
         with os.scandir(directory) as iterator:
             entries = sorted(iterator, key=lambda entry: entry.name)
+        after = _directory_snapshot(directory, expected_snapshot)
+        if not _same_stable_snapshot(before, after):
+            raise _DirectoryChanged
+    except _DirectorySymlink:
+        _handle_directory_substitution(
+            root_id,
+            relative_directory,
+            findings,
+            root_level=root_level,
+            symlink=True,
+        )
+        return
+    except (_DirectoryChanged, _DirectoryNonDirectory):
+        _handle_directory_substitution(
+            root_id,
+            relative_directory,
+            findings,
+            root_level=root_level,
+            symlink=False,
+        )
+        return
     except (OSError, RuntimeError):
         _add_structural(findings, "directory_read_error", root_id, relative_directory)
         return
@@ -269,7 +313,16 @@ def _scan_entry(
         _add_structural(findings, "entry_inspection_error", root_id, relative_path)
         return
     if stat.S_ISDIR(before.st_mode):
-        _scan_directory(root_id, Path(entry.path), relative_path, loaded, findings, counts)
+        _scan_directory(
+            root_id,
+            Path(entry.path),
+            relative_path,
+            loaded,
+            findings,
+            counts,
+            expected_snapshot=before,
+            root_level=False,
+        )
         return
     if not stat.S_ISREG(before.st_mode):
         _add_structural(findings, "unsafe_special_file", root_id, relative_path)
@@ -306,7 +359,7 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
         opened = os.fstat(descriptor)
         if not stat.S_ISREG(opened.st_mode):
             return "entry_inspection_error", None
-        if not _same_identity(before, opened):
+        if not _same_stable_snapshot(before, opened):
             return "entry_inspection_error", None
         try:
             current = os.lstat(path)
@@ -314,20 +367,32 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
             return "entry_inspection_error", None
         if stat.S_ISLNK(current.st_mode):
             return "unsafe_symlink", None
-        if not _same_identity(before, current):
+        if not _same_stable_snapshot(before, current):
             return "entry_inspection_error", None
         if opened.st_size > MAX_SCANNABLE_FILE_BYTES:
             return "oversize_file", None
-        remaining = opened.st_size
+        byte_limit = MAX_SCANNABLE_FILE_BYTES + 1
+        total = 0
         pieces: list[bytes] = []
-        while remaining:
-            chunk = os.read(descriptor, min(1024 * 1024, remaining))
+        while total < byte_limit:
+            chunk = os.read(descriptor, min(1024 * 1024, byte_limit - total))
             if not chunk:
-                return "entry_inspection_error", None
+                break
             pieces.append(chunk)
-            remaining -= len(chunk)
+            total += len(chunk)
+        if total > MAX_SCANNABLE_FILE_BYTES:
+            return "oversize_file", None
         after = os.fstat(descriptor)
-        if not _same_identity(opened, after) or after.st_size != opened.st_size:
+        try:
+            current = os.lstat(path)
+        except OSError:
+            return "entry_inspection_error", None
+        if (
+            total != opened.st_size
+            or not _same_stable_snapshot(before, opened)
+            or not _same_stable_snapshot(opened, after)
+            or not _same_stable_snapshot(before, current)
+        ):
             return "entry_inspection_error", None
         return "ok", b"".join(pieces)
     except (OSError, RuntimeError):
@@ -345,18 +410,70 @@ def _open_failure_code(path: Path, before: os.stat_result) -> str:
         current = os.lstat(path)
         if stat.S_ISLNK(current.st_mode):
             return "unsafe_symlink"
-        return "entry_inspection_error" if not _same_identity(before, current) else "file_read_error"
+        return "entry_inspection_error" if not _same_object_identity(before, current) else "file_read_error"
     except OSError:
         return "entry_inspection_error"
 
 
-def _same_identity(first: os.stat_result, second: os.stat_result) -> bool:
+def _same_object_identity(first: os.stat_result, second: os.stat_result) -> bool:
     if first.st_dev and first.st_ino and second.st_dev and second.st_ino:
         return first.st_dev == second.st_dev and first.st_ino == second.st_ino
     return (
         stat.S_IFMT(first.st_mode) == stat.S_IFMT(second.st_mode)
         and first.st_size == second.st_size
+    )
+
+
+def _same_stable_snapshot(first: os.stat_result, second: os.stat_result) -> bool:
+    return (
+        _same_object_identity(first, second)
+        and first.st_size == second.st_size
         and first.st_mtime_ns == second.st_mtime_ns
+        and first.st_ctime_ns == second.st_ctime_ns
+    )
+
+
+class _DirectorySymlink(Exception):
+    pass
+
+
+class _DirectoryNonDirectory(Exception):
+    pass
+
+
+class _DirectoryChanged(Exception):
+    pass
+
+
+def _directory_snapshot(
+    path: Path,
+    expected_snapshot: os.stat_result | None = None,
+) -> os.stat_result:
+    snapshot = os.lstat(path)
+    if stat.S_ISLNK(snapshot.st_mode):
+        raise _DirectorySymlink
+    if not stat.S_ISDIR(snapshot.st_mode):
+        raise _DirectoryNonDirectory
+    if expected_snapshot is not None and not _same_stable_snapshot(expected_snapshot, snapshot):
+        raise _DirectoryChanged
+    return snapshot
+
+
+def _handle_directory_substitution(
+    root_id: str,
+    relative_directory: str,
+    findings: dict[tuple[str, str, str, str | None], LeakageAuditFinding],
+    *,
+    root_level: bool,
+    symlink: bool,
+) -> None:
+    if root_level:
+        raise ValueError("scan root changed before enumeration")
+    _add_structural(
+        findings,
+        "unsafe_symlink" if symlink else "entry_inspection_error",
+        root_id,
+        relative_directory,
     )
 
 

@@ -4,9 +4,11 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
@@ -265,7 +267,17 @@ class LeakageScanTest(unittest.TestCase):
             with mock.patch("labos.benchmarks.leakage_scan.os.scandir", side_effect=OSError(PATH_SECRET)):
                 report = self.scan(repo, policy, self.root(root))
             self.assertIn("directory_read_error", [item.code for item in report.findings])
-            with mock.patch("labos.benchmarks.leakage_scan.os.lstat", side_effect=OSError(PATH_SECRET)):
+            real_lstat = os.lstat
+
+            def fail_child_inspection(path: os.PathLike[str] | str):
+                if Path(path) == child:
+                    raise OSError(PATH_SECRET)
+                return real_lstat(path)
+
+            with mock.patch(
+                "labos.benchmarks.leakage_scan.os.lstat",
+                side_effect=fail_child_inspection,
+            ):
                 report = self.scan(repo, policy, self.root(root))
             self.assertIn("entry_inspection_error", [item.code for item in report.findings])
             self.assertNotIn(PATH_SECRET, serialize_leakage_audit_report(report).decode())
@@ -278,6 +290,157 @@ class LeakageScanTest(unittest.TestCase):
             with mock.patch("labos.benchmarks.leakage_scan.os.read", side_effect=OSError(PATH_SECRET)):
                 report = self.scan(repo, policy, self.root(root))
             self.assertIn("file_read_error", [item.code for item in report.findings])
+
+    def test_nested_directory_symlink_substitution_discards_external_entries(self) -> None:
+        temporary, repo, policy, root = self.make_layout()
+        with temporary:
+            self.write_policy(policy)
+            nested = root / "nested"
+            nested.mkdir()
+            (root / "sibling.txt").write_text("safe", encoding="utf-8")
+            external = Path(temporary.name) / "external"
+            external.mkdir()
+            external_child = external / (SECRET + "-external.txt")
+            external_child.write_text(SECRET, encoding="utf-8")
+            real_scandir = os.scandir
+            substituted = False
+
+            def replace_before_nested_enumeration(path: os.PathLike[str] | str):
+                nonlocal substituted
+                if Path(path) == nested and not substituted:
+                    substituted = True
+                    shutil.rmtree(nested)
+                    try:
+                        nested.symlink_to(external, target_is_directory=True)
+                    except (OSError, NotImplementedError) as exc:
+                        self.skipTest(f"symlink unavailable: {exc}")
+                return real_scandir(path)
+
+            with mock.patch(
+                "labos.benchmarks.leakage_scan.os.scandir",
+                side_effect=replace_before_nested_enumeration,
+            ):
+                report = self.scan(repo, policy, self.root(root))
+            self.assertTrue(substituted)
+            self.assertIn("unsafe_symlink", [item.code for item in report.findings])
+            self.assertNotIn("content_match", [item.code for item in report.findings])
+            self.assertEqual(report.entry_count, 2)
+            self.assertEqual(report.decoded_file_count, 1)
+            self.assertEqual(report.scanned_byte_count, len(b"safe"))
+            self.assertNotIn(
+                hashlib.sha256(("ROOT-0001\0nested/" + external_child.name).encode()).hexdigest(),
+                [item.path_sha256 for item in report.findings],
+            )
+
+    def test_root_symlink_substitution_is_a_safe_operational_failure(self) -> None:
+        temporary, repo, policy, root = self.make_layout()
+        with temporary:
+            self.write_policy(policy)
+            external = Path(temporary.name) / "external"
+            external.mkdir()
+            (external / "target.txt").write_text(SECRET, encoding="utf-8")
+            real_scandir = os.scandir
+            substituted = False
+
+            def replace_before_root_enumeration(path: os.PathLike[str] | str):
+                nonlocal substituted
+                if Path(path) == root and not substituted:
+                    substituted = True
+                    shutil.rmtree(root)
+                    try:
+                        root.symlink_to(external, target_is_directory=True)
+                    except (OSError, NotImplementedError) as exc:
+                        self.skipTest(f"symlink unavailable: {exc}")
+                return real_scandir(path)
+
+            with mock.patch(
+                "labos.benchmarks.leakage_scan.os.scandir",
+                side_effect=replace_before_root_enumeration,
+            ), mock.patch("labos.benchmarks.leakage_scan._add_content_matches") as content_matches:
+                with self.assertRaises(ValueError) as context:
+                    self.scan(repo, policy, self.root(root))
+            self.assertTrue(substituted)
+            self.assertEqual(content_matches.call_count, 0)
+            self.assertNotIn(str(root), str(context.exception))
+            self.assertNotIn(str(external), str(context.exception))
+            self.assertNotIn(SECRET, str(context.exception))
+
+            root.unlink()
+            root.mkdir()
+            substituted = False
+            from scripts import labos_benchmark
+
+            stream = io.StringIO()
+            with mock.patch(
+                "labos.benchmarks.leakage_scan.os.scandir",
+                side_effect=replace_before_root_enumeration,
+            ), redirect_stderr(stream):
+                exit_code = labos_benchmark.main(
+                    [
+                        "scan-private-leakage",
+                        "--repo-root",
+                        str(repo),
+                        "--policy-root",
+                        str(policy),
+                        "--scan-root",
+                        "ROOT-0001=" + str(root),
+                    ]
+                )
+            self.assertTrue(substituted)
+            self.assertEqual(exit_code, 2)
+            self.assertNotIn(str(root), stream.getvalue())
+            self.assertNotIn(str(external), stream.getvalue())
+            self.assertNotIn(SECRET, stream.getvalue())
+
+    def test_zero_size_metadata_with_readable_bytes_fails_closed(self) -> None:
+        temporary, repo, policy, root = self.make_layout()
+        with temporary:
+            self.write_policy(policy)
+            target = root / "empty.txt"
+            target.write_bytes(b"")
+            real_read = os.read
+            calls = 0
+
+            def readable_zero_size(descriptor: int, size: int) -> bytes:
+                nonlocal calls
+                calls += 1
+                return SECRET.encode("utf-8") if calls == 1 else real_read(descriptor, size)
+
+            with mock.patch("labos.benchmarks.leakage_scan.os.read", side_effect=readable_zero_size):
+                report = self.scan(repo, policy, self.root(root))
+            self.assertGreaterEqual(calls, 1)
+            self.assertEqual(report.status, "fail")
+            self.assertIn("entry_inspection_error", [item.code for item in report.findings])
+            self.assertNotIn("content_match", [item.code for item in report.findings])
+            self.assertEqual(report.scanned_byte_count, 0)
+            self.assert_no_secret(serialize_leakage_audit_report(report), root, policy, repo)
+
+    def test_same_size_in_place_mutation_fails_closed(self) -> None:
+        temporary, repo, policy, root = self.make_layout()
+        with temporary:
+            self.write_policy(policy)
+            target = root / "mutable.txt"
+            target.write_text("x" * len(SECRET), encoding="utf-8")
+            real_read = os.read
+            mutated = False
+
+            def mutate_after_read(descriptor: int, size: int) -> bytes:
+                nonlocal mutated
+                data = real_read(descriptor, size)
+                if not mutated:
+                    mutated = True
+                    target.write_text(SECRET, encoding="utf-8")
+                    timestamp = time.time_ns() + 2_000_000_000
+                    os.utime(target, ns=(timestamp, timestamp))
+                return data
+
+            with mock.patch("labos.benchmarks.leakage_scan.os.read", side_effect=mutate_after_read):
+                report = self.scan(repo, policy, self.root(root))
+            self.assertTrue(mutated)
+            self.assertIn("entry_inspection_error", [item.code for item in report.findings])
+            self.assertNotIn("content_match", [item.code for item in report.findings])
+            self.assertEqual(report.scanned_byte_count, 0)
+            self.assert_no_secret(serialize_leakage_audit_report(report), root, policy, repo)
 
     def test_special_file_is_structural_when_supported(self) -> None:
         if not hasattr(os, "mkfifo"):
