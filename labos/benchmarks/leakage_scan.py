@@ -359,7 +359,10 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
         opened = os.fstat(descriptor)
         if not stat.S_ISREG(opened.st_mode):
             return "entry_inspection_error", None
-        if not _same_stable_snapshot(before, opened):
+        # Windows can report a discontinuous ctime after a descriptor is
+        # opened. Identity, size, and mtime protect path snapshots; ctime is
+        # retained for the opened-descriptor snapshots around the read.
+        if not _same_stable_snapshot(before, opened, compare_ctime=False):
             return "entry_inspection_error", None
         try:
             current = os.lstat(path)
@@ -367,7 +370,7 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
             return "entry_inspection_error", None
         if stat.S_ISLNK(current.st_mode):
             return "unsafe_symlink", None
-        if not _same_stable_snapshot(before, current):
+        if not _same_stable_snapshot(before, current, compare_ctime=False):
             return "entry_inspection_error", None
         if opened.st_size > MAX_SCANNABLE_FILE_BYTES:
             return "oversize_file", None
@@ -389,9 +392,9 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
             return "entry_inspection_error", None
         if (
             total != opened.st_size
-            or not _same_stable_snapshot(before, opened)
+            or not _same_stable_snapshot(before, opened, compare_ctime=False)
             or not _same_stable_snapshot(opened, after)
-            or not _same_stable_snapshot(before, current)
+            or not _same_stable_snapshot(before, current, compare_ctime=False)
         ):
             return "entry_inspection_error", None
         return "ok", b"".join(pieces)
@@ -424,13 +427,18 @@ def _same_object_identity(first: os.stat_result, second: os.stat_result) -> bool
     )
 
 
-def _same_stable_snapshot(first: os.stat_result, second: os.stat_result) -> bool:
-    return (
+def _same_stable_snapshot(
+    first: os.stat_result,
+    second: os.stat_result,
+    *,
+    compare_ctime: bool = True,
+) -> bool:
+    stable = (
         _same_object_identity(first, second)
         and first.st_size == second.st_size
         and first.st_mtime_ns == second.st_mtime_ns
-        and first.st_ctime_ns == second.st_ctime_ns
     )
+    return stable and (not compare_ctime or first.st_ctime_ns == second.st_ctime_ns)
 
 
 class _DirectorySymlink(Exception):
