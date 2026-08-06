@@ -5,6 +5,7 @@ import io
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -12,6 +13,7 @@ import time
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from labos.benchmarks.leakage_scan import (
@@ -211,6 +213,37 @@ class LeakageScanTest(unittest.TestCase):
             (root / "text.txt").write_bytes(b"aaa\x00AbC\xef\xbb\xbfxx")
             findings = [item.token_id for item in self.scan(repo, policy, self.root(root)).findings if item.code == "content_match"]
             self.assertEqual(findings, ["LKG-0001", "LKG-0002", "LKG-0003"])
+
+    def test_path_and_descriptor_ctime_difference_does_not_reject_unchanged_file(self) -> None:
+        temporary, repo, policy, root = self.make_layout()
+        with temporary:
+            self.write_policy(policy)
+            content = b"ordinary file"
+            (root / "plain.txt").write_bytes(content)
+            real_fstat = os.fstat
+
+            def descriptor_snapshot_with_distinct_ctime(descriptor: int) -> os.stat_result | SimpleNamespace:
+                snapshot = real_fstat(descriptor)
+                if not stat.S_ISREG(snapshot.st_mode):
+                    return snapshot
+                return SimpleNamespace(
+                    st_mode=snapshot.st_mode,
+                    st_dev=snapshot.st_dev,
+                    st_ino=snapshot.st_ino,
+                    st_size=snapshot.st_size,
+                    st_mtime_ns=snapshot.st_mtime_ns,
+                    st_ctime_ns=snapshot.st_ctime_ns + 1,
+                )
+
+            with mock.patch(
+                "labos.benchmarks.leakage_scan.os.fstat",
+                side_effect=descriptor_snapshot_with_distinct_ctime,
+            ):
+                report = self.scan(repo, policy, self.root(root))
+            self.assertEqual(report.status, "pass")
+            self.assertEqual(report.decoded_file_count, 1)
+            self.assertEqual(report.scanned_byte_count, len(content))
+            self.assertNotIn("entry_inspection_error", [item.code for item in report.findings])
 
     def test_repeated_content_occurrences_are_aggregated(self) -> None:
         temporary, repo, policy, root = self.make_layout()
