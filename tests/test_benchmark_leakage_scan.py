@@ -245,7 +245,121 @@ class LeakageScanTest(unittest.TestCase):
             self.assertEqual(report.scanned_byte_count, len(content))
             self.assertNotIn("entry_inspection_error", [item.code for item in report.findings])
 
-    def test_before_open_same_size_restored_mtime_mutation_fails_closed(self) -> None:
+    def test_before_open_same_size_restored_mtime_disk_mutation_fails_closed(self) -> None:
+        temporary, repo, policy, root = self.make_layout()
+        with temporary:
+            self.write_policy(policy)
+            target = root / "race.txt"
+            sensitive = SECRET.encode("utf-8")
+            temporary_clean = b"x" * len(sensitive)
+            self.assertEqual(len(sensitive), len(temporary_clean))
+            target.write_bytes(sensitive)
+            self.assertEqual(target.read_bytes(), sensitive)
+            real_open = os.open
+            real_lstat = os.lstat
+            real_read = os.read
+            real_close = os.close
+            initial = real_lstat(target)
+            original_times = (initial.st_atime_ns, initial.st_mtime_ns)
+            scanner_before: list[os.stat_result] = []
+            target_descriptor: int | None = None
+            read_calls = 0
+            closed_descriptors: list[int] = []
+            temporary_snapshot: os.stat_result | None = None
+            restored_during_read = False
+
+            def record_lstat(path: os.PathLike[str] | str) -> os.stat_result:
+                snapshot = real_lstat(path)
+                if Path(path) == target:
+                    scanner_before.append(snapshot)
+                return snapshot
+
+            def mutate_before_open(path: os.PathLike[str] | str, flags: int, *args: object, **kwargs: object) -> int:
+                nonlocal target_descriptor, temporary_snapshot
+                if Path(path) != target:
+                    return real_open(path, flags, *args, **kwargs)
+                self.assertEqual(len(scanner_before), 1)
+                self.assertEqual(scanner_before[0].st_size, len(sensitive))
+                self.assertEqual(scanner_before[0].st_mtime_ns, initial.st_mtime_ns)
+                target.write_bytes(temporary_clean)
+                os.utime(target, ns=original_times)
+                temporary_snapshot = real_lstat(target)
+                self.assertEqual(temporary_snapshot.st_dev, initial.st_dev)
+                self.assertEqual(temporary_snapshot.st_ino, initial.st_ino)
+                self.assertEqual(stat.S_IFMT(temporary_snapshot.st_mode), stat.S_IFMT(initial.st_mode))
+                self.assertEqual(temporary_snapshot.st_size, initial.st_size)
+                self.assertEqual(temporary_snapshot.st_mtime_ns, initial.st_mtime_ns)
+                if temporary_snapshot.st_ctime_ns == initial.st_ctime_ns:
+                    self.skipTest(
+                        "filesystem does not expose a distinguishable ctime after an in-place write with restored mtime"
+                    )
+                target_descriptor = real_open(path, flags, *args, **kwargs)
+                return target_descriptor
+
+            def record_read(descriptor: int, size: int) -> bytes:
+                nonlocal read_calls, restored_during_read
+                if descriptor == target_descriptor:
+                    read_calls += 1
+                    data = real_read(descriptor, size)
+                    if read_calls == 1:
+                        self.assertEqual(data, temporary_clean)
+                        target.write_bytes(sensitive)
+                        os.utime(target, ns=original_times)
+                        restored_during_read = True
+                    return data
+                return real_read(descriptor, size)
+
+            def record_close(descriptor: int) -> None:
+                if descriptor == target_descriptor:
+                    closed_descriptors.append(descriptor)
+                real_close(descriptor)
+
+            try:
+                with mock.patch(
+                    "labos.benchmarks.leakage_scan.os.lstat",
+                    side_effect=record_lstat,
+                ), mock.patch(
+                    "labos.benchmarks.leakage_scan.os.open",
+                    side_effect=mutate_before_open,
+                ), mock.patch(
+                    "labos.benchmarks.leakage_scan.os.read",
+                    side_effect=record_read,
+                ), mock.patch(
+                    "labos.benchmarks.leakage_scan.os.close",
+                    side_effect=record_close,
+                ):
+                    report = self.scan(repo, policy, self.root(root))
+            finally:
+                target.write_bytes(sensitive)
+                os.utime(target, ns=original_times)
+
+            restored = real_lstat(target)
+            self.assertIsNotNone(temporary_snapshot)
+            self.assertEqual(target.read_bytes(), sensitive)
+            self.assertEqual(restored.st_dev, initial.st_dev)
+            self.assertEqual(restored.st_ino, initial.st_ino)
+            self.assertEqual(stat.S_IFMT(restored.st_mode), stat.S_IFMT(initial.st_mode))
+            self.assertEqual(restored.st_size, initial.st_size)
+            self.assertEqual(restored.st_mtime_ns, initial.st_mtime_ns)
+            self.assertNotEqual(temporary_snapshot.st_ctime_ns, initial.st_ctime_ns)
+            self.assertEqual(len(scanner_before), 2)
+            self.assertEqual(scanner_before[1].st_dev, initial.st_dev)
+            self.assertEqual(scanner_before[1].st_ino, initial.st_ino)
+            self.assertEqual(scanner_before[1].st_size, initial.st_size)
+            self.assertEqual(scanner_before[1].st_mtime_ns, initial.st_mtime_ns)
+            self.assertNotEqual(scanner_before[1].st_ctime_ns, initial.st_ctime_ns)
+            self.assertIsNotNone(target_descriptor)
+            self.assertEqual(read_calls, 0)
+            self.assertFalse(restored_during_read)
+            self.assertEqual(closed_descriptors, [target_descriptor])
+            codes = [item.code for item in report.findings]
+            self.assertEqual(report.status, "fail")
+            self.assertIn("entry_inspection_error", codes)
+            self.assertNotIn("content_match", codes)
+            self.assertEqual(report.scanned_byte_count, 0)
+            self.assert_no_secret(serialize_leakage_audit_report(report), root, policy, repo)
+
+    def test_before_open_same_size_restored_mtime_snapshot_model_fails_closed(self) -> None:
         temporary, repo, policy, root = self.make_layout()
         with temporary:
             self.write_policy(policy)
@@ -311,6 +425,8 @@ class LeakageScanTest(unittest.TestCase):
                     return temporary_clean
                 return b""
 
+            # This models the path/descriptor snapshot sequence portably. The
+            # preceding test performs the corresponding real disk mutation.
             with mock.patch(
                 "labos.benchmarks.leakage_scan.os.open",
                 side_effect=open_temporary_content,
