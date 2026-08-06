@@ -359,9 +359,8 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
         opened = os.fstat(descriptor)
         if not stat.S_ISREG(opened.st_mode):
             return "entry_inspection_error", None
-        # Windows can report a discontinuous ctime after a descriptor is
-        # opened. Identity, size, and mtime protect path snapshots; ctime is
-        # retained for the opened-descriptor snapshots around the read.
+        # Windows can report a discontinuous ctime across lstat and fstat.
+        # Same-interface path and descriptor comparisons retain ctime.
         if not _same_stable_snapshot(before, opened, compare_ctime=False):
             return "entry_inspection_error", None
         try:
@@ -370,7 +369,7 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
             return "entry_inspection_error", None
         if stat.S_ISLNK(current.st_mode):
             return "unsafe_symlink", None
-        if not _same_stable_snapshot(before, current, compare_ctime=False):
+        if not _same_stable_snapshot(before, current):
             return "entry_inspection_error", None
         if opened.st_size > MAX_SCANNABLE_FILE_BYTES:
             return "oversize_file", None
@@ -394,7 +393,7 @@ def _read_regular_file(path: Path, before: os.stat_result) -> tuple[str, bytes |
             total != opened.st_size
             or not _same_stable_snapshot(before, opened, compare_ctime=False)
             or not _same_stable_snapshot(opened, after)
-            or not _same_stable_snapshot(before, current, compare_ctime=False)
+            or not _same_stable_snapshot(before, current)
         ):
             return "entry_inspection_error", None
         return "ok", b"".join(pieces)

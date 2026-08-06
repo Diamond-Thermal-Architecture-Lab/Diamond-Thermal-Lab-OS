@@ -245,6 +245,108 @@ class LeakageScanTest(unittest.TestCase):
             self.assertEqual(report.scanned_byte_count, len(content))
             self.assertNotIn("entry_inspection_error", [item.code for item in report.findings])
 
+    def test_before_open_same_size_restored_mtime_mutation_fails_closed(self) -> None:
+        temporary, repo, policy, root = self.make_layout()
+        with temporary:
+            self.write_policy(policy)
+            target = root / "race.txt"
+            sensitive = SECRET.encode("utf-8")
+            temporary_clean = b"x" * len(sensitive)
+            target.write_bytes(sensitive)
+            real_open = os.open
+            real_lstat = os.lstat
+            real_fstat = os.fstat
+            initial = real_lstat(target)
+            path_ctime = initial.st_ctime_ns
+            descriptor_ctime = path_ctime + 1
+            final_ctime = path_ctime + 2
+            path_calls = 0
+            read_calls = 0
+            target_opened = False
+            virtual_content = sensitive
+
+            def snapshot(ctime_ns: int) -> SimpleNamespace:
+                return SimpleNamespace(
+                    st_mode=initial.st_mode,
+                    st_dev=initial.st_dev,
+                    st_ino=initial.st_ino,
+                    st_size=initial.st_size,
+                    st_mtime_ns=initial.st_mtime_ns,
+                    st_ctime_ns=ctime_ns,
+                )
+
+            before_snapshot = snapshot(path_ctime)
+            pre_read_path_snapshot = snapshot(path_ctime)
+            final_path_snapshot = snapshot(final_ctime)
+            opened_snapshot = snapshot(descriptor_ctime)
+
+            def staged_lstat(path: os.PathLike[str] | str) -> os.stat_result | SimpleNamespace:
+                nonlocal path_calls, virtual_content
+                if Path(path) != target:
+                    return real_lstat(path)
+                path_calls += 1
+                if path_calls == 1:
+                    return before_snapshot
+                if path_calls == 2:
+                    return pre_read_path_snapshot
+                virtual_content = sensitive
+                return final_path_snapshot
+
+            def open_temporary_content(path: os.PathLike[str] | str, flags: int) -> int:
+                nonlocal target_opened, virtual_content
+                if Path(path) == target:
+                    target_opened = True
+                    virtual_content = temporary_clean
+                return real_open(path, flags)
+
+            def stable_descriptor_snapshot(descriptor: int) -> os.stat_result | SimpleNamespace:
+                current = real_fstat(descriptor)
+                return opened_snapshot if stat.S_ISREG(current.st_mode) else current
+
+            def read_temporary_content(descriptor: int, size: int) -> bytes:
+                nonlocal read_calls
+                read_calls += 1
+                if read_calls == 1:
+                    self.assertEqual(virtual_content, temporary_clean)
+                    return temporary_clean
+                return b""
+
+            with mock.patch(
+                "labos.benchmarks.leakage_scan.os.open",
+                side_effect=open_temporary_content,
+            ), mock.patch(
+                "labos.benchmarks.leakage_scan.os.lstat",
+                side_effect=staged_lstat,
+            ), mock.patch(
+                "labos.benchmarks.leakage_scan.os.fstat",
+                side_effect=stable_descriptor_snapshot,
+            ), mock.patch(
+                "labos.benchmarks.leakage_scan.os.read",
+                side_effect=read_temporary_content,
+            ):
+                report = self.scan(repo, policy, self.root(root))
+
+            self.assertEqual(target.read_bytes(), sensitive)
+            self.assertEqual(virtual_content, sensitive)
+            self.assertTrue(target_opened)
+            self.assertEqual(path_calls, 3)
+            self.assertEqual(read_calls, 2)
+            self.assertEqual(before_snapshot.st_dev, final_path_snapshot.st_dev)
+            self.assertEqual(before_snapshot.st_ino, final_path_snapshot.st_ino)
+            self.assertEqual(before_snapshot.st_size, final_path_snapshot.st_size)
+            self.assertEqual(before_snapshot.st_mtime_ns, final_path_snapshot.st_mtime_ns)
+            self.assertNotEqual(before_snapshot.st_ctime_ns, final_path_snapshot.st_ctime_ns)
+            codes = [item.code for item in report.findings]
+            self.assertEqual(
+                report.status,
+                "fail",
+                (report.status, codes, report.scanned_byte_count),
+            )
+            self.assertIn("entry_inspection_error", codes)
+            self.assertNotIn("content_match", [item.code for item in report.findings])
+            self.assertEqual(report.scanned_byte_count, 0)
+            self.assert_no_secret(serialize_leakage_audit_report(report), root, policy, repo)
+
     def test_repeated_content_occurrences_are_aggregated(self) -> None:
         temporary, repo, policy, root = self.make_layout()
         with temporary:
