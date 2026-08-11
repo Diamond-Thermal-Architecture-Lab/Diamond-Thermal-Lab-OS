@@ -14,6 +14,7 @@ from labos.benchmarks.execution_baseline import (
     EXECUTION_BASELINE_RECORD_VERSION,
     EXECUTION_SCOPE_VERSION,
     M14_RULE_PATH,
+    M15B_EXECUTION_BASELINE_RECORD_PATH,
     M15B_EXECUTION_SCOPE_PATH,
     M15B_PROTOCOL_MERGE_COMMIT,
     M15B_PROTOCOL_PATH,
@@ -151,6 +152,13 @@ class ExecutionBaselineBuildTests(ExecutionBaselineFixture):
         (root / "requirements-dev.txt").write_bytes(b"example==1\n")
         record = self.build(root, scope_path)
         self.assertEqual([item.path for item in record.dependency_manifests], ["requirements-dev.txt"])
+
+    def test_build_records_empty_dependency_manifest(self) -> None:
+        temporary, root, scope_path = self.make_repo()
+        self.addCleanup(temporary.cleanup)
+        (root / "requirements.txt").write_bytes(b"")
+        record = self.build(root, scope_path)
+        self.assertEqual(record.dependency_manifests[0].byte_length, 0)
 
     def test_build_records_nested_package_manifest(self) -> None:
         temporary, root, scope_path = self.make_repo()
@@ -411,7 +419,48 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
             stderr=subprocess.PIPE,
         )
 
-    def test_git_verification_accepts_current_repository_ancestry(self) -> None:
+    def make_committed_baseline(
+        self,
+    ) -> tuple[tempfile.TemporaryDirectory[str], Path, ExecutionBaselineRecord, str]:
+        temporary = tempfile.TemporaryDirectory()
+        root = Path(temporary.name) / "repo"
+        subprocess.run(
+            ["git", "clone", "--quiet", "--no-hardlinks", str(REPO_ROOT), str(root)],
+            check=True,
+        )
+        subprocess.run(["git", "config", "user.name", "Phase 0.5C Test"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "phase-0.5c-test@example.invalid"],
+            cwd=root,
+            check=True,
+        )
+        content_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root, text=True
+        ).strip()
+        record = build_execution_baseline_record(
+            repo_root=root,
+            scope_path=root / M15B_EXECUTION_SCOPE_PATH,
+            protected_content_commit=content_commit,
+            recorded_at_utc=TIMESTAMP,
+        )
+        record_path = root / M15B_EXECUTION_BASELINE_RECORD_PATH
+        write_new_execution_baseline_record(record_path, record)
+        subprocess.run(
+            ["git", "add", M15B_EXECUTION_BASELINE_RECORD_PATH], cwd=root, check=True
+        )
+        subprocess.run(
+            ["git", "commit", "--quiet", "-m", "Record synthetic execution baseline"],
+            cwd=root,
+            check=True,
+        )
+        return temporary, root, record, content_commit
+
+    def test_git_verification_accepts_committed_canonical_record(self) -> None:
+        temporary, root, record, _ = self.make_committed_baseline()
+        self.addCleanup(temporary.cleanup)
+        self.assertEqual(verify_execution_baseline_git(record, repo_root=root), ())
+
+    def test_git_verification_rejects_record_not_committed_at_ref(self) -> None:
         head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
         record = build_execution_baseline_record(
             repo_root=REPO_ROOT,
@@ -419,7 +468,34 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
             protected_content_commit=head,
             recorded_at_utc=TIMESTAMP,
         )
-        self.assertEqual(verify_execution_baseline_git(record, repo_root=REPO_ROOT), ())
+        findings = verify_execution_baseline_git(record, repo_root=REPO_ROOT)
+        self.assertIn("baseline_record_not_committed", {item.code for item in findings})
+
+    def test_git_verification_rejects_record_bytes_not_matching_ref(self) -> None:
+        temporary, root, record, _ = self.make_committed_baseline()
+        self.addCleanup(temporary.cleanup)
+        changed = replace(record, recorded_at_utc="2026-08-11T06:00:01Z")
+        findings = verify_execution_baseline_git(changed, repo_root=root)
+        self.assertIn("baseline_record_git_mismatch", {item.code for item in findings})
+
+    def test_git_verification_rejects_ref_that_is_not_checked_out(self) -> None:
+        temporary, root, record, content_commit = self.make_committed_baseline()
+        self.addCleanup(temporary.cleanup)
+        findings = verify_execution_baseline_git(record, repo_root=root, ref=content_commit)
+        self.assertIn("git_ref_not_checked_out", {item.code for item in findings})
+
+    def test_git_verification_detects_dependency_change_after_content_commit(self) -> None:
+        temporary, root, record, _ = self.make_committed_baseline()
+        self.addCleanup(temporary.cleanup)
+        (root / "requirements.txt").write_bytes(b"unexpected==1\n")
+        subprocess.run(["git", "add", "requirements.txt"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "--quiet", "-m", "Mutate dependency state"],
+            cwd=root,
+            check=True,
+        )
+        findings = verify_execution_baseline_git(record, repo_root=root)
+        self.assertIn("dependency_manifest_git_mismatch", {item.code for item in findings})
 
     def test_git_verification_rejects_unknown_protected_commit(self) -> None:
         head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
@@ -451,7 +527,7 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
         self.assertEqual(first.returncode, 0, first.stderr)
         self.assertEqual(first.stdout, second.stdout)
 
-    def test_build_validate_and_verify_cli(self) -> None:
+    def test_cli_rejects_uncommitted_external_record_for_git_verification(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "record.json"
             head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
@@ -473,8 +549,29 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
                 "--git-ref", "HEAD",
                 "--json",
             )
-            self.assertEqual(verified.returncode, 0, verified.stderr)
-            self.assertTrue(json.loads(verified.stdout)["valid"])
+            self.assertEqual(verified.returncode, 1, verified.stderr)
+            result = json.loads(verified.stdout)
+            self.assertFalse(result["valid"])
+            self.assertIn(
+                "baseline_record_not_committed",
+                {item["code"] for item in result["findings"]},
+            )
+
+    def test_build_validate_and_verify_committed_baseline_cli(self) -> None:
+        temporary, root, _, _ = self.make_committed_baseline()
+        self.addCleanup(temporary.cleanup)
+        record_path = root / M15B_EXECUTION_BASELINE_RECORD_PATH
+        validated = self.run_cli("validate-execution-baseline", str(record_path), "--json")
+        self.assertEqual(validated.returncode, 0, validated.stderr)
+        verified = self.run_cli(
+            "verify-execution-baseline", str(record_path),
+            "--repo-root", str(root),
+            "--scope", str(root / M15B_EXECUTION_SCOPE_PATH),
+            "--git-ref", "HEAD",
+            "--json",
+        )
+        self.assertEqual(verified.returncode, 0, verified.stderr)
+        self.assertTrue(json.loads(verified.stdout)["valid"])
 
     def test_verify_cli_returns_one_for_mismatch(self) -> None:
         temporary, root, scope_path = self.make_repo()

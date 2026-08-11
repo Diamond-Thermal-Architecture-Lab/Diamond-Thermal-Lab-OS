@@ -47,9 +47,11 @@ Verification has two layers:
 
 1. Offline verification checks current exact bytes and file sets without
    network access or `.git`.
-2. Git-aware verification checks protocol ancestry, protected-content ancestry,
-   ref availability, and byte-identical protected paths between the reviewed
-   content commit and the requested execution-baseline ref.
+2. Git-aware verification requires the requested ref to be the checked-out
+   `HEAD`, requires its canonical committed record to equal the loaded record,
+   and checks protocol ancestry, protected-content ancestry, protected paths,
+   the scope specification, and dependency-manifest changes between the
+   reviewed content commit and that ref.
 
 ## 4. Commands
 

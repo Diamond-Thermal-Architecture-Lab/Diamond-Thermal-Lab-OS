@@ -406,6 +406,48 @@ def verify_execution_baseline_git(
     git_env = os.environ.copy()
     git_env["GIT_NO_LAZY_FETCH"] = "1"
     git_env["GIT_TERMINAL_PROMPT"] = "0"
+    ref_commit = _resolve_git_commit(root, ref, git_env)
+    head_commit = _resolve_git_commit(root, "HEAD", git_env)
+    if ref_commit is None:
+        findings.append(ExecutionBaselineFinding("invalid_git_ref", ref, "commit is unavailable"))
+        return tuple(sorted(findings, key=lambda item: (item.target, item.code, item.detail)))
+    if head_commit is None:
+        findings.append(
+            ExecutionBaselineFinding("invalid_git_head", "HEAD", "checked-out commit is unavailable")
+        )
+    elif head_commit != ref_commit:
+        findings.append(
+            ExecutionBaselineFinding(
+                "git_ref_not_checked_out",
+                ref,
+                "verification ref is not the currently checked-out HEAD",
+            )
+        )
+
+    record_result = subprocess.run(
+        ["git", "show", f"{ref}:{M15B_EXECUTION_BASELINE_RECORD_PATH}"],
+        cwd=root,
+        env=git_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if record_result.returncode != 0:
+        findings.append(
+            ExecutionBaselineFinding(
+                "baseline_record_not_committed",
+                M15B_EXECUTION_BASELINE_RECORD_PATH,
+                "canonical execution baseline record is unavailable at verification ref",
+            )
+        )
+    elif record_result.stdout != serialize_execution_baseline_record(record):
+        findings.append(
+            ExecutionBaselineFinding(
+                "baseline_record_git_mismatch",
+                M15B_EXECUTION_BASELINE_RECORD_PATH,
+                "loaded record bytes differ from the canonical record committed at verification ref",
+            )
+        )
+
     checks = (
         (
             "protocol_not_ancestor",
@@ -433,6 +475,7 @@ def verify_execution_baseline_git(
     protected_paths = sorted(
         {
             M15B_PROTOCOL_PATH,
+            M15B_EXECUTION_SCOPE_PATH,
             M14_RULE_PATH,
             *(path for _, paths in PROTECTED_TREE_GROUPS for path in paths),
         }
@@ -460,16 +503,69 @@ def verify_execution_baseline_git(
                 "protected paths differ from the protected content commit",
             )
         )
-    result = subprocess.run(
-        ["git", "cat-file", "-e", f"{ref}^{{commit}}"],
+
+    dependency_result = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--name-only",
+            "--no-renames",
+            "-z",
+            record.protected_content_commit,
+            ref,
+            "--",
+        ],
         cwd=root,
         env=git_env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    if result.returncode != 0:
-        findings.append(ExecutionBaselineFinding("invalid_git_ref", ref, "commit is unavailable"))
+    if dependency_result.returncode != 0:
+        findings.append(
+            ExecutionBaselineFinding(
+                "dependency_manifest_git_unreadable",
+                ref,
+                "dependency manifest changes could not be checked",
+            )
+        )
+    else:
+        changed_paths = [
+            value.decode("utf-8", errors="surrogateescape")
+            for value in dependency_result.stdout.split(b"\0")
+            if value
+        ]
+        scope = canonical_execution_scope()
+        changed_manifests = sorted(
+            path
+            for path in changed_paths
+            if _is_dependency_manifest(PurePosixPath(path).name, scope)
+        )
+        if changed_manifests:
+            findings.append(
+                ExecutionBaselineFinding(
+                    "dependency_manifest_git_mismatch",
+                    ref,
+                    "dependency manifest paths or bytes differ from the protected content commit",
+                )
+            )
     return tuple(sorted(findings, key=lambda item: (item.target, item.code, item.detail)))
+
+
+def _resolve_git_commit(root: Path, ref: str, git_env: dict[str, str]) -> str | None:
+    if not isinstance(ref, str) or not ref or ref.startswith("-") or "\x00" in ref:
+        return None
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", f"{ref}^{{commit}}"],
+        cwd=root,
+        env=git_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    value = result.stdout.strip()
+    if result.returncode != 0 or not _COMMIT_RE.fullmatch(value):
+        return None
+    return value
 
 
 def _build_tree_records(root: Path, scope: ExecutionScope) -> tuple[BaselineTreeRecord, ...]:
@@ -609,7 +705,7 @@ def _validate_record(record: ExecutionBaselineRecord) -> None:
     paths: list[str] = []
     scope = canonical_execution_scope()
     for item in record.dependency_manifests:
-        _validate_file_record(item)
+        _validate_file_record(item, allow_empty=True)
         if not _is_dependency_manifest(PurePosixPath(item.path).name, scope):
             raise ValueError("dependency manifest path is not in the approved name set")
         paths.append(item.path)
@@ -617,12 +713,17 @@ def _validate_record(record: ExecutionBaselineRecord) -> None:
         raise ValueError("dependency manifest records must have unique sorted paths")
 
 
-def _validate_file_record(record: BaselineFileRecord) -> None:
+def _validate_file_record(record: BaselineFileRecord, *, allow_empty: bool = False) -> None:
     if not isinstance(record, BaselineFileRecord):
         raise ValueError("baseline file must be a BaselineFileRecord")
     _validate_relative_path(record.path)
-    if isinstance(record.byte_length, bool) or not isinstance(record.byte_length, int) or record.byte_length <= 0:
-        raise ValueError("baseline file byte_length must be a positive integer")
+    if (
+        isinstance(record.byte_length, bool)
+        or not isinstance(record.byte_length, int)
+        or record.byte_length < 0
+        or (record.byte_length == 0 and not allow_empty)
+    ):
+        raise ValueError("baseline file byte_length is not valid for this record")
     _validate_sha256(record.sha256, "baseline file sha256")
 
 
