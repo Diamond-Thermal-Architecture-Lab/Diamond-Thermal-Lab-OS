@@ -1,0 +1,49 @@
+{
+  "dependency_manifest_basenames": [
+    "Pipfile",
+    "Pipfile.lock",
+    "constraints.txt",
+    "package-lock.json",
+    "package.json",
+    "pnpm-lock.yaml",
+    "poetry.lock",
+    "pyproject.toml",
+    "setup.cfg",
+    "setup.py",
+    "uv.lock",
+    "yarn.lock"
+  ],
+  "dependency_manifest_globs": [
+    "requirements*.txt"
+  ],
+  "m14_rule_path": "labos/triage/thermomechanical.py",
+  "protected_trees": [
+    {
+      "group_id": "production_code",
+      "include_paths": [
+        "labos"
+      ]
+    },
+    {
+      "group_id": "schemas",
+      "include_paths": [
+        "labos/schemas",
+        "schemas"
+      ]
+    },
+    {
+      "group_id": "scripts",
+      "include_paths": [
+        "scripts"
+      ]
+    },
+    {
+      "group_id": "workflows",
+      "include_paths": [
+        ".github/workflows"
+      ]
+    }
+  ],
+  "protocol_path": "docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md",
+  "scope_version": "1.0"
+}

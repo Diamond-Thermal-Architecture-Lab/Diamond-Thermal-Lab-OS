@@ -35,6 +35,14 @@ from labos.benchmarks.sealed_manifest import (  # noqa: E402
     verify_sealed_manifest,
     write_new_sealed_manifest,
 )
+from labos.benchmarks.execution_baseline import (  # noqa: E402
+    build_execution_baseline_record,
+    load_execution_baseline_record,
+    load_execution_scope,
+    verify_execution_baseline,
+    verify_execution_baseline_git,
+    write_new_execution_baseline_record,
+)
 
 
 def _print_json(data: dict) -> None:
@@ -260,6 +268,102 @@ def cmd_scan_private_leakage(args: argparse.Namespace) -> int:
     return 0 if report.status == "pass" else 1
 
 
+def cmd_validate_execution_scope(args: argparse.Namespace) -> int:
+    path = Path(args.scope)
+    scope = load_execution_scope(path)
+    result = {
+        "dependency_manifest_basename_count": len(scope.dependency_manifest_basenames),
+        "dependency_manifest_glob_count": len(scope.dependency_manifest_globs),
+        "protected_tree_count": len(scope.protected_trees),
+        "scope": path.as_posix(),
+        "scope_version": scope.scope_version,
+        "valid": True,
+    }
+    if args.json:
+        _print_json(result)
+    else:
+        print(f"valid execution scope: version={scope.scope_version} trees={len(scope.protected_trees)}")
+    return 0
+
+
+def cmd_build_execution_baseline(args: argparse.Namespace) -> int:
+    record = build_execution_baseline_record(
+        repo_root=Path(args.repo_root),
+        scope_path=Path(args.scope),
+        protected_content_commit=args.protected_content_commit,
+        recorded_at_utc=args.recorded_at,
+    )
+    output = Path(args.output)
+    write_new_execution_baseline_record(output, record)
+    _print_json(
+        {
+            "dependency_manifest_count": len(record.dependency_manifests),
+            "output": output.as_posix(),
+            "protected_content_commit": record.protected_content_commit,
+            "protected_tree_count": len(record.protected_trees),
+            "record_version": record.record_version,
+            "recorded_at_utc": record.recorded_at_utc,
+            "scope_spec_sha256": record.scope_spec_sha256,
+        }
+    )
+    return 0
+
+
+def cmd_validate_execution_baseline(args: argparse.Namespace) -> int:
+    record = load_execution_baseline_record(Path(args.record))
+    result = {
+        "dependency_manifest_count": len(record.dependency_manifests),
+        "protected_content_commit": record.protected_content_commit,
+        "protected_tree_count": len(record.protected_trees),
+        "record_version": record.record_version,
+        "recorded_at_utc": record.recorded_at_utc,
+        "valid": True,
+    }
+    if args.json:
+        _print_json(result)
+    else:
+        print(
+            "valid execution baseline: "
+            f"version={record.record_version} trees={len(record.protected_trees)}"
+        )
+    return 0
+
+
+def cmd_verify_execution_baseline(args: argparse.Namespace) -> int:
+    record = load_execution_baseline_record(Path(args.record))
+    findings = list(
+        verify_execution_baseline(
+            record,
+            repo_root=Path(args.repo_root),
+            scope_path=Path(args.scope),
+        )
+    )
+    if args.git_ref is not None:
+        findings.extend(
+            verify_execution_baseline_git(
+                record,
+                repo_root=Path(args.repo_root),
+                ref=args.git_ref,
+            )
+        )
+    findings.sort(key=lambda item: (item.target, item.code, item.detail))
+    result = {
+        "finding_count": len(findings),
+        "findings": [asdict(item) for item in findings],
+        "git_checked": args.git_ref is not None,
+        "valid": not findings,
+    }
+    if args.json:
+        _print_json(result)
+    else:
+        print(
+            "execution baseline verification passed"
+            if not findings
+            else f"execution baseline verification found {len(findings)} issue(s)"
+        )
+    return 0 if not findings else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Lab OS benchmark integrity helpers.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -332,6 +436,32 @@ def build_parser() -> argparse.ArgumentParser:
     scan_policy.add_argument("--forbidden-root", action="append", default=[])
     scan_policy.add_argument("--json", action="store_true")
     scan_policy.set_defaults(func=cmd_scan_private_leakage)
+
+    validate_scope = subparsers.add_parser("validate-execution-scope")
+    validate_scope.add_argument("scope")
+    validate_scope.add_argument("--json", action="store_true")
+    validate_scope.set_defaults(func=cmd_validate_execution_scope)
+
+    build_baseline = subparsers.add_parser("build-execution-baseline")
+    build_baseline.add_argument("--repo-root", required=True)
+    build_baseline.add_argument("--scope", required=True)
+    build_baseline.add_argument("--protected-content-commit", required=True)
+    build_baseline.add_argument("--recorded-at", required=True)
+    build_baseline.add_argument("--output", required=True)
+    build_baseline.set_defaults(func=cmd_build_execution_baseline)
+
+    validate_baseline = subparsers.add_parser("validate-execution-baseline")
+    validate_baseline.add_argument("record")
+    validate_baseline.add_argument("--json", action="store_true")
+    validate_baseline.set_defaults(func=cmd_validate_execution_baseline)
+
+    verify_baseline = subparsers.add_parser("verify-execution-baseline")
+    verify_baseline.add_argument("record")
+    verify_baseline.add_argument("--repo-root", required=True)
+    verify_baseline.add_argument("--scope", required=True)
+    verify_baseline.add_argument("--git-ref")
+    verify_baseline.add_argument("--json", action="store_true")
+    verify_baseline.set_defaults(func=cmd_verify_execution_baseline)
 
     return parser
 

@@ -95,8 +95,11 @@ token IDs, and public-safe validation summaries are documented in
 
 Explicit-root private leakage scanning and public-safe audit reports are
 documented in [`BENCHMARK_LEAKAGE_SCAN_GUIDE.md`](BENCHMARK_LEAKAGE_SCAN_GUIDE.md).
-Execution-scope and execution-baseline verification remain separate Phase 0.5
-gates before candidate screening.
+Execution-scope specification, baseline generation, and offline and Git-aware
+verification are documented in
+[`BENCHMARK_EXECUTION_BASELINE_GUIDE.md`](BENCHMARK_EXECUTION_BASELINE_GUIDE.md).
+Candidate screening remains prohibited until the exact execution-baseline
+commit is independently reviewed, recorded, and formally frozen.
 
 Export a Decision Review Package when the preview should be shared, archived, or inspected by reviewers without modifying the canonical case:
 

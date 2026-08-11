@@ -127,4 +127,8 @@ Phase 0.5B2B provides explicit-root scanning, relative-path scanning, strict UTF
 
 ## 16. Deferred Execution Baseline
 
-Execution-scope specification, execution-baseline generation, execution-baseline verification, and immutable M15B execution-baseline recording remain deferred. No candidate screening has begun.
+Execution-scope specification, execution-baseline generation, and verification
+are documented in
+[`BENCHMARK_EXECUTION_BASELINE_GUIDE.md`](BENCHMARK_EXECUTION_BASELINE_GUIDE.md).
+The exact immutable baseline still requires a reviewed commit, exact-head CI,
+and a formal Phase 0.5C freeze declaration. No candidate screening has begun.
