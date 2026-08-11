@@ -78,14 +78,19 @@ python scripts/labos_benchmark.py scan-private-leakage --repo-root . --policy-ro
 
 Token values, normalized values, raw paths, snippets, lines, and offsets are not emitted. The audit cannot establish absence from unavailable or unscanned locations.
 
-## 20. Deferred Execution Scope
+## 20. Execution Scope
 
-Execution-scope specification remains a separate Phase 0.5 gate.
+Execution-scope specification is documented separately in
+[`BENCHMARK_EXECUTION_BASELINE_GUIDE.md`](BENCHMARK_EXECUTION_BASELINE_GUIDE.md).
 
-## 21. Deferred Execution Baseline
+## 21. Execution Baseline
 
-Execution-baseline generation, verification, and immutable recording remain deferred.
+Execution-baseline generation and verification are documented in
+[`BENCHMARK_EXECUTION_BASELINE_GUIDE.md`](BENCHMARK_EXECUTION_BASELINE_GUIDE.md).
+Immutable recording completes only after exact-head CI and the Phase 0.5C
+freeze declaration.
 
 ## 22. Candidate Work Not Started
 
-No real policy or candidate is used in this PR, and candidate screening remains prohibited.
+No real policy or candidate is used in this phase. Candidate screening remains
+prohibited until Phase 0.5C is formally frozen.

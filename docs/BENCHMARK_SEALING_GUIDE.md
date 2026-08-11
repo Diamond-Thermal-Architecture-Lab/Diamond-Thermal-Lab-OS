@@ -59,4 +59,7 @@ Private leakage-policy schema and validation are documented in `BENCHMARK_LEAKAG
 
 ## 14. Deferred Execution Baseline
 
-Execution-scope specification, execution-baseline generation, execution-baseline verification, and immutable M15B execution-baseline recording remain deferred. Candidate screening remains prohibited.
+Execution-scope and execution-baseline controls are documented in
+[`BENCHMARK_EXECUTION_BASELINE_GUIDE.md`](BENCHMARK_EXECUTION_BASELINE_GUIDE.md).
+Candidate screening remains prohibited until the exact baseline is formally
+frozen.
