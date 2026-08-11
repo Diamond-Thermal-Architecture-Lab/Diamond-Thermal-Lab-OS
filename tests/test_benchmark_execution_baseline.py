@@ -434,6 +434,19 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
             cwd=root,
             check=True,
         )
+        record_path = root / M15B_EXECUTION_BASELINE_RECORD_PATH
+        if record_path.exists():
+            record_path.unlink()
+            subprocess.run(
+                ["git", "add", "--update", M15B_EXECUTION_BASELINE_RECORD_PATH],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "commit", "--quiet", "-m", "Prepare synthetic content state"],
+                cwd=root,
+                check=True,
+            )
         content_commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=root, text=True
         ).strip()
@@ -443,7 +456,6 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
             protected_content_commit=content_commit,
             recorded_at_utc=TIMESTAMP,
         )
-        record_path = root / M15B_EXECUTION_BASELINE_RECORD_PATH
         write_new_execution_baseline_record(record_path, record)
         subprocess.run(
             ["git", "add", M15B_EXECUTION_BASELINE_RECORD_PATH], cwd=root, check=True
@@ -461,14 +473,12 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
         self.assertEqual(verify_execution_baseline_git(record, repo_root=root), ())
 
     def test_git_verification_rejects_record_not_committed_at_ref(self) -> None:
-        head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
-        record = build_execution_baseline_record(
-            repo_root=REPO_ROOT,
-            scope_path=SCOPE_PATH,
-            protected_content_commit=head,
-            recorded_at_utc=TIMESTAMP,
+        temporary, root, record, content_commit = self.make_committed_baseline()
+        self.addCleanup(temporary.cleanup)
+        subprocess.run(
+            ["git", "checkout", "--quiet", "--detach", content_commit], cwd=root, check=True
         )
-        findings = verify_execution_baseline_git(record, repo_root=REPO_ROOT)
+        findings = verify_execution_baseline_git(record, repo_root=root)
         self.assertIn("baseline_record_not_committed", {item.code for item in findings})
 
     def test_git_verification_rejects_record_bytes_not_matching_ref(self) -> None:
@@ -528,34 +538,37 @@ class ExecutionBaselineGitAndCliTests(ExecutionBaselineFixture):
         self.assertEqual(first.stdout, second.stdout)
 
     def test_cli_rejects_uncommitted_external_record_for_git_verification(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            output = Path(tmp) / "record.json"
-            head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
-            built = self.run_cli(
-                "build-execution-baseline",
-                "--repo-root", ".",
-                "--scope", M15B_EXECUTION_SCOPE_PATH,
-                "--protected-content-commit", head,
-                "--recorded-at", TIMESTAMP,
-                "--output", str(output),
-            )
-            self.assertEqual(built.returncode, 0, built.stderr)
-            validated = self.run_cli("validate-execution-baseline", str(output), "--json")
-            self.assertEqual(validated.returncode, 0, validated.stderr)
-            verified = self.run_cli(
-                "verify-execution-baseline", str(output),
-                "--repo-root", ".",
-                "--scope", M15B_EXECUTION_SCOPE_PATH,
-                "--git-ref", "HEAD",
-                "--json",
-            )
-            self.assertEqual(verified.returncode, 1, verified.stderr)
-            result = json.loads(verified.stdout)
-            self.assertFalse(result["valid"])
-            self.assertIn(
-                "baseline_record_not_committed",
-                {item["code"] for item in result["findings"]},
-            )
+        temporary, root, _, content_commit = self.make_committed_baseline()
+        self.addCleanup(temporary.cleanup)
+        subprocess.run(
+            ["git", "checkout", "--quiet", "--detach", content_commit], cwd=root, check=True
+        )
+        output = Path(temporary.name) / "external-record.json"
+        built = self.run_cli(
+            "build-execution-baseline",
+            "--repo-root", str(root),
+            "--scope", str(root / M15B_EXECUTION_SCOPE_PATH),
+            "--protected-content-commit", content_commit,
+            "--recorded-at", TIMESTAMP,
+            "--output", str(output),
+        )
+        self.assertEqual(built.returncode, 0, built.stderr)
+        validated = self.run_cli("validate-execution-baseline", str(output), "--json")
+        self.assertEqual(validated.returncode, 0, validated.stderr)
+        verified = self.run_cli(
+            "verify-execution-baseline", str(output),
+            "--repo-root", str(root),
+            "--scope", str(root / M15B_EXECUTION_SCOPE_PATH),
+            "--git-ref", "HEAD",
+            "--json",
+        )
+        self.assertEqual(verified.returncode, 1, verified.stderr)
+        result = json.loads(verified.stdout)
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "baseline_record_not_committed",
+            {item["code"] for item in result["findings"]},
+        )
 
     def test_build_validate_and_verify_committed_baseline_cli(self) -> None:
         temporary, root, _, _ = self.make_committed_baseline()
