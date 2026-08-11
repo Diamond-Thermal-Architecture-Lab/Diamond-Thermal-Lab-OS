@@ -1,0 +1,46 @@
+{
+  "dependency_manifests": [],
+  "m14_rule_file": {
+    "byte_length": 21045,
+    "path": "labos/triage/thermomechanical.py",
+    "sha256": "d9e6e1fbd36c96fa83e88676ac30760449639bb2e40161fd63ba1e05e262618f"
+  },
+  "protected_content_commit": "a3814d0cad0f5bc91a37000e90248e9f1e1d163a",
+  "protected_trees": [
+    {
+      "algorithm": "labos-tree-sha256-v1",
+      "file_count": 79,
+      "group_id": "production_code",
+      "sha256": "397306cefdded7854541c6f2dc75fec2372b3bbdbd860f1efb69548dc1eaafe0"
+    },
+    {
+      "algorithm": "labos-tree-sha256-v1",
+      "file_count": 16,
+      "group_id": "schemas",
+      "sha256": "c49b5ba0c0f3247e7969bf06c12a95580d8026de4c6e654418a5ae28a035efca"
+    },
+    {
+      "algorithm": "labos-tree-sha256-v1",
+      "file_count": 3,
+      "group_id": "scripts",
+      "sha256": "aecd80139ca54dd8f8249a1bd2fa1fd5a2c7074cc0895c1eb27ddb8c2acf5fad"
+    },
+    {
+      "algorithm": "labos-tree-sha256-v1",
+      "file_count": 1,
+      "group_id": "workflows",
+      "sha256": "c9ad6a56ea8f8db0d5f854e3344a3ffc4ebe1486a5d547fd3f555ec2208ee1af"
+    }
+  ],
+  "protocol_file": {
+    "byte_length": 34793,
+    "path": "docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md",
+    "sha256": "4c5a5c09fb0822f70c87fff9f6a5162bd318d72da18cd4909d60a0b0f8a4e9b5"
+  },
+  "protocol_merge_commit": "e35476d5fe4ccfa94f8438a7ef1fbf569fd67aa2",
+  "protocol_version": "1.0",
+  "record_version": "1.0",
+  "recorded_at_utc": "2026-08-11T07:57:54Z",
+  "scope_spec_sha256": "f18fd6ca13fafc0bb41dc76cbb2df69b8d4a4e146e616787110d9af89bc7c196",
+  "scope_version": "1.0"
+}
