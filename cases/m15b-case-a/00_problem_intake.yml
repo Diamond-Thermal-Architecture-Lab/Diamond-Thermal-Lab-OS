@@ -1,0 +1,29 @@
+case_id: m15b-case-a
+title: "M15B-CASE-A Blind Phase-One Case"
+status: draft
+owner: "Role D Phase-One Builder"
+application: "blind thermomechanical evidence construction"
+device_type: "suspended graphene/molybdenum-sulfide composite membrane"
+customer_question: "Structure evidence needs for retained thin-layer integration while a circular membrane is already suspended; do not predict mechanical performance or route suitability."
+heat_source_geometry: "unknown; no heat-source fact is admissible"
+power_or_power_density: "unknown; no power fact is admissible"
+current_material_stack: "Prepatterned silicon/silicon-oxide support with circular cavities; exfoliated multilayer graphene; molybdenum oxide deposited by plasma-enhanced atomic layer deposition; retained molybdenum sulfide after sulfurization."
+cooling_boundary: "unknown; holder, carrier, furnace-wall, and ambient thermal boundaries are unresolved"
+target_temperature_or_margin: "unknown; no mechanical acceptance target is admissible"
+known_data:
+  - "The circular membrane has a stated radius of 4 um and perimeter support by silicon oxide."
+  - "The membrane is suspended before deposition, during deposition and conversion, and after retained-layer integration."
+  - "Molybdenum oxide is deposited on the suspended graphene membrane by plasma-enhanced atomic layer deposition."
+  - "Stated process temperature is 100 C for deposition and 900 C for conversion."
+  - "Approximate graphene and converted-layer thicknesses are 13 nm and 8 nm; retained only as retrospective-risk geometry inputs."
+missing_data:
+  - "Sulfurization duration, heating ramp, and cooling route."
+  - "Temperature-dependent properties and stress-free reference condition."
+  - "Initial/post-process stress, shape, curvature, pretension, and acceptance basis."
+  - "Interface adhesion, fracture, delamination, and intended-function acceptance basis."
+assumptions:
+  - "Unknowns are not converted to zero, default, estimate, absence, or acceptance."
+validation_placeholders:
+  - "Obtain bounded thermal, mechanical, interface, and acceptance evidence before any conclusion."
+note: "Blind packet facts only; no source identity, outcome, prediction, or assessment result is included."
+confidentiality_level: "public-safe-blind"

@@ -1,0 +1,20 @@
+case_id: m15b-case-a
+title: "M15B-CASE-A Blind Phase-One Case"
+status: draft
+confidentiality_level: "public-safe-blind"
+architectures:
+  - route_id: evidence-only-001
+    route_name: "No architecture route proposed"
+    heat_source: "unknown"
+    substrate: "prepatterned silicon/silicon-oxide support with circular cavity"
+    bonding_interface: "retained integrated top layer; interface acceptance unknown"
+    heat_spreader: "unknown"
+    package_path: "unknown"
+    cooling_boundary: "unknown"
+    manufacturing_route: "Suspended graphene; plasma-enhanced atomic layer deposition at 100 C; sulfurization at 900 C."
+    validation_method: "Read-only evidence-gap screening followed by bounded validation planning."
+    risk_profile: "Thermal boundaries, cooling, properties, stress reference, and interface acceptance remain unknown."
+    maturity_level: "evidence construction only"
+    when_to_use: "Organize admissible evidence needs only."
+    when_not_to_use: "Do not use for route selection or performance approval."
+note: "No assessment result is generated."

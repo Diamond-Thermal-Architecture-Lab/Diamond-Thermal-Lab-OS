@@ -1,0 +1,145 @@
+{
+  "artifacts": [
+    {
+      "byte_length": 4258,
+      "path": "benchmarks/m15b-phase3/inputs/BLIND_INPUT_MANIFEST.md",
+      "sha256": "c1d098c95cdd47fb228a3c3613189b3d7acc1fcfd1c6ff7a154884c7e091855a"
+    },
+    {
+      "byte_length": 8809,
+      "path": "benchmarks/m15b-phase3/inputs/BLIND_INPUT_PACKET.yml",
+      "sha256": "b991c8f33c7f54d444196fa18b26e206167743efa1e3d8e0215cea70a9d4aadf"
+    },
+    {
+      "byte_length": 386,
+      "path": "benchmarks/m15b-phase3/inputs/LEAKAGE_AUDIT_REPORT.json",
+      "sha256": "70f3207cf012a632b83180ea4a1170a80a947cd3f7af308d0d5eb9212f672d8f"
+    },
+    {
+      "byte_length": 3200,
+      "path": "benchmarks/m15b-phase3/inputs/ROLE_D_HANDOFF.md",
+      "sha256": "9989e0247fe958a7ef3e55483267f96f3adb7c1760ee5bce8a6faedde3cc9d89"
+    },
+    {
+      "byte_length": 3466,
+      "path": "benchmarks/m15b-phase3/inputs/ROLE_D_INFORMATION_RECEIPT.md",
+      "sha256": "21c8580f27220a05e06d93a56da10f5ccbabd8f2e4ffa445394fb79043aa9891"
+    },
+    {
+      "byte_length": 802,
+      "path": "benchmarks/m15b-phase3/inputs/SEALED_REGISTRATION_MANIFEST.json",
+      "sha256": "3e7c5a50c68724ee37ef17cf3eb3a62f569e4b1253ec3963a8eae7fd0bbab160"
+    },
+    {
+      "byte_length": 1811,
+      "path": "benchmarks/m15b-phase3/M15B_CASE_B_APPLICABILITY_CONTRACT.json",
+      "sha256": "85fbb83053f868bac21b451c6540990558b06981473e40a86e86bffbedba99f5"
+    },
+    {
+      "byte_length": 1530,
+      "path": "benchmarks/m15b-phase3/M15B_CASE_B_APPLICABILITY_CONTRACT.md",
+      "sha256": "a30713b1173397774a49bf270ad13b74b662f56d88a7973ed092a8bcf1cdf4a5"
+    },
+    {
+      "byte_length": 933,
+      "path": "benchmarks/m15b-phase3/ROLE_D_PHASE3_RECOVERY_RECEIPT.md",
+      "sha256": "725b187e7182ee07449471883bc648bf7c15bf196956e4c4fdc039cfa2a51123"
+    },
+    {
+      "byte_length": 2266,
+      "path": "cases/m15b-case-a/00_problem_intake.yml",
+      "sha256": "33a3114c1e436cb771acdcaeb1fbd3a3664f9303249547cfc98a6b786e25ca6b"
+    },
+    {
+      "byte_length": 1078,
+      "path": "cases/m15b-case-a/01_thermal_design_passport.yml",
+      "sha256": "546d5de07ad38a3ed91719e53e4921a48536b204d5a7e6288277bd67e2d1a112"
+    },
+    {
+      "byte_length": 972,
+      "path": "cases/m15b-case-a/02_decision_board.md",
+      "sha256": "565236c055a08b0597997cb052e841b6a56dc6913476bd074d42dc28b305ce61"
+    },
+    {
+      "byte_length": 1069,
+      "path": "cases/m15b-case-a/03_architecture_genomes.yml",
+      "sha256": "1ee923d48bbfa5a5145189c16c9fe5dbc7773c0ffa0b4210fceed2dbe6769927"
+    },
+    {
+      "byte_length": 798,
+      "path": "cases/m15b-case-a/04_design_space_scorecard.md",
+      "sha256": "c60cad1ab94d3e8f36a3414cb7d54c638141ddbd5588fbfd40b433d5319a042f"
+    },
+    {
+      "byte_length": 776,
+      "path": "cases/m15b-case-a/05_red_flags.md",
+      "sha256": "c1bbf88e67a8548f94e496f7d54cdbe5905e7f6275aecd6ef790754c2c33f5ba"
+    },
+    {
+      "byte_length": 622,
+      "path": "cases/m15b-case-a/06_next_best_action.md",
+      "sha256": "16bec7aeddf1884dc10b0caef0614168ded1116e57560958dfa45a2bd1947a2a"
+    },
+    {
+      "byte_length": 703,
+      "path": "cases/m15b-case-a/07_validation_plan.md",
+      "sha256": "1a954f69de8404206179d2bb99bfb5a732ea4c5a3131cb5c0d2087f8698216b7"
+    },
+    {
+      "byte_length": 612,
+      "path": "cases/m15b-case-a/08_supplier_specification.md",
+      "sha256": "dc0c1ba828f9fefcc9ad06d17285dadc0dcb515c93e686e403e469ac876e1ba9"
+    },
+    {
+      "byte_length": 1022,
+      "path": "cases/m15b-case-a/09_customer_memo.md",
+      "sha256": "db40d117076c0b1b4d489632abb50ec333731a3be12e4c7d57c8ac2d6657aff7"
+    },
+    {
+      "byte_length": 1330,
+      "path": "cases/m15b-case-a/10_claim_ledger.yml",
+      "sha256": "942bd565ad3825010d8712a457b4114793c414d83021186c42f4b6490addca1a"
+    },
+    {
+      "byte_length": 825,
+      "path": "cases/m15b-case-a/11_engineering_memory_entry.md",
+      "sha256": "fa0f8422916a1d28c4e7607b76397d892902a76bb1209a3b95daee15a8c117bc"
+    },
+    {
+      "byte_length": 12378,
+      "path": "exports/m15b-case-a-phase3/decision_board_preview.json",
+      "sha256": "0be34c2d49cd6c346bb9fd2c27fd5c38104e091a5bbf4c401efd7c32031148e1"
+    },
+    {
+      "byte_length": 2805,
+      "path": "exports/m15b-case-a-phase3/decision_board_preview.md",
+      "sha256": "8a47936f5ddab5d7ef0a3d5e927f921fa9e346a5bbc7e3cfb3280a34c047b5fc"
+    },
+    {
+      "byte_length": 919,
+      "path": "exports/m15b-case-a-phase3/human_review_checklist.md",
+      "sha256": "6ee1ac064f30208361f5d445581b853515505f7d46fb9e230d04137815a2d58c"
+    },
+    {
+      "byte_length": 2982,
+      "path": "exports/m15b-case-a-phase3/review_manifest.json",
+      "sha256": "9a03791daca813d2a9437085b8899df53f677f3e969c09a87201468eeddecfd3"
+    },
+    {
+      "byte_length": 1738,
+      "path": "exports/m15b-case-a-phase3/triage_report.md",
+      "sha256": "c410e4a951e90b7d4ff682f521b832e04a977f448ace190656b705350cc8e341"
+    },
+    {
+      "byte_length": 8554,
+      "path": "exports/m15b-case-a-phase3/triage_result.json",
+      "sha256": "2c022ac5587d118cdef36d2bc30092328a01654aea147bd4246963914bc895d9"
+    }
+  ],
+  "frozen_base_commit": "2b45c63128dad6793dd753ca9300538769af8c53",
+  "frozen_base_tree": "acb84fb593eed10f7ce0507febf5c4217053d129",
+  "hash_algorithm": "sha256",
+  "manifest_version": "1.0",
+  "phase": "M15B Phase 3",
+  "self_hashing": "excluded"
+}

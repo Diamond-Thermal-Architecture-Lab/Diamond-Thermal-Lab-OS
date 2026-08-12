@@ -1,0 +1,27 @@
+{
+  "manifest_version": "1.0",
+  "protocol_version": "1.0",
+  "registered_at_utc": "2026-08-11T08:38:13Z",
+  "sealed_artifacts": [
+    {
+      "byte_length": 2583,
+      "filename": "RELEVANCE_REGISTRATION.md",
+      "sha256": "810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd22"
+    },
+    {
+      "byte_length": 3167,
+      "filename": "SCOPE_REGISTRATION.md",
+      "sha256": "23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d251"
+    },
+    {
+      "byte_length": 3088,
+      "filename": "SCORING_REGISTRATION.md",
+      "sha256": "03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34e5"
+    },
+    {
+      "byte_length": 5450,
+      "filename": "SOURCE_DOSSIER.md",
+      "sha256": "d66ac855cd7f247838d8a0f1e24b4a8940589997a4b584f28ee23e69a589da40"
+    }
+  ]
+}

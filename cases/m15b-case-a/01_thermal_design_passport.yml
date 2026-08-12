@@ -1,0 +1,20 @@
+case_id: m15b-case-a
+title: "M15B-CASE-A Blind Phase-One Case"
+status: draft
+confidentiality_level: "public-safe-blind"
+likely_bottleneck: "unknown; no outcome or confirmed bottleneck is admissible"
+bottleneck_classification: "unknown"
+architecture_candidates:
+  - "No architecture route is proposed; this phase constructs evidence needs only."
+constraints:
+  - "The circular membrane remains suspended through retained-layer integration."
+  - "Process order and stated process conditions are preserved."
+  - "No response, suitability, or approval is inferred."
+assumptions:
+  - "The stated 4 um value is a radius, not a diameter."
+  - "Thermal boundaries, cooling route, properties, and stress reference remain unknown."
+confidence_level: low
+recommended_near_term_route: "No route selection; preserve deterministic evidence requests for review."
+recommended_long_term_route: "No route selection pending admissible validation evidence."
+next_best_action: "Run read-only deterministic triage without treating it as a measurement or conclusion."
+note: "Blind packet facts only."
