@@ -1,18 +1,19 @@
 {
-  "contract_id": "m15b-phase4-sealed-delivery-1.0",
+  "contract_id": "m15b-phase4-sealed-delivery-2.0",
   "delivery_root_environment_variable": "M15B_SEALED_ROOT",
   "media_type": "text/markdown; charset=utf-8",
-  "payload_commit_policy": "prohibited_unless_future_accepted_protocol_amendment_explicitly_requires_it",
-  "permitted_root_entries": ["RELEVANCE_REGISTRATION.md", "SCORING_REGISTRATION.md", "SCOPE_REGISTRATION.md", "SOURCE_DOSSIER.md"],
+  "media_type_verification": ["registered .md filename", "verify raw length and SHA-256 before decoding", "strict UTF-8 decode", "no UTF-8 BOM", "no NUL byte", "LF-only newline bytes", "never use OS or shell MIME guess"],
+  "payload_commit_policy": "prohibited unless a future independently accepted amendment explicitly requires it",
+  "permitted_root_entries": ["RELEVANCE_REGISTRATION.md","SCORING_REGISTRATION.md","SCOPE_REGISTRATION.md","SOURCE_DOSSIER.md"],
   "registered_payloads": [
-    {"byte_length":2583,"delivery_relative_filename":"RELEVANCE_REGISTRATION.md","registered_evidence_identifier":"m15b-sealed-relevance-registration","sha256":"810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd222"},
-    {"byte_length":3167,"delivery_relative_filename":"SCOPE_REGISTRATION.md","registered_evidence_identifier":"m15b-sealed-scope-registration","sha256":"23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d2551"},
-    {"byte_length":3088,"delivery_relative_filename":"SCORING_REGISTRATION.md","registered_evidence_identifier":"m15b-sealed-scoring-registration","sha256":"03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34ee5"},
-    {"byte_length":5450,"delivery_relative_filename":"SOURCE_DOSSIER.md","registered_evidence_identifier":"m15b-sealed-source-dossier","sha256":"d66ac855cd7f247838d8a0f1e24b4a8940589997a4b584f28ee23e69a589da40"}
+    {"registered_evidence_identifier":"m15b-sealed-relevance-registration","delivery_relative_filename":"RELEVANCE_REGISTRATION.md","byte_length":2583,"sha256":"810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd222"},
+    {"registered_evidence_identifier":"m15b-sealed-scope-registration","delivery_relative_filename":"SCOPE_REGISTRATION.md","byte_length":3167,"sha256":"23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d2551"},
+    {"registered_evidence_identifier":"m15b-sealed-scoring-registration","delivery_relative_filename":"SCORING_REGISTRATION.md","byte_length":3088,"sha256":"03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34ee5"},
+    {"registered_evidence_identifier":"m15b-sealed-source-dossier","delivery_relative_filename":"SOURCE_DOSSIER.md","byte_length":5450,"sha256":"d66ac855cd7f247838d8a0f1e24b4a8940589997a4b584f28ee23e69a589da40"}
   ],
-  "root_requirements": ["absolute_existing_directory", "outside_git_repository", "outside_role_d_review_protocol_author_and_execution_workspaces", "real_directory_not_symlink_junction_or_reparse_point", "no_parent_or_neighbor_enumeration", "immediate_entries_equal_permitted_root_entries"],
-  "payload_requirements": ["resolve_only_exact_delivery_relative_filename", "strictly_below_root", "regular_file", "verify_raw_byte_length_and_sha256_before_decoding", "verify_media_type", "no_online_or_similarly_named_substitution"],
-  "temporary_material_requirements": ["no_secret_in_chat", "plaintext_and_rendered_material_only_under_executor_dedicated_temporary_root", "remove_plaintext_and_rendered_copies_after_validation"],
-  "filename_rule": "The Phase 3 registration already has exact filenames. Every delivery_relative_filename is the registered filename verbatim; it is a delivery locator, not a change to registered evidence identity.",
-  "hard_stop_conditions": ["M15B_SEALED_ROOT_unset", "root_missing_or_not_absolute", "root_not_real_directory", "root_inside_prohibited_location", "unexpected_sibling", "payload_missing_or_not_regular", "path_escapes_root", "byte_length_mismatch", "digest_mismatch", "media_type_mismatch", "over_disclosure"]
+  "root_requirements": ["absolute existing real directory", "not symlink junction or reparse redirect", "outside repository and prohibited workspaces", "do not enumerate parent or neighboring directory", "immediate entries exactly equal permitted list"],
+  "payload_requirements": ["resolve exact relative filename only", "path remains strictly below root", "regular file", "digest/length before decode", "no online or similarly named substitution"],
+  "temporary_material_requirements": ["no secret in chat", "plaintext/rendered data only under executor temporary root", "remove plaintext/rendered data after validation"],
+  "filename_rule": "These exact Phase 3 registered filenames are delivery locators, not changes to evidence identity.",
+  "hard_stop_conditions": ["root unset/missing/not absolute/not real/outside boundary failure", "unexpected sibling", "missing/nonregular/escaping payload", "length/digest/media failure", "over-disclosure"]
 }

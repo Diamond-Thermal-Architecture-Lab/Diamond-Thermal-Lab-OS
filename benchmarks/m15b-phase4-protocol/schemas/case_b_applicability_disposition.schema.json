@@ -1,3 +1,7 @@
 {
-  "$schema":"https://json-schema.org/draft/2020-12/schema", "$id":"https://diamond-thermal-lab.example/schemas/m15b-phase4/case-b-applicability-disposition-1.0.schema.json", "type":"object", "additionalProperties":false,
-  "required":["artifact_id","case_id","disposition","basis_contract_path"], "properties":{"artifact_id":{"const":"case_b_applicability_disposition"},"case_id":{"const":"M15B-CASE-B"},"disposition":{"enum":["applicable","not_applicable","indeterminate_under_contract","contract_compliant_handling","contract_noncompliant_handling"]},"basis_contract_path":{"const":"benchmarks/m15b-phase3/M15B_CASE_B_APPLICABILITY_CONTRACT.json"}}}
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-thermal-lab.example/schemas/m15b-phase4/case-b-applicability-disposition-2.0.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["artifact_id", "case_id", "applicability_status", "handling_compliance", "basis_contract_path", "basis_contract_sha256"],
+  "properties": {"artifact_id": {"const": "case_b_applicability_disposition"}, "case_id": {"const": "M15B-CASE-B"}, "applicability_status": {"type": "string", "enum": ["applicable", "not_applicable", "indeterminate_under_contract"]}, "handling_compliance": {"type": "string", "enum": ["contract_compliant", "contract_noncompliant", "not_assessable"]}, "basis_contract_path": {"const": "benchmarks/m15b-phase3/M15B_CASE_B_APPLICABILITY_CONTRACT.json"}, "basis_contract_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

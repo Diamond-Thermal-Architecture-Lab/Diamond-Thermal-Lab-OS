@@ -2,16 +2,16 @@
 
 ## Entry conditions
 
-Enter only after independent acceptance of this package. Start from the frozen Phase 3 merge, independently verify all anchors and 28 freeze-manifest hashes, preserve Phase 3, use a dedicated temporary root, and establish the pre-reveal lock. `M15B_SEALED_ROOT` may be unset until delivery; that is a block, not permission to search, substitute, or begin reveal.
+Enter only after independent acceptance; verify the frozen anchors and 27-listed-plus-manifest/28-file freeze, establish the lock, and block if controlled delivery is absent. Follow the sealed-delivery contract; do not search or substitute evidence.
 
-## Required execution
+## Completed gates
 
-Apply the sealed-delivery contract exactly, create only the seven output-contract artifacts, follow the protocol gate order, validate every JSON/schema/local reference/cross-reference, repeat deterministic generation and compare hashes, perform the disclosure audit, run the required tests and baseline verifiers, and audit protected surfaces. No new Phase 4 artifact is authorized.
+Render this section as a fixed ordered Markdown table from execution-manifest `pre_commit_gates`: `gate | status`. Render all sixteen normative gates in their schema order, escape Markdown cells, use `—` for no value, and end LF.
 
 ## Stop conditions
 
-For missing controlled delivery or authority, stop with `M15B PHASE 4 EVIDENCE REVEAL: BLOCKED — <exact requirement>`. For an integrity, provenance, schema, determinism, disclosure, test, baseline, or protected-surface failure, stop with `M15B PHASE 4 EVIDENCE REVEAL: FAILED — <exact gate>`. Do not repair Phase 3, alter rules, invent a score, fabricate Case B evidence, expose source text, or continue after a hard stop.
+Render fixed text: missing authority/delivery is `M15B PHASE 4 EVIDENCE REVEAL: BLOCKED — <exact requirement>`; integrity, schema, disclosure, test, baseline, or preservation failure is `M15B PHASE 4 EVIDENCE REVEAL: FAILED — <exact gate>`. No Phase 3 rewrite, numeric score, fabricated Case B evidence, or source reproduction is permitted.
 
 ## Independent-review boundary
 
-After a valid push, report `M15B PHASE 4 EVIDENCE REVEAL: COMPLETED — BRANCH PUSHED, NOT FROZEN` and stop. The executor cannot independently review, approve, freeze, merge, or begin later phases.
+Render fixed text: the executor cannot independently review, approve, freeze, merge, or begin later phases. Commit and normal push verification are external transition checks after immutable artifact creation and are reported outside it; successful external push is `M15B PHASE 4 EVIDENCE REVEAL: COMPLETED — BRANCH PUSHED, NOT FROZEN`.
