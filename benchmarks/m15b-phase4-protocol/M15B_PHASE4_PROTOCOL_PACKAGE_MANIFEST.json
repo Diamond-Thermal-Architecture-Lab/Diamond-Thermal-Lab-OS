@@ -1,0 +1,17 @@
+{
+  "manifest_version": "1.0",
+  "package_id": "m15b-phase4-protocol-completion-1.0",
+  "hash_algorithm": "sha256",
+  "self_hashing": "excluded; independent review hashes this manifest separately",
+  "files": [
+    {"byte_length":4526,"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_EVIDENCE_REVEAL_PROTOCOL.md","sha256":"413b6ba82ebf29d130535f66a800c01d418482cb9326d7226ffbcc5b7f031f31"},
+    {"byte_length":1503,"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_EXECUTOR_HANDOFF.md","sha256":"00866b221090bec3ec64af40f235f98b1eeab10c996a7ed641def7263f6d32e2"},
+    {"byte_length":5451,"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_OUTPUT_CONTRACT.json","sha256":"f13386bc17e9761787c764528f322d1c075765677fc179cf1022ebeca763352d"},
+    {"byte_length":2574,"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_SEALED_DELIVERY_CONTRACT.json","sha256":"834a07a03a754dd2b17249e04e4c5334c8099c7dcb127377a4a6b44b6d8ecbf0"},
+    {"byte_length":2149,"path":"benchmarks/m15b-phase4-protocol/schemas/case_a_evidence_comparison.schema.json","sha256":"48f5a7fdc293d2365a6f74c8fb126c1511be58dd92a8abca4c67b3e13ec82eb5"},
+    {"byte_length":654,"path":"benchmarks/m15b-phase4-protocol/schemas/case_b_applicability_disposition.schema.json","sha256":"e35c8fa895957ecc49c1999b5ed2a9aa49c94b1f86c235074e85f51be1f29bb4"},
+    {"byte_length":1460,"path":"benchmarks/m15b-phase4-protocol/schemas/evidence_reveal_receipt.schema.json","sha256":"70e6c14c716ae8664df5cc338d24e38e2e00f822ce4d002b5693e3128a1716cf"},
+    {"byte_length":1700,"path":"benchmarks/m15b-phase4-protocol/schemas/phase4_execution_manifest.schema.json","sha256":"ececeed7886ee2d26d873cc38a4651af03ad88c1001bb8761448415932d90bfe"},
+    {"byte_length":1317,"path":"benchmarks/m15b-phase4-protocol/schemas/retrospective_leakage_assessment.schema.json","sha256":"b04cc689c0e363615d19aa2e017b19cd3a1ecf146a59aaa2f0ec59957a759cc1"}
+  ]
+}
