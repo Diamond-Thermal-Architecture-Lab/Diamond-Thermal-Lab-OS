@@ -1,21 +1,389 @@
 {
-  "contract_id": "m15b-phase4-output-contract-2.0",
-  "schema_draft": "https://json-schema.org/draft/2020-12/schema",
-  "serialization": {"encoding": "utf-8", "bom": "prohibited", "newline": "lf", "final_newline": true, "json": "two-space indentation; lexicographic object keys"},
-  "timestamp_rule": "Capture one RFC3339 UTC Z timestamp before generation; inject it unchanged into both runs and compare raw hashes.",
-  "artifacts": [
-    {"id":"evidence_reveal_receipt","path":"exports/m15b-case-a-phase4/evidence_reveal_receipt.json","schema":"schemas/evidence_reveal_receipt.schema.json"},
-    {"id":"case_a_evidence_comparison","path":"exports/m15b-case-a-phase4/case_a_evidence_comparison.json","schema":"schemas/case_a_evidence_comparison.schema.json"},
-    {"id":"case_a_comparison_report","path":"exports/m15b-case-a-phase4/case_a_evidence_comparison_report.md","rendering":"validated Case A JSON; headings # M15B Phase 4 Case A Evidence Comparison, ## Scope and frozen inputs, ## Findings, ## Triage, Decision Board, and engineering-memory effects, ## Uncertainty and recommendations, ## Disclosure statement; table fields in schema order; finding ID ascending; escape pipe/backslash/CR/LF; empty=—; no appendix/timestamp/free text; final LF"},
-    {"id":"case_b_applicability_disposition","path":"exports/m15b-case-b-phase4/case_b_applicability_disposition.json","schema":"schemas/case_b_applicability_disposition.schema.json"},
-    {"id":"retrospective_leakage_assessment","path":"exports/m15b-case-a-phase4/retrospective_leakage_assessment.json","schema":"schemas/retrospective_leakage_assessment.schema.json"},
-    {"id":"phase4_execution_manifest","path":"exports/m15b-phase4/phase4_execution_manifest.json","schema":"schemas/phase4_execution_manifest.schema.json"},
-    {"id":"phase4_executor_handoff","path":"exports/m15b-phase4/phase4_executor_handoff.md","rendering":"execution manifest pre_commit_gates in schema order plus fixed stops, independence boundary, and external commit/push statement; exact headings in handoff; escaped cells; empty=—; final LF"}
-  ],
   "artifact_addition_policy": "No artifact may be added, omitted, or renamed without an independently accepted pre-reveal amendment.",
-  "pre_commit_gate_order": ["frozen_phase3_anchor_verification","pre_reveal_lock","sealed_root_resolution","sealed_byte_provenance","reveal_opening","authorized_evidence_scope","case_a_comparison","case_b_disposition","leakage_assessment","schema_validation","deterministic_validation","disclosure_audit","targeted_tests","complete_tests","baseline_verifiers","protected_surface_audit"],
-  "semantic_validator_requirements": ["exact comparison/leakage inventory extraction, counts, digests, uniqueness and ordering", "Case A material requires non-no_change downstream effect", "no numeric score unless separately frozen", "Case B contract path/hash and prohibited-field audit", "execution paths/gates exactly match contract", "all output timestamps captured once", "disclosure scan"],
-  "test_accounting": {"required_fields":["run","passed","failed","errored","skipped","skip_names","skip_reasons","all_skips_expected_platform_conditional"],"frozen_parent_comparison":"same run count, exact skip names and reasons; zero failed/errored; any difference blocks"},
-  "schema_quality_gate": {"format_checking":true,"synthetic_valid_instances":true,"invalid_rejections":["wrong primitive type","duplicate/missing delivery ID","identifier locator mismatch","incomplete/duplicate Case A coverage","invalid Case A combination","mixed Case B dimensions","Case B evidence injection","incomplete/duplicate leakage coverage","unexpected/missing/duplicate execution path","missing/duplicate gate","false post-push claim","invalid timestamp","extra property"]},
-  "disclosure_prohibitions": ["full sealed source","long extract","credential","token","local absolute path","temporary path","URL","unrelated evidence","source copy","binary payload"]
+  "artifacts": [
+    {
+      "id": "evidence_reveal_receipt",
+      "path": "exports/m15b-case-a-phase4/evidence_reveal_receipt.json",
+      "schema": "schemas/evidence_reveal_receipt.schema.json"
+    },
+    {
+      "id": "case_a_evidence_comparison",
+      "path": "exports/m15b-case-a-phase4/case_a_evidence_comparison.json",
+      "schema": "schemas/case_a_evidence_comparison.schema.json"
+    },
+    {
+      "id": "case_a_comparison_report",
+      "path": "exports/m15b-case-a-phase4/case_a_evidence_comparison_report.md",
+      "rendering": "validated Case A JSON; headings # M15B Phase 4 Case A Evidence Comparison, ## Scope and frozen inputs, ## Findings, ## Triage, Decision Board, and engineering-memory effects, ## Uncertainty and recommendations, ## Disclosure statement; table fields in schema order; finding ID ascending; escape pipe/backslash/CR/LF; empty=em dash; no appendix/timestamp/free text; final LF"
+    },
+    {
+      "id": "case_b_applicability_disposition",
+      "path": "exports/m15b-case-b-phase4/case_b_applicability_disposition.json",
+      "schema": "schemas/case_b_applicability_disposition.schema.json"
+    },
+    {
+      "id": "retrospective_leakage_assessment",
+      "path": "exports/m15b-case-a-phase4/retrospective_leakage_assessment.json",
+      "schema": "schemas/retrospective_leakage_assessment.schema.json"
+    },
+    {
+      "id": "phase4_execution_manifest",
+      "path": "exports/m15b-phase4/phase4_execution_manifest.json",
+      "schema": "schemas/phase4_execution_manifest.schema.json"
+    },
+    {
+      "id": "phase4_executor_handoff",
+      "path": "exports/m15b-phase4/phase4_executor_handoff.md",
+      "rendering": "execution manifest pre_commit_gates in schema order plus fixed stops, independence boundary, and external commit/push statement; exact headings in handoff; escaped cells; empty=em dash; final LF"
+    }
+  ],
+  "comparison_unit_inventory": {
+    "canonical_locator_prefixes": {
+      "claim_ledger": "claim_id:",
+      "engineering_memory": "heading:",
+      "json_scalar_leaf": "json_pointer:"
+    },
+    "claim_ledger": {
+      "derive_additional_yaml_units": false,
+      "exact_locators": [
+        "claim_id:CLM-001",
+        "claim_id:CLM-002"
+      ],
+      "excluded_nodes": [
+        "document title",
+        "status",
+        "note",
+        "claim text",
+        "nested fields",
+        "all other YAML nodes"
+      ],
+      "existence_check": "verify both exact claim IDs in the already hash-verified frozen bytes",
+      "source_count": 2
+    },
+    "digest": {
+      "algorithm": "sha256",
+      "encoding": "lowercase hexadecimal",
+      "golden_sha256": "4a1d9fab7154166a5c1daa5bcdbfe88aa4f49db41f697dc189a739e546a81bd3",
+      "id_encoding": "ascii",
+      "leading_lf": false,
+      "preimage_construction": "bytes([0x0A]).join(comparison_unit_id.encode(\"ascii\") for comparison_unit_id in canonically_ordered_ids)",
+      "prohibited_bytes": [
+        "carriage return",
+        "UTF-8 BOM",
+        "literal backslash-plus-n separator"
+      ],
+      "separator_byte_hex": "0a",
+      "separator_count": 279,
+      "terminal_lf": false
+    },
+    "engineering_memory": {
+      "captured_heading_uniqueness_required": true,
+      "exact_locators": [
+        "heading:Lesson",
+        "heading:Source Artifact",
+        "heading:Reusable Pattern",
+        "heading:Failed Assumption",
+        "heading:Validated Assumption",
+        "heading:Future Use",
+        "heading:Draft Safety Note"
+      ],
+      "excluded": {
+        "blank_lines": true,
+        "heading_levels_other_than_2": true,
+        "level_1_document_title": "# Engineering Memory Entry",
+        "level_1_locator": "heading:Engineering Memory Entry",
+        "metadata_lines": true,
+        "section_body_paragraphs": true,
+        "title_unit_id": "M15B-P4-CAU-71a60b23fc2b28aaf7d81e88950d52e6b548a99defb3bf168030d958c05296d58"
+      },
+      "line_capture": {
+        "encoding": "strict UTF-8",
+        "exact_ascii_prefix": "## ",
+        "exact_prefix_bytes_hex": "232320",
+        "line_endings": "LF",
+        "locator_construction": "heading: followed by the remainder of the exact line",
+        "normalizations_prohibited": [
+          "trimming",
+          "case folding",
+          "Unicode normalization",
+          "slugification",
+          "Markdown-anchor conversion"
+        ]
+      },
+      "source_count": 7
+    },
+    "inventory_version": "3.0",
+    "json_scalar_leaves": {
+      "array_elements": "include each scalar array element individually",
+      "bom_rules": {
+        "decision_board_preview.json": "no BOM permitted",
+        "embedded_or_other_bom": "prohibited",
+        "second_bom": "prohibited",
+        "triage_result.json": "require, permit, and remove exactly one leading U+FEFF solely before JSON parsing"
+      },
+      "container_exclusions": [
+        "object",
+        "array",
+        "empty object",
+        "empty array",
+        "object container with scalar descendants",
+        "array container with scalar descendants"
+      ],
+      "decision_bearing_definition": "all and only scalar leaves in the two exact named JSON artifacts",
+      "decoding_requirements": [
+        "strict UTF-8",
+        "duplicate-key rejection at every object depth",
+        "no comments",
+        "no trailing non-whitespace content",
+        "no non-standard numeric values"
+      ],
+      "rfc6901": {
+        "array_index": "zero-based base-10 with no leading zero except index 0",
+        "fragment_prefix_prohibited": true,
+        "locator_construction": "json_pointer: followed immediately by the RFC 6901 pointer",
+        "normalizations_prohibited": [
+          "case folding",
+          "Unicode normalization"
+        ],
+        "object_member_step": "/ followed by escaped member name",
+        "pointer_examples": [
+          "json_pointer:/case_id",
+          "json_pointer:/secondary_classifications/0",
+          "json_pointer:/triggered_rules/0/rule_id"
+        ],
+        "token_escape_order": [
+          "replace ~ with ~0",
+          "then replace / with ~1"
+        ],
+        "uri_encoding_prohibited": true
+      },
+      "scalar_leaf_types": [
+        "string",
+        "number",
+        "true",
+        "false",
+        "null"
+      ],
+      "source_counts": {
+        "exports/m15b-case-a-phase3/decision_board_preview.json": 160,
+        "exports/m15b-case-a-phase3/triage_result.json": 111
+      }
+    },
+    "ordering": {
+      "comparison": "unsigned bytewise lexicographic",
+      "keys": [
+        "exact UTF-8 repository-relative path bytes",
+        "exact UTF-8 canonical locator bytes"
+      ],
+      "prohibited": [
+        "locale-aware sorting",
+        "natural-number sorting",
+        "case-insensitive sorting",
+        "filesystem ordering",
+        "YAML source order",
+        "JSON source order",
+        "unit-ID sorting"
+      ],
+      "required_for": [
+        "Case A comparison_records",
+        "retrospective leakage assessments"
+      ]
+    },
+    "ordering_sentinels": {
+      "first": {
+        "id": "M15B-P4-CAU-41f739f2487744226be4b0868f02b2a2718c2de0afe1617075ac1594e9fa6142",
+        "locator": "claim_id:CLM-001",
+        "path": "cases/m15b-case-a/10_claim_ledger.yml"
+      },
+      "last": {
+        "id": "M15B-P4-CAU-83e3f4a4040fd5b4f956480bd4211e92a4247fd88097a814ec8d1c5ca1d5194f",
+        "locator": "json_pointer:/validation_note",
+        "path": "exports/m15b-case-a-phase3/triage_result.json"
+      }
+    },
+    "source_counts": {
+      "cases/m15b-case-a/10_claim_ledger.yml": 2,
+      "cases/m15b-case-a/11_engineering_memory_entry.md": 7,
+      "exports/m15b-case-a-phase3/decision_board_preview.json": 160,
+      "exports/m15b-case-a-phase3/triage_result.json": 111
+    },
+    "source_paths": [
+      "cases/m15b-case-a/10_claim_ledger.yml",
+      "cases/m15b-case-a/11_engineering_memory_entry.md",
+      "exports/m15b-case-a-phase3/decision_board_preview.json",
+      "exports/m15b-case-a-phase3/triage_result.json"
+    ],
+    "source_set_closed": true,
+    "total_required_units": 280,
+    "unit_identifier": {
+      "algorithm": "sha256",
+      "encoding": "lowercase hexadecimal",
+      "id_prefix": "M15B-P4-CAU-",
+      "literal_backslash_n_separator_prohibited": true,
+      "normalizations_prohibited": [
+        "Unicode normalization",
+        "locale transformation"
+      ],
+      "preimage_construction": "path.encode(\"utf-8\") + bytes([0x0A]) + locator.encode(\"utf-8\")",
+      "preimage_constraints": {
+        "bom": false,
+        "carriage_return": false,
+        "leading_whitespace": false,
+        "separator_byte_hex": "0a",
+        "separator_count": 1,
+        "terminal_lf": false,
+        "trailing_whitespace": false
+      }
+    }
+  },
+  "contract_id": "m15b-phase4-output-contract-3.0",
+  "disclosure_prohibitions": [
+    "full sealed source",
+    "long extract",
+    "credential",
+    "token",
+    "local absolute path",
+    "temporary path",
+    "URL",
+    "unrelated evidence",
+    "source copy",
+    "binary payload"
+  ],
+  "pre_commit_gate_order": [
+    "frozen_phase3_anchor_verification",
+    "pre_reveal_lock",
+    "sealed_root_resolution",
+    "sealed_byte_provenance",
+    "reveal_opening",
+    "authorized_evidence_scope",
+    "case_a_comparison",
+    "case_b_disposition",
+    "leakage_assessment",
+    "schema_validation",
+    "deterministic_validation",
+    "disclosure_audit",
+    "targeted_tests",
+    "complete_tests",
+    "baseline_verifiers",
+    "protected_surface_audit"
+  ],
+  "schema_draft": "https://json-schema.org/draft/2020-12/schema",
+  "schema_quality_gate": {
+    "format_checking": true,
+    "invalid_rejections": [
+      "wrong primitive type",
+      "duplicate or missing delivery ID",
+      "inclusion of heading:Engineering Memory Entry",
+      "inclusion of an empty array or container",
+      "omission of a scalar array element",
+      "incorrect RFC 6901 escape ordering",
+      "leading-zero array indexes",
+      "locale or natural sorting",
+      "sorting by unit ID",
+      "terminal LF in digest preimage",
+      "literal backslash-plus-n in unit-ID or digest preimage",
+      "wrong source count",
+      "correct total with wrong source allocation",
+      "count or digest mismatch",
+      "locator or identifier mismatch",
+      "incomplete or duplicate Case A coverage",
+      "invalid Case A combination",
+      "mixed Case B dimensions",
+      "Case B evidence injection",
+      "incomplete or duplicate leakage coverage",
+      "unexpected, missing, or duplicate execution path",
+      "missing or duplicate gate",
+      "false post-push claim",
+      "invalid timestamp",
+      "extra property"
+    ],
+    "synthetic_valid_instances": true
+  },
+  "semantic_validator_requirements": [
+    {
+      "enforcement": "inventory source paths equal the four source_paths entries and no other path",
+      "id": "exact_four_source_inventory"
+    },
+    {
+      "enforcement": "per-source counts equal 2, 7, 160, and 111; total equals 280",
+      "id": "exact_counts"
+    },
+    {
+      "enforcement": "required, evaluated, and assessed set digests all equal the golden SHA-256",
+      "id": "exact_golden_digest"
+    },
+    {
+      "enforcement": "recompute every unit ID from exact path, actual LF byte 0x0A, and canonical locator; reject literal backslash-plus-n",
+      "id": "path_locator_id_binding"
+    },
+    {
+      "enforcement": "Case A and leakage arrays use exact unsigned bytewise path-and-locator order",
+      "id": "canonical_ordering"
+    },
+    {
+      "enforcement": "exclude the level-1 title, its locator, and its listed title unit ID",
+      "id": "engineering_memory_h1_exclusion"
+    },
+    {
+      "enforcement": "select all and only JSON scalar leaves; exclude objects, arrays, and empty containers",
+      "id": "json_scalar_only_selection"
+    },
+    {
+      "enforcement": "strict UTF-8, duplicate-key rejection at every depth, and exact named-file BOM handling",
+      "id": "json_decode_rules"
+    },
+    {
+      "enforcement": "digest uses 279 actual LF bytes between IDs and no terminal LF",
+      "id": "digest_preimage_bytes"
+    },
+    {
+      "enforcement": "Case A and leakage use identical IDs and golden inventory exactly once with no missing or extra unit",
+      "id": "identical_case_a_leakage_inventory"
+    },
+    {
+      "enforcement": "leakage assessment IDs are M15B-P4-LK-00000001 through M15B-P4-LK-00000280 and position matches canonical unit position",
+      "id": "leakage_sequence_binding"
+    },
+    {
+      "enforcement": "Case A material requires a non-no_change downstream effect and all existing relationship constraints",
+      "id": "case_a_relationship_materiality"
+    },
+    {
+      "enforcement": "no numeric score unless separately frozen",
+      "id": "no_unfrozen_numeric_score"
+    },
+    {
+      "enforcement": "Case B contract path/hash and prohibited-field audit",
+      "id": "case_b_boundary"
+    },
+    {
+      "enforcement": "execution paths and gates exactly match the contract; all output timestamps are captured once",
+      "id": "execution_determinism"
+    },
+    {
+      "enforcement": "apply all disclosure prohibitions",
+      "id": "disclosure_scan"
+    }
+  ],
+  "serialization": {
+    "bom": "prohibited",
+    "encoding": "utf-8",
+    "final_newline": true,
+    "json": "two-space indentation; lexicographic object keys",
+    "newline": "lf"
+  },
+  "test_accounting": {
+    "frozen_parent_comparison": "same run count, exact skip names and reasons; zero failed/errored; any difference blocks",
+    "required_fields": [
+      "run",
+      "passed",
+      "failed",
+      "errored",
+      "skipped",
+      "skip_names",
+      "skip_reasons",
+      "all_skips_expected_platform_conditional"
+    ]
+  },
+  "timestamp_rule": "Capture one RFC3339 UTC Z timestamp before generation; inject it unchanged into both runs and compare raw hashes."
 }

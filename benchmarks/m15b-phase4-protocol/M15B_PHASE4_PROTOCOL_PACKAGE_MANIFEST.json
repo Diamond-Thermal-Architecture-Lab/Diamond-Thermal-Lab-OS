@@ -1,14 +1,54 @@
 {
-  "manifest_version":"2.0","package_id":"m15b-phase4-protocol-completion-2.0","hash_algorithm":"sha256","self_hashing":"excluded; reviewer hashes this manifest separately","covered_file_count":9,
-  "files":[
-    {"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_EVIDENCE_REVEAL_PROTOCOL.md","byte_length":5373,"sha256":"10d76d75fc8c06569f579230843942be8607b04187a6728bb3bd8d5f459b5092"},
-    {"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_EXECUTOR_HANDOFF.md","byte_length":1295,"sha256":"8144cbca192b001a294ddc89549caa9097f4fc63818f4add36f3f309729946ec"},
-    {"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_OUTPUT_CONTRACT.json","byte_length":3957,"sha256":"9cfba24da611c18a9d5cfc6d9ec362a5097739ddcbbb31f9206f543b76d60665"},
-    {"path":"benchmarks/m15b-phase4-protocol/M15B_PHASE4_SEALED_DELIVERY_CONTRACT.json","byte_length":2501,"sha256":"89701150c14451cb172f21de85fbf2cda5e21f9785b60f9b2c8ca76284b00eee"},
-    {"path":"benchmarks/m15b-phase4-protocol/schemas/case_a_evidence_comparison.schema.json","byte_length":3823,"sha256":"02c5c808c5b931ad3dd9eea6dd6947fc484435899609c171a97ce941c66bc556"},
-    {"path":"benchmarks/m15b-phase4-protocol/schemas/case_b_applicability_disposition.schema.json","byte_length":896,"sha256":"3a98e25952fbc66beb9c9f87a0e096b36a3dc5d58d663e9853a40ab31c71c231"},
-    {"path":"benchmarks/m15b-phase4-protocol/schemas/evidence_reveal_receipt.schema.json","byte_length":2622,"sha256":"32dcbc62e4488ac8c9f812beac703ac585c4454a1498b7426813d64114fa1f15"},
-    {"path":"benchmarks/m15b-phase4-protocol/schemas/phase4_execution_manifest.schema.json","byte_length":2300,"sha256":"4c69b99cbf32cb0e0354a3d39b46d85af98857dc3bbc2b58b3e84adaa93653b2"},
-    {"path":"benchmarks/m15b-phase4-protocol/schemas/retrospective_leakage_assessment.schema.json","byte_length":3366,"sha256":"2a12e5b24c4b2254f98801e2db95c021ec0b9609d035e026544ea5e23eddd53b"}
+  "manifest_version": "3.0",
+  "package_id": "m15b-phase4-protocol-completion-3.0",
+  "hash_algorithm": "sha256",
+  "self_hashing": "excluded; reviewer hashes this manifest separately",
+  "covered_file_count": 9,
+  "files": [
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_EVIDENCE_REVEAL_PROTOCOL.md",
+      "byte_length": 11079,
+      "sha256": "72522d2a094969cc74cde02151f3cc7d6a073e9951b51bbf655e24f6af864dbd"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_EXECUTOR_HANDOFF.md",
+      "byte_length": 1295,
+      "sha256": "8144cbca192b001a294ddc89549caa9097f4fc63818f4add36f3f309729946ec"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_OUTPUT_CONTRACT.json",
+      "byte_length": 14008,
+      "sha256": "b240e9e55fffd584022595a1213f3301009d76eec7c4da11c112d5889a284775"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_SEALED_DELIVERY_CONTRACT.json",
+      "byte_length": 2501,
+      "sha256": "89701150c14451cb172f21de85fbf2cda5e21f9785b60f9b2c8ca76284b00eee"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/case_a_evidence_comparison.schema.json",
+      "byte_length": 8306,
+      "sha256": "b42aac4c35cb8057f17b58efd7e9b76d681987b5343b6759dfccba2f8977450e"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/case_b_applicability_disposition.schema.json",
+      "byte_length": 896,
+      "sha256": "3a98e25952fbc66beb9c9f87a0e096b36a3dc5d58d663e9853a40ab31c71c231"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/evidence_reveal_receipt.schema.json",
+      "byte_length": 2622,
+      "sha256": "32dcbc62e4488ac8c9f812beac703ac585c4454a1498b7426813d64114fa1f15"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/phase4_execution_manifest.schema.json",
+      "byte_length": 2300,
+      "sha256": "4c69b99cbf32cb0e0354a3d39b46d85af98857dc3bbc2b58b3e84adaa93653b2"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/retrospective_leakage_assessment.schema.json",
+      "byte_length": 5648,
+      "sha256": "7042d13feb2c91459278d8c3631de70816e41db79149f18c16d6e44cc8909a3e"
+    }
   ]
 }
