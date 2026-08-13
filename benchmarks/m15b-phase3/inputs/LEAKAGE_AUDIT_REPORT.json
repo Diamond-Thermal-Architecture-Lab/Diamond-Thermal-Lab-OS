@@ -1,0 +1,15 @@
+{
+  "decoded_file_count": 6,
+  "entry_count": 6,
+  "finding_count": 0,
+  "findings": [],
+  "policy_byte_length": 6465,
+  "policy_sha256": "139384a58275c4da5bd4364f40c06229eaa6ec37aa0426b2218a742b1d1ee6fe",
+  "policy_token_count": 41,
+  "policy_version": "1.0",
+  "regular_file_count": 6,
+  "report_version": "1.0",
+  "root_count": 2,
+  "scanned_byte_count": 36563,
+  "status": "pass"
+}

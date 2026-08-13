@@ -1,0 +1,30 @@
+case_id: m15b-case-a
+title: "M15B-CASE-A Blind Phase-One Case"
+status: draft
+confidentiality_level: "public-safe-blind"
+claims:
+  - claim_id: CLM-001
+    claim: "The blind packet states that the relevant circular membrane is suspended before, during, and after retained-layer integration."
+    claim_type: input_fact
+    basis: "Authorized BLIND_INPUT_PACKET.yml"
+    assumptions:
+      - "No response, success, or route suitability is implied."
+    confidence: stated_input
+    validation_required: true
+    status: draft
+    public_release: not_allowed_until_review
+    confidentiality_level: "public-safe-blind"
+    reviewer: "Role D Phase-One Builder"
+  - claim_id: CLM-002
+    claim: "The blind packet leaves thermal boundaries, cooling route, property basis, stress reference, response, interface acceptance, and intended-function acceptance unresolved."
+    claim_type: evidence_boundary
+    basis: "Authorized BLIND_INPUT_PACKET.yml"
+    assumptions:
+      - "Unknowns are not converted into defaults or conclusions."
+    confidence: stated_input
+    validation_required: true
+    status: draft
+    public_release: not_allowed_until_review
+    confidentiality_level: "public-safe-blind"
+    reviewer: "Role D Phase-One Builder"
+note: "No outcome, performance, source-identity, score, or route-approval claim is recorded."

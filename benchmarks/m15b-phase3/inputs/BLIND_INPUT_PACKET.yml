@@ -1,0 +1,161 @@
+packet_version: "1.0"
+protocol_version: "1.0"
+prepared_at_utc: "2026-08-11T08:38:13Z"
+confidentiality: "public-safe blind input; source identity and outcomes withheld"
+frozen_entry_point:
+  repository: "Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS"
+  execution_baseline_commit: "2b45c63128dad6793dd753ca9300538769af8c53"
+  execution_baseline_tree: "acb84fb593eed10f7ce0507febf5c4217053d129"
+  execution_baseline_record_sha256: "85adb4cd708d73a3c6731d3af0bf8c9517173acd328b301ec274bf37bc9e337e"
+
+case_inputs:
+  - anonymous_case_id: "M15B-CASE-A"
+    construction_role: "numbered canonical case"
+    engineering_question: >-
+      Structure the evidence needs for a retained thin-layer integration performed while a
+      circular membrane is already suspended. Do not predict stress, deformation, survival,
+      mechanical performance, or route suitability.
+    material_stack:
+      support: "prepatterned silicon/silicon-oxide substrate with circular cavities"
+      suspended_layer: "exfoliated multilayer graphene"
+      deposited_intermediate: "molybdenum oxide formed by plasma-enhanced atomic layer deposition"
+      retained_integrated_layer: "molybdenum sulfide formed by sulfurization of the deposited oxide"
+    structural_state:
+      before_integration: >-
+        The multilayer graphene membrane is transferred over a circular cavity and is already
+        suspended before the deposited-layer sequence begins.
+      during_integration: >-
+        The relevant circular membrane remains suspended during plasma-enhanced atomic layer
+        deposition and the subsequent high-temperature conversion step.
+      after_integration: >-
+        The converted layer remains integrated as the top layer of a suspended
+        graphene/molybdenum-sulfide composite membrane.
+    source_terms_to_preserve:
+      - "suspended graphene membrane"
+      - "suspended graphene drum"
+      - "circular cavity"
+      - "deposited on top of"
+      - "plasma-enhanced atomic layer deposition"
+      - "sulfurized"
+    geometry:
+      membrane_shape: "circular"
+      membrane_radius_um: 4
+      support_boundary: "membrane perimeter supported by the silicon-oxide surface around the cavity"
+      suspended_layer_thickness_nm_approx: 13
+      converted_layer_thickness_nm_approx: 8
+      total_composite_thickness_nm_approx: 21
+    process_sequence:
+      - step: 1
+        description: >-
+          Fabricate circular cavities in the silicon-oxide surface and transfer exfoliated
+          multilayer graphene over a cavity at room temperature to form the suspended membrane.
+      - step: 2
+        description: >-
+          Deposit molybdenum oxide directly on the already-suspended graphene membrane by
+          plasma-enhanced atomic layer deposition at 100 degrees Celsius.
+      - step: 3
+        description: >-
+          Each stated deposition cycle uses 6 seconds of precursor dosing with argon carrier,
+          3 seconds of argon purge, 3 seconds of pump-down, and 4 seconds of oxygen-plasma
+          exposure at 100 watts. Reported chamber pressures are approximately 7.5 mTorr during
+          precursor dosing and 5.1 mTorr during plasma exposure.
+      - step: 4
+        description: >-
+          Sulfurize the deposited oxide in a tube furnace at a process temperature of
+          900 degrees Celsius and atmospheric pressure using 10 percent hydrogen sulfide in argon.
+      - step: 5
+        description: >-
+          Retain the converted layer on the suspended graphene membrane as the composite structure.
+    known_process_context:
+      precursor_bubbler_temperature_c: 50
+      deposition_reactor: "vacuum chamber connected to an inductively coupled plasma source and pump unit"
+      deposition_temperature_c: 100
+      conversion_temperature_c: 900
+      conversion_pressure: "atmospheric"
+      conversion_gas: "10 percent hydrogen sulfide in argon"
+    retained_retrospective_risk_fields:
+      - field: "layer thicknesses"
+        reason: >-
+          Approximate layer thicknesses were obtained after fabrication. They are retained only
+          as geometry inputs; no mechanical response or outcome is included.
+      - field: "top-layer relationship"
+        reason: >-
+          The source describes direct deposition on top of the suspended membrane. Exact underside
+          coverage is not supplied as a pre-outcome fact.
+    explicitly_unresolved_inputs:
+      - "duration of the 900 degrees Celsius sulfurization exposure"
+      - "heating ramp and cooling route for the sulfurization step"
+      - "membrane-to-holder, carrier, furnace-wall, and ambient thermal-boundary conditions"
+      - "temperature-dependent material properties and stress-free reference condition"
+      - "initial and post-process stress, shape, curvature, or pretension acceptance basis"
+      - "interface adhesion, fracture, or delamination acceptance basis"
+      - "geometry-dependent comparison beyond the stated 4 micrometre radius"
+      - "post-integration acceptance criteria for the intended resonator function"
+    evidence_boundary:
+      included: >-
+        Only source-faithful material, geometry, structural-state, process-order, process-condition,
+        retained-interface, and explicitly unresolved input facts.
+      excluded: >-
+        Source identity, device success or failure labels, measured or inferred stress, deflection,
+        pretension, elastic modulus, frequency, quality factor, dissipation, causal conclusions,
+        expected screening status, expected rules, benchmark scores, and rule-fix ideas.
+
+  - anonymous_case_id: "M15B-CASE-B"
+    construction_role: "separate contract-evaluation input"
+    engineering_question: >-
+      Apply the frozen applicability contract to this thin-film integration using only the stated
+      structural states and process sequence. Do not infer unstated geometry or later processing.
+    material_stack:
+      support: "150 mm p-type (100) bulk silicon wafer with a silicon-oxide-terminated surface"
+      integrated_layer: "aluminium oxide deposited from trimethylaluminium and water"
+    structural_state:
+      before_integration: "bulk silicon wafer, fully supported"
+      during_integration: "bulk silicon wafer, fully supported throughout atomic layer deposition"
+      after_integration: "deposited film retained on the bulk silicon wafer; no release step is present"
+    source_terms_to_preserve:
+      - "150 mm p-type (100) silicon wafer"
+      - "double-side polished"
+      - "single-side polished"
+      - "atomic layer deposition"
+      - "trimethylaluminium and water"
+    geometry:
+      wafer_diameter_mm: 150
+      double_side_polished_wafer_thickness_um: "380 +/- 5"
+      single_side_polished_wafer_thickness_um: "675 +/- 15"
+      deposited_film_thickness_range_nm: "10 to 600"
+      suspended_span: "none"
+      membrane_or_released_region: "none"
+    process_sequence:
+      - step: 1
+        description: >-
+          Wet-clean the silicon wafers using an RCA sequence with deionized-water rinsing and
+          spin drying, leaving a silicon-oxide-terminated surface.
+      - step: 2
+        description: >-
+          Deposit aluminium oxide from trimethylaluminium and water by atomic layer deposition
+          at selected temperatures from 110 to 300 degrees Celsius.
+      - step: 3
+        description: >-
+          Retain the deposited film on the same bulk silicon wafer for later characterization.
+          No membrane fabrication, suspended region, bridge release, or other compliant-region
+          creation is part of the stated process sequence.
+    explicitly_unresolved_inputs:
+      - "case-specific mechanical acceptance criteria"
+      - "post-deposition cooling route for each reactor run"
+    evidence_boundary:
+      included: >-
+        Supported-wafer structure, material stack, stated wafer and film geometry, process order,
+        and deposition-temperature range.
+      excluded: >-
+        Source identity, measured stress, modulus, hardness, adhesion, composition, density,
+        outcome trends, causal conclusions, expected screening status, expected rules, scores,
+        and rule-fix ideas.
+
+builder_constraints:
+  - "Use only this packet, the frozen public repository, and the merged protocol."
+  - "Do not search for, infer, or retrieve the underlying publications."
+  - "Do not add facts that are not present in this packet."
+  - "Keep facts, assumptions, hypotheses, unknowns, and requested evidence visibly separate."
+  - "Do not change M14, schemas, dependencies, workflows, patterns, or the frozen execution baseline."
+  - "Do not create Evidence Objects, Measurement References, or prediction-reality records before reveal."
+  - "Build, run, freeze, commit, push, and stop as required by Phase 3; do not interpret revealed evidence."

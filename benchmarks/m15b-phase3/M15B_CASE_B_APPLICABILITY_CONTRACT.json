@@ -1,0 +1,35 @@
+{
+  "applicability_contract_version": "M15B-1.0",
+  "case_id": "M15B-CASE-B",
+  "evidence_boundary": "Authorized blind packet facts only; source identity, outcomes, sealed registrations, expected rules, scores, and rule-fix material were not consulted.",
+  "gates": [
+    {
+      "gate": "structural_state",
+      "status": "fail",
+      "basis": "The stated structure is a fully supported bulk silicon wafer before, during, and after atomic layer deposition; no suspended span, membrane, released region, bridge release, or compliant-region creation is present."
+    },
+    {
+      "gate": "integration",
+      "status": "pass",
+      "basis": "The stated aluminium-oxide film is deposited by atomic layer deposition and retained on the same bulk silicon wafer."
+    },
+    {
+      "gate": "thermal_significance",
+      "status": "pass",
+      "basis": "Atomic layer deposition is stated at selected temperatures from 110 to 300 C."
+    },
+    {
+      "gate": "source_sufficiency",
+      "status": "pass",
+      "basis": "The packet states the supported structural state, retained integration process, process order, material stack, wafer/film geometry, deposition-temperature range, and post-process relationship."
+    },
+    {
+      "gate": "independence",
+      "status": "not_evaluated",
+      "basis": "The blind packet intentionally withholds source identity and source mapping. This gate is not needed to determine the result because the structural-state gate fails."
+    }
+  ],
+  "thermomechanical_screening_status": "not_applicable",
+  "verdict": "not_applicable",
+  "verdict_basis": "The frozen contract requires all applicability gates to pass. The structural-state gate fails on the stated supported-wafer process, so this separate input is not incorporated into the M15B-CASE-A canonical case."
+}

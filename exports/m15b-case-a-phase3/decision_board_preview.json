@@ -1,0 +1,237 @@
+{
+  "board_status": "HOLD_FOR_DATA",
+  "candidate_routes": [],
+  "case_id": "m15b-case-a",
+  "claim_guardrails": [
+    "Screening output is not a validated thermal conclusion.",
+    "Pattern selection is not a final recommendation.",
+    "Measured and simulated evidence must be clearly distinguished.",
+    "Supplier-stated properties must not be treated as system-level performance.",
+    "Customer-facing performance claims remain blocked until the stated evidence gap is closed."
+  ],
+  "confidence": "low",
+  "critical_missing_data": [
+    "heat_source_geometry",
+    "power_or_power_density",
+    "cooling_boundary"
+  ],
+  "current_decision": "Defer architecture selection until critical thermal inputs are defined.",
+  "decision_basis": [
+    "Critical input is incomplete: heat_source_geometry.",
+    "Critical input is incomplete: power_or_power_density.",
+    "Critical input is incomplete: cooling_boundary.",
+    "Cooling boundary is not defined.",
+    "Interface resistance remains unbounded in an interface-sensitive context.",
+    "Thermomechanical material-property evidence is incomplete for elevated-temperature layer integration.",
+    "The deposited-layer route lacks a resolved process thermal history for thermomechanical screening.",
+    "Residual-stress or bow/warpage context is not sufficient to advance the membrane integration route.",
+    "The integrated layer interface lacks a stated adhesion or mechanical-integrity basis for thermomechanical screening.",
+    "The applicable process lacks a resolved fixture, carrier, or reactor thermal-boundary basis."
+  ],
+  "decision_state": "deferred",
+  "deferred_routes": [],
+  "hold_points": [
+    "Do not start detailed FEM before defining heat source geometry and cooling boundary.",
+    "Do not advance elevated-temperature membrane integration without the stated thermomechanical evidence.",
+    "Do not optimize diamond thickness before interface resistance is bounded.",
+    "Do not make customer-facing thermal claims before measurement or validation."
+  ],
+  "next_actions": [
+    {
+      "action": "Define heat_source_geometry.",
+      "completion_evidence": "A documented input, bounded range, or measurement record that resolves the stated gap.",
+      "owner_role": "thermal engineer",
+      "priority": 1,
+      "rationale": "The deterministic triage result identifies this as the highest-impact immediate uncertainty reduction."
+    },
+    {
+      "action": "Bound interface thermal resistance for the relevant thermal stack.",
+      "completion_evidence": "A documented sensitivity range, measurement basis, or reviewed interface assumption.",
+      "owner_role": "thermal engineer",
+      "priority": 2,
+      "rationale": "Interface uncertainty can change the relative value of material and package routes."
+    },
+    {
+      "action": "Define supplier or test acceptance criteria before external engagement.",
+      "completion_evidence": "A public-safe data request or validation plan with acceptance criteria.",
+      "owner_role": "project owner",
+      "priority": 3,
+      "rationale": "Evidence requests need clear decision and inspection criteria."
+    }
+  ],
+  "primary_classification": "insufficient_data",
+  "problem_summary": "suspended graphene/molybdenum-sulfide composite membrane in blind thermomechanical evidence construction: Structure evidence needs for retained thin-layer integration while a circular membrane is already suspended; do not predict mechanical performance or route suitability.",
+  "relevant_pattern_ids": [],
+  "ruleset_version": "decision-board-1.0",
+  "secondary_classifications": [
+    "cooling_boundary_limited",
+    "interface_limited_candidate",
+    "thermomechanical_validation_needed"
+  ],
+  "top_uncertainties": [
+    "heat_source_geometry",
+    "power_or_power_density",
+    "cooling_boundary",
+    "interface thermal resistance"
+  ],
+  "triage_status": "NEEDS_DATA",
+  "triggered_rules": [
+    {
+      "action_enabled": "Define heat_source_geometry.",
+      "evidence": "heat_source_geometry",
+      "finding": "Critical input is incomplete: heat_source_geometry.",
+      "rule_id": "TRIAGE-DATA-HEAT_SOURCE_GEOMETRY",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Define power_or_power_density.",
+      "evidence": "power_or_power_density",
+      "finding": "Critical input is incomplete: power_or_power_density.",
+      "rule_id": "TRIAGE-DATA-POWER_OR_POWER_DENSITY",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Define cooling_boundary.",
+      "evidence": "cooling_boundary",
+      "finding": "Critical input is incomplete: cooling_boundary.",
+      "rule_id": "TRIAGE-DATA-COOLING_BOUNDARY",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Define package-to-heat-sink boundary.",
+      "evidence": "cooling_boundary",
+      "finding": "Cooling boundary is not defined.",
+      "rule_id": "TRIAGE-BOUNDARY-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Bound interface thermal resistance.",
+      "evidence": "pattern or material context",
+      "finding": "Interface resistance remains unbounded in an interface-sensitive context.",
+      "rule_id": "TRIAGE-INTERFACE-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Obtain temperature-dependent material-property and stress-free-reference assumptions suitable for qualitative thermomechanical review.",
+      "engineering_rationale": "Thermal expansion context alone does not establish residual stress; a stated basis remains distinct from reviewed evidence.",
+      "evidence": "credible membrane integration context",
+      "evidence_boundary": "Qualitative screening guardrail only; it does not calculate stress, bow, warpage, or likelihood of failure.",
+      "finding": "Thermomechanical material-property evidence is incomplete for elevated-temperature layer integration.",
+      "missing_evidence": [
+        "temperature-dependent material-property and reference-temperature basis"
+      ],
+      "rule_id": "TRIAGE-THERMOMECH-001",
+      "severity": "WARN",
+      "title": "Material-property basis is incomplete",
+      "triggering_inputs": [
+        "credible membrane integration context"
+      ]
+    },
+    {
+      "action_enabled": "Define the public-safe growth or deposition temperature, dwell or exposure, cooling route, and relevant reference condition before advancing the route.",
+      "engineering_rationale": "A topic mention or an unresolved temperature statement does not define the heating, exposure, cooling, or reference context.",
+      "evidence": "thermally significant integration process",
+      "evidence_boundary": "Qualitative screening guardrail only; it does not calculate stress, bow, warpage, or likelihood of failure.",
+      "finding": "The deposited-layer route lacks a resolved process thermal history for thermomechanical screening.",
+      "missing_evidence": [
+        "growth or deposition temperature, dwell or exposure, and cooling-route evidence"
+      ],
+      "rule_id": "TRIAGE-THERMOMECH-002",
+      "severity": "WARN",
+      "title": "Process thermal history is incomplete",
+      "triggering_inputs": [
+        "thermally significant integration process"
+      ]
+    },
+    {
+      "action_enabled": "Obtain reviewed stress and profilometry evidence where applicable, define acceptance criteria, and compare initial with post-process state before advancing the route.",
+      "engineering_rationale": "Source-documented values and prose declarations do not replace reviewed evidence, applicable acceptance criteria, or initial/post-process comparison.",
+      "evidence": "elevated-temperature membrane integration; stress evidence state: missing; bow evidence state: missing",
+      "evidence_boundary": "Qualitative screening guardrail only; it does not calculate stress, bow, warpage, or likelihood of failure.",
+      "finding": "Residual-stress or bow/warpage context is not sufficient to advance the membrane integration route.",
+      "missing_evidence": [
+        "reviewed residual-stress evidence relevant to the route",
+        "reviewed bow or warpage evidence relevant to the route",
+        "case-specific residual-stress acceptance criteria",
+        "case-specific bow/warpage/curvature acceptance criteria",
+        "initial-state versus post-process comparison basis"
+      ],
+      "rule_id": "TRIAGE-THERMOMECH-003",
+      "severity": "WARN",
+      "title": "Stress and warpage evidence remains incomplete",
+      "triggering_inputs": [
+        "elevated-temperature membrane integration",
+        "stress evidence state: missing",
+        "bow evidence state: missing"
+      ]
+    },
+    {
+      "action_enabled": "Define a public-safe adhesion or mechanical-integrity validation basis and the evidence needed to reconsider the route.",
+      "engineering_rationale": "Missing interface evidence does not predict delamination or cracking; it identifies a validation condition before stronger route conclusions.",
+      "evidence": "deposited-layer integration on a membrane or thin structural layer",
+      "evidence_boundary": "Qualitative screening guardrail only; it does not calculate stress, bow, warpage, or likelihood of failure.",
+      "finding": "The integrated layer interface lacks a stated adhesion or mechanical-integrity basis for thermomechanical screening.",
+      "missing_evidence": [
+        "interface adhesion, fracture, or delamination evidence"
+      ],
+      "rule_id": "TRIAGE-THERMOMECH-004",
+      "severity": "WARN",
+      "title": "Interface mechanical evidence is incomplete",
+      "triggering_inputs": [
+        "deposited-layer integration on a membrane or thin structural layer"
+      ]
+    },
+    {
+      "action_enabled": "Define the public-safe fixture, carrier, reactor, contact, and ambient boundary assumptions before treating package screening as sufficient.",
+      "engineering_rationale": "A process fixture is distinct from a conventional package-to-heat-sink boundary and can affect the process thermal history.",
+      "evidence": "thermally significant membrane integration process",
+      "evidence_boundary": "Qualitative screening guardrail only; it does not calculate stress, bow, warpage, or likelihood of failure.",
+      "finding": "The applicable process lacks a resolved fixture, carrier, or reactor thermal-boundary basis.",
+      "missing_evidence": [
+        "process-fixture, carrier, or reactor thermal-boundary definition"
+      ],
+      "rule_id": "TRIAGE-THERMOMECH-005",
+      "severity": "WARN",
+      "title": "Process thermal boundary is incomplete",
+      "triggering_inputs": [
+        "thermally significant membrane integration process"
+      ]
+    },
+    {
+      "action_enabled": "Complete the highest-impact intake gap before architecture selection.",
+      "evidence": "triage status NEEDS_DATA",
+      "finding": "Decision Board is held because critical thermal inputs are incomplete.",
+      "rule_id": "BOARD-STATUS-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Select legitimate screening candidates only after critical inputs are complete.",
+      "evidence": "no known pattern references",
+      "finding": "No approved pattern candidate is selected in the case.",
+      "rule_id": "BOARD-ROUTE-002",
+      "severity": "INFO"
+    },
+    {
+      "action_enabled": "Close the applicable data, evidence, and validation gaps before strengthening the decision.",
+      "evidence": "NEEDS_DATA",
+      "finding": "Decision hold points preserve traceability while case evidence remains incomplete or unvalidated.",
+      "rule_id": "BOARD-HOLD-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Keep external language aligned with the claim ledger and validation state.",
+      "evidence": "triage state and unvalidated pattern context",
+      "finding": "Claim guardrails remain active until case-specific evidence and review support stronger statements.",
+      "rule_id": "BOARD-CLAIM-001",
+      "severity": "WARN"
+    },
+    {
+      "action_enabled": "Define heat_source_geometry.",
+      "evidence": "Define heat_source_geometry.",
+      "finding": "The first Decision Board action is inherited from triage.",
+      "rule_id": "BOARD-ACTION-001",
+      "severity": "INFO"
+    }
+  ],
+  "validation_note": "This is a deterministic decision preview, not an approved engineering decision."
+}
