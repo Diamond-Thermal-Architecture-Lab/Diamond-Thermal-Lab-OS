@@ -236,7 +236,160 @@
       }
     }
   },
-  "contract_id": "m15b-phase4-output-contract-3.0",
+  "contract_id": "m15b-phase4-output-contract-4.0",
+  "controlled_delivery_boundary": {
+    "all_payload_barrier": {
+      "byte_gate_range": "verification_order steps 1 through 13",
+      "decode_before_all_four_pass": false,
+      "payload_count": 4,
+      "prohibited_before_barrier": [
+        "decoding",
+        "rendering",
+        "comparison",
+        "evidence interpretation",
+        "reveal opening"
+      ]
+    },
+    "canonical_containment": {
+      "ambiguity_result": "hard stop before byte reading",
+      "canonical_parent_equals_canonical_root": true,
+      "immediate_child_required": true,
+      "parent_directory_identity_equals_retained_root_identity": true,
+      "prohibited_proofs": [
+        "StartsWith",
+        "textual path prefix",
+        "substring",
+        "relative-string prefix",
+        "normalized-string prefix without path-component equality",
+        "check before symlink or reparse rejection",
+        "child path merely containing root text"
+      ]
+    },
+    "exact_immediate_entry_set": [
+      "RELEVANCE_REGISTRATION.md",
+      "SCORING_REGISTRATION.md",
+      "SCOPE_REGISTRATION.md",
+      "SOURCE_DOSSIER.md"
+    ],
+    "fail_closed_when_verification_unavailable": true,
+    "prohibited_location_comparison": {
+      "canonical_path_components_required": true,
+      "equal_or_descendant_prohibited": true,
+      "os_native_case_semantics": true,
+      "prohibited_roots": [
+        "repository root",
+        "review or author workspace",
+        "executor workspace",
+        "dedicated temporary root",
+        "output or export roots",
+        "prior reviewer or builder roots expressly prohibited by the handoff"
+      ],
+      "textual_prefix_comparison_prohibited": true
+    },
+    "receipt_verification_fields": {
+      "delivery_entry_required_const_true": [
+        "filename_syntax_verified",
+        "no_follow_metadata_verified",
+        "regular_file_verified",
+        "non_reparse_verified",
+        "canonical_parent_equals_root_verified",
+        "parent_identity_equals_root_verified",
+        "stable_object_read_verified",
+        "byte_length_verified",
+        "sha256_verified",
+        "media_type_verified"
+      ],
+      "delivery_root_required_const_true": [
+        "controller_supplied_verified",
+        "absolute_path_verified",
+        "existing_directory_verified",
+        "no_follow_root_verified",
+        "root_non_reparse_verified",
+        "path_components_non_reparse_verified",
+        "canonical_root_verified",
+        "outside_prohibited_locations_verified",
+        "exact_immediate_entry_set_verified",
+        "textual_prefix_not_used_verified"
+      ],
+      "exact_identifier_filename_pairs": {
+        "m15b-sealed-relevance-registration": "RELEVANCE_REGISTRATION.md",
+        "m15b-sealed-scope-registration": "SCOPE_REGISTRATION.md",
+        "m15b-sealed-scoring-registration": "SCORING_REGISTRATION.md",
+        "m15b-sealed-source-dossier": "SOURCE_DOSSIER.md"
+      },
+      "forbidden_receipt_data": [
+        "absolute paths",
+        "canonical paths",
+        "handles",
+        "device or inode values",
+        "credentials",
+        "payload text",
+        "source extracts"
+      ]
+    },
+    "registered_entry_validation": {
+      "filename_single_component_required": true,
+      "no_follow_metadata_required": true,
+      "non_reparse_required_independently_of_regular_file": true,
+      "posix_lstat_mode_must_be_s_isreg": true,
+      "prohibited_entry_types": [
+        "symbolic link",
+        "junction",
+        "reparse point",
+        "redirect",
+        "mount point",
+        "directory",
+        "device",
+        "FIFO",
+        "socket",
+        "other special file"
+      ],
+      "windows_reparsepoint_or_nonzero_tag_is_hard_stop": true
+    },
+    "root_validation": {
+      "canonical_physical_root_retained": true,
+      "no_follow_component_inspection_without_parent_enumeration": true,
+      "no_follow_root_inspection_required": true,
+      "posix_lstat_symlink_is_hard_stop": true,
+      "prohibited_indirection": [
+        "symbolic link",
+        "junction",
+        "reparse point",
+        "redirect",
+        "mount-point redirect below filesystem or volume root",
+        "other pathname-traversal redirect"
+      ],
+      "stable_root_directory_identity_retained_when_supported": true,
+      "windows_reparsepoint_or_nonzero_tag_is_hard_stop": true
+    },
+    "sealed_delivery_contract_id": "m15b-phase4-sealed-delivery-3.0",
+    "stable_read": {
+      "close_and_reopen_between_validation_hashing_or_read": false,
+      "decode_source": "the same already length-and-SHA-256-verified raw-byte buffer",
+      "fallback": "single read with object identity proved before and after reading; reject any change",
+      "hash_source": "the same raw bytes read once from the validated opened object",
+      "no_follow_open_when_supported": true,
+      "replacement_or_identity_metadata_size_change_result": "hard stop"
+    },
+    "verification_order": [
+      "controller authority and environment-variable presence",
+      "absolute and syntactic root validation",
+      "no-follow root and path-component inspection",
+      "canonical root and prohibited-location comparison",
+      "exact immediate-entry-set comparison",
+      "registered filename syntax validation",
+      "no-follow registered-entry metadata and non-reparse validation",
+      "canonical parent and root identity equality",
+      "stable opened-object or equivalent identity protection",
+      "raw byte acquisition",
+      "raw length verification",
+      "SHA-256 verification",
+      "media-type byte checks",
+      "strict UTF-8 decode of the already verified bytes",
+      "receipt creation",
+      "reveal opening"
+    ]
+  },
   "disclosure_prohibitions": [
     "full sealed source",
     "long extract",
@@ -282,6 +435,34 @@
       "sorting by unit ID",
       "terminal LF in digest preimage",
       "literal backslash-plus-n in unit-ID or digest preimage",
+      "root symlink",
+      "root junction",
+      "root reparse point",
+      "reparse ancestor or path component",
+      "registered file symlink",
+      "registered file junction or reparse point",
+      "special file accepted through a followed target",
+      "platform unable to determine reparse status",
+      "root versus root-evil textual-prefix confusion",
+      "actual descendant accepted as outside a prohibited root",
+      "dot-dot escape",
+      "separator injection",
+      "absolute child path",
+      "UNC or drive injection",
+      "alternate data stream syntax",
+      "canonical-parent mismatch",
+      "root-directory identity mismatch",
+      "filename case variant",
+      "Unicode-normalized alias",
+      "unexpected sibling",
+      "missing registered file",
+      "duplicate identifier or filename mapping",
+      "entry replacement between check and read",
+      "close and reopen before hashing",
+      "hash from one read and decode from another",
+      "receipt missing a boundary-verification field",
+      "receipt containing an absolute path",
+      "decoding before all four payloads pass",
       "wrong source count",
       "correct total with wrong source allocation",
       "count or digest mismatch",
@@ -363,6 +544,34 @@
     {
       "enforcement": "apply all disclosure prohibitions",
       "id": "disclosure_scan"
+    },
+    {
+      "enforcement": "prove no-follow metadata and explicit non-reparse status for the root, every path component below the filesystem or volume root, and each registered entry; inability to prove any status fails closed",
+      "id": "delivery_root_and_entry_non_reparse"
+    },
+    {
+      "enforcement": "compare the retained canonical sealed root with canonical prohibited roots by path components and OS-native case semantics; reject equality, descendants, ambiguity, and textual-prefix reasoning",
+      "id": "canonical_root_prohibited_location_boundary"
+    },
+    {
+      "enforcement": "require each entry canonical parent and available parent directory identity to equal the retained canonical root and root identity",
+      "id": "canonical_payload_parent_equality"
+    },
+    {
+      "enforcement": "require the four exact registered-evidence-identifier and delivery-relative-filename pairs exactly once",
+      "id": "delivery_identifier_filename_binding"
+    },
+    {
+      "enforcement": "validate identity on a stable no-follow opened object and acquire raw bytes once; hash and decode that same buffer without closing and reopening",
+      "id": "stable_object_raw_byte_acquisition"
+    },
+    {
+      "enforcement": "require every receipt boundary field to be true only after its corresponding gate completes, and prohibit absolute or canonical sealed paths and object identities in every output",
+      "id": "delivery_receipt_gate_binding"
+    },
+    {
+      "enforcement": "execute the exact controlled_delivery_boundary verification_order and require gates 1 through 13 for all four entries before any decode, rendering, comparison, interpretation, receipt creation, or reveal",
+      "id": "delivery_verification_order_and_all_payload_barrier"
     }
   ],
   "serialization": {

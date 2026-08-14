@@ -1,19 +1,259 @@
 {
-  "contract_id": "m15b-phase4-sealed-delivery-2.0",
+  "canonical_payload_containment": {
+    "canonical_parent_equals_canonical_root": true,
+    "canonicalization_after_no_follow_only": true,
+    "containment_ambiguity": "hard_stop_before_byte_read",
+    "identity_requirement": "when directory or file identity is available, the entry parent directory identity must equal the retained sealed-root directory identity",
+    "immediate_child_required": true,
+    "prohibited_proofs": [
+      "StartsWith",
+      "textual path prefix",
+      "substring",
+      "relative-string prefix",
+      "normalized-string prefix without path-component equality",
+      "check before symlink or reparse rejection",
+      "child path merely containing root text"
+    ]
+  },
+  "canonical_root": {
+    "canonicalization_cannot_override_no_follow_rejection": true,
+    "physical_os_native_path_required": true,
+    "retain_canonical_root_for_all_comparisons": true,
+    "retain_stable_directory_identity_when_supported": true,
+    "uncanonicalized_input_not_used_for_comparison": true
+  },
+  "contract_id": "m15b-phase4-sealed-delivery-3.0",
+  "controller_supplied_root": {
+    "already_existing": true,
+    "directory_required": true,
+    "exact_absolute_path_required": true,
+    "must_be_controller_supplied": true,
+    "parent_or_neighbor_enumeration_prohibited": true,
+    "prohibited_syntax": [
+      "wildcard",
+      "glob",
+      "environment expansion",
+      "unresolved dot component",
+      "unresolved dot-dot component",
+      "alternate data stream syntax",
+      "embedded NUL"
+    ],
+    "search_or_discovery_prohibited": true
+  },
   "delivery_root_environment_variable": "M15B_SEALED_ROOT",
-  "media_type": "text/markdown; charset=utf-8",
-  "media_type_verification": ["registered .md filename", "verify raw length and SHA-256 before decoding", "strict UTF-8 decode", "no UTF-8 BOM", "no NUL byte", "LF-only newline bytes", "never use OS or shell MIME guess"],
-  "payload_commit_policy": "prohibited unless a future independently accepted amendment explicitly requires it",
-  "permitted_root_entries": ["RELEVANCE_REGISTRATION.md","SCORING_REGISTRATION.md","SCOPE_REGISTRATION.md","SOURCE_DOSSIER.md"],
-  "registered_payloads": [
-    {"registered_evidence_identifier":"m15b-sealed-relevance-registration","delivery_relative_filename":"RELEVANCE_REGISTRATION.md","byte_length":2583,"sha256":"810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd222"},
-    {"registered_evidence_identifier":"m15b-sealed-scope-registration","delivery_relative_filename":"SCOPE_REGISTRATION.md","byte_length":3167,"sha256":"23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d2551"},
-    {"registered_evidence_identifier":"m15b-sealed-scoring-registration","delivery_relative_filename":"SCORING_REGISTRATION.md","byte_length":3088,"sha256":"03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34ee5"},
-    {"registered_evidence_identifier":"m15b-sealed-source-dossier","delivery_relative_filename":"SOURCE_DOSSIER.md","byte_length":5450,"sha256":"d66ac855cd7f247838d8a0f1e24b4a8940589997a4b584f28ee23e69a589da40"}
-  ],
-  "root_requirements": ["absolute existing real directory", "not symlink junction or reparse redirect", "outside repository and prohibited workspaces", "do not enumerate parent or neighboring directory", "immediate entries exactly equal permitted list"],
-  "payload_requirements": ["resolve exact relative filename only", "path remains strictly below root", "regular file", "digest/length before decode", "no online or similarly named substitution"],
-  "temporary_material_requirements": ["no secret in chat", "plaintext/rendered data only under executor temporary root", "remove plaintext/rendered data after validation"],
+  "fail_closed": {
+    "canonicalization_or_identity_ambiguity": "hard_stop",
+    "no_follow_or_reparse_status_unavailable": "hard_stop_before_payload_read",
+    "stable_object_or_equivalent_identity_protection_unavailable": "hard_stop",
+    "verification_failure": "no decode, render, comparison, interpretation, receipt completion, or reveal"
+  },
   "filename_rule": "These exact Phase 3 registered filenames are delivery locators, not changes to evidence identity.",
-  "hard_stop_conditions": ["root unset/missing/not absolute/not real/outside boundary failure", "unexpected sibling", "missing/nonregular/escaping payload", "length/digest/media failure", "over-disclosure"]
+  "hard_stop_conditions": [
+    "controller authority or root presence failure",
+    "absolute or syntactic root failure",
+    "root or component symlink, junction, reparse, redirect, or mount redirect",
+    "canonical prohibited-location equality or descendant relationship",
+    "ambiguous canonical comparison",
+    "unexpected, missing, duplicate, case-variant, alias, or additional immediate entry",
+    "registered filename syntax failure",
+    "entry symlink, junction, reparse, redirect, mount point, directory, device, FIFO, socket, or other special type",
+    "canonical-parent or root-identity mismatch",
+    "object replacement or metadata, identity, or size change",
+    "length, digest, or media-byte failure",
+    "over-disclosure"
+  ],
+  "immediate_entry_set": {
+    "comparison": "exact registered filename identity without trimming, Unicode normalization, aliases, short names, alternate separators, or extra case folding",
+    "descendant_enumeration_prohibited": true,
+    "enumeration_scope": "verified canonical root immediate entries only",
+    "hard_stop_variants": [
+      "unexpected",
+      "missing",
+      "duplicate",
+      "case variant",
+      "alias",
+      "additional"
+    ],
+    "required_exact_set": [
+      "RELEVANCE_REGISTRATION.md",
+      "SCORING_REGISTRATION.md",
+      "SCOPE_REGISTRATION.md",
+      "SOURCE_DOSSIER.md"
+    ]
+  },
+  "media_type": "text/markdown; charset=utf-8",
+  "media_type_verification": [
+    "registered .md filename",
+    "verify raw length and SHA-256 before decoding",
+    "strict UTF-8 decode of the same verified buffer",
+    "no UTF-8 BOM",
+    "no NUL byte",
+    "LF-only newline bytes",
+    "never use OS or shell MIME guess"
+  ],
+  "no_follow_root_inspection": {
+    "component_scope": "inspect each exact component below the filesystem or volume root without enumerating parent directories",
+    "metadata_mode": "OS-native no-follow or lstat-equivalent",
+    "posix": {
+      "lstat_symbolic_link": "hard_stop"
+    },
+    "reject_indirections": [
+      "symbolic link",
+      "junction",
+      "reparse point",
+      "redirect",
+      "mount-point redirect below filesystem or volume root",
+      "other pathname-traversal indirection"
+    ],
+    "status_unavailable": "hard_stop_before_payload_read",
+    "windows": {
+      "FileAttributes.ReparsePoint": "hard_stop",
+      "nonzero_reparse_tag": "hard_stop"
+    }
+  },
+  "payload_commit_policy": "prohibited unless a future independently accepted amendment explicitly requires it",
+  "prohibited_location_comparison": {
+    "ambiguity": "hard_stop",
+    "canonicalize_prohibited_roots": true,
+    "case_semantics": "OS-native",
+    "comparison": "canonical path components",
+    "prohibited_relationships": [
+      "equal",
+      "descendant"
+    ],
+    "prohibited_roots": [
+      "repository root",
+      "review or author workspace",
+      "executor workspace",
+      "dedicated temporary root",
+      "output or export roots",
+      "prior reviewer or builder roots expressly prohibited by handoff"
+    ],
+    "resist_aliases": [
+      "case variation",
+      "separator variation",
+      "dot-dot",
+      "short name",
+      "alias",
+      "junction",
+      "Unicode representation"
+    ],
+    "textual_prefix_comparison_prohibited": true
+  },
+  "registered_entry_no_follow_validation": {
+    "join_rule": "join only the verified canonical root and one exact registered filename",
+    "metadata_mode": "OS-native no-follow or lstat-equivalent",
+    "posix": {
+      "required_lstat_mode": "S_ISREG",
+      "target_follow_before_type_test_prohibited": true
+    },
+    "regular_file_alone_is_sufficient": false,
+    "reject_types": [
+      "symbolic link",
+      "junction",
+      "reparse point",
+      "redirect",
+      "mount point",
+      "directory",
+      "device",
+      "FIFO",
+      "socket",
+      "other special file"
+    ],
+    "status_unavailable": "hard_stop",
+    "windows": {
+      "FileAttributes.ReparsePoint": "hard_stop_even_if_target_appears_regular",
+      "nonzero_reparse_tag": "hard_stop_even_if_target_appears_regular"
+    }
+  },
+  "registered_filename_syntax": {
+    "exact_single_component_required": true,
+    "prohibited": [
+      "forward slash",
+      "backslash",
+      "dot-dot",
+      "drive syntax",
+      "UNC syntax",
+      "absolute path",
+      "alternate data stream syntax",
+      "NUL",
+      "any additional path component"
+    ]
+  },
+  "registered_payloads": [
+    {
+      "byte_length": 2583,
+      "delivery_relative_filename": "RELEVANCE_REGISTRATION.md",
+      "registered_evidence_identifier": "m15b-sealed-relevance-registration",
+      "sha256": "810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd222"
+    },
+    {
+      "byte_length": 3167,
+      "delivery_relative_filename": "SCOPE_REGISTRATION.md",
+      "registered_evidence_identifier": "m15b-sealed-scope-registration",
+      "sha256": "23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d2551"
+    },
+    {
+      "byte_length": 3088,
+      "delivery_relative_filename": "SCORING_REGISTRATION.md",
+      "registered_evidence_identifier": "m15b-sealed-scoring-registration",
+      "sha256": "03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34ee5"
+    },
+    {
+      "byte_length": 5450,
+      "delivery_relative_filename": "SOURCE_DOSSIER.md",
+      "registered_evidence_identifier": "m15b-sealed-source-dossier",
+      "sha256": "d66ac855cd7f247838d8a0f1e24b4a8940589997a4b584f28ee23e69a589da40"
+    }
+  ],
+  "stable_read_and_substitution_protection": {
+    "close_and_reopen_between_validation_hashing_or_read": false,
+    "decode_source": "same verified raw-byte buffer",
+    "fallback": "single read with object identity proved before and after; reject any change",
+    "hash_and_length_source": "same exact raw-byte buffer",
+    "no_follow_open_when_supported": true,
+    "object_validation": "validate metadata and identity on the opened object",
+    "path_substitution_failures": [
+      "filename swap",
+      "entry replacement",
+      "identity change",
+      "size change",
+      "metadata change"
+    ],
+    "raw_read_count": 1,
+    "stable_handle_retained": "required when supported",
+    "unavailable": "hard_stop"
+  },
+  "temporary_material_requirements": [
+    "no secret or payload content in console or chat",
+    "plaintext or rendered data only under executor temporary root",
+    "remove plaintext or rendered data after validation"
+  ],
+  "verification_order": [
+    "controller authority and environment-variable presence",
+    "absolute and syntactic root validation",
+    "no-follow root and path-component inspection",
+    "canonical root and prohibited-location comparison",
+    "exact immediate-entry-set comparison",
+    "registered filename syntax validation",
+    "no-follow registered-entry metadata and non-reparse validation",
+    "canonical parent and root identity equality",
+    "stable opened-object or equivalent identity protection",
+    "raw byte acquisition",
+    "raw length verification",
+    "SHA-256 verification",
+    "media-type byte checks",
+    "strict UTF-8 decode of already verified bytes",
+    "receipt creation",
+    "reveal opening"
+  ],
+  "verification_scope_barrier": {
+    "all_four_payloads_must_pass_gates_1_through_13_before_any_decode": true,
+    "pre_barrier_operations_prohibited": [
+      "decode",
+      "render",
+      "comparison",
+      "evidence interpretation"
+    ]
+  }
 }

@@ -1,19 +1,197 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-thermal-lab.example/schemas/m15b-phase4/evidence-reveal-receipt-2.0.schema.json",
-  "type": "object", "additionalProperties": false,
-  "required": ["artifact_id", "generated_at_utc", "phase3_anchor", "pre_reveal_lock", "delivery_verification", "reveal_status"],
+  "$id": "https://diamond-thermal-lab.example/schemas/m15b-phase4/evidence-reveal-receipt-3.0.schema.json",
+  "additionalProperties": false,
   "properties": {
-    "artifact_id": {"const": "evidence_reveal_receipt"},
-    "generated_at_utc": {"type": "string", "format": "date-time", "pattern": "Z$"},
-    "phase3_anchor": {"type": "object", "additionalProperties": false, "required": ["commit", "tree", "first_parent", "second_parent"], "properties": {"commit": {"const": "1f8d258030f1330e022dec34bab608fef46b54c9"}, "tree": {"const": "772aba695aac5726df4c0b8193ba0bad5dbab24f"}, "first_parent": {"const": "2b45c63128dad6793dd753ca9300538769af8c53"}, "second_parent": {"const": "61753ff5e3398f30f983682b59c04fc4ad0449f1"}}},
-    "pre_reveal_lock": {"const": "established"},
-    "delivery_verification": {"type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true, "items": {"type": "object", "additionalProperties": false, "required": ["registered_evidence_identifier", "byte_length_verified", "sha256_verified", "media_type_verified"], "properties": {"registered_evidence_identifier": {"type": "string", "enum": ["m15b-sealed-relevance-registration", "m15b-sealed-scope-registration", "m15b-sealed-scoring-registration", "m15b-sealed-source-dossier"]}, "byte_length_verified": {"type": "boolean", "const": true}, "sha256_verified": {"type": "boolean", "const": true}, "media_type_verified": {"type": "boolean", "const": true}}}, "allOf": [
-      {"contains": {"type": "object", "properties": {"registered_evidence_identifier": {"const": "m15b-sealed-relevance-registration"}}, "required": ["registered_evidence_identifier"]}, "minContains": 1, "maxContains": 1},
-      {"contains": {"type": "object", "properties": {"registered_evidence_identifier": {"const": "m15b-sealed-scope-registration"}}, "required": ["registered_evidence_identifier"]}, "minContains": 1, "maxContains": 1},
-      {"contains": {"type": "object", "properties": {"registered_evidence_identifier": {"const": "m15b-sealed-scoring-registration"}}, "required": ["registered_evidence_identifier"]}, "minContains": 1, "maxContains": 1},
-      {"contains": {"type": "object", "properties": {"registered_evidence_identifier": {"const": "m15b-sealed-source-dossier"}}, "required": ["registered_evidence_identifier"]}, "minContains": 1, "maxContains": 1}
-    ]},
-    "reveal_status": {"type": "string", "enum": ["opened", "completed"]}
-  }
+    "artifact_id": {
+      "const": "evidence_reveal_receipt"
+    },
+    "delivery_root_verification": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_path_verified": {"const": true},
+        "canonical_root_verified": {"const": true},
+        "controller_supplied_verified": {"const": true},
+        "exact_immediate_entry_set_verified": {"const": true},
+        "existing_directory_verified": {"const": true},
+        "no_follow_root_verified": {"const": true},
+        "outside_prohibited_locations_verified": {"const": true},
+        "path_components_non_reparse_verified": {"const": true},
+        "root_non_reparse_verified": {"const": true},
+        "textual_prefix_not_used_verified": {"const": true}
+      },
+      "required": [
+        "controller_supplied_verified",
+        "absolute_path_verified",
+        "existing_directory_verified",
+        "no_follow_root_verified",
+        "root_non_reparse_verified",
+        "path_components_non_reparse_verified",
+        "canonical_root_verified",
+        "outside_prohibited_locations_verified",
+        "exact_immediate_entry_set_verified",
+        "textual_prefix_not_used_verified"
+      ],
+      "type": "object"
+    },
+    "delivery_verification": {
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "delivery_relative_filename": {"const": "RELEVANCE_REGISTRATION.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-relevance-registration"}
+            },
+            "required": ["registered_evidence_identifier", "delivery_relative_filename"]
+          },
+          "maxContains": 1,
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "delivery_relative_filename": {"const": "SCORING_REGISTRATION.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-scoring-registration"}
+            },
+            "required": ["registered_evidence_identifier", "delivery_relative_filename"]
+          },
+          "maxContains": 1,
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "delivery_relative_filename": {"const": "SCOPE_REGISTRATION.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-scope-registration"}
+            },
+            "required": ["registered_evidence_identifier", "delivery_relative_filename"]
+          },
+          "maxContains": 1,
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "delivery_relative_filename": {"const": "SOURCE_DOSSIER.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-source-dossier"}
+            },
+            "required": ["registered_evidence_identifier", "delivery_relative_filename"]
+          },
+          "maxContains": 1,
+          "minContains": 1
+        }
+      ],
+      "items": {
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": {
+              "delivery_relative_filename": {"const": "RELEVANCE_REGISTRATION.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-relevance-registration"}
+            }
+          },
+          {
+            "properties": {
+              "delivery_relative_filename": {"const": "SCORING_REGISTRATION.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-scoring-registration"}
+            }
+          },
+          {
+            "properties": {
+              "delivery_relative_filename": {"const": "SCOPE_REGISTRATION.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-scope-registration"}
+            }
+          },
+          {
+            "properties": {
+              "delivery_relative_filename": {"const": "SOURCE_DOSSIER.md"},
+              "registered_evidence_identifier": {"const": "m15b-sealed-source-dossier"}
+            }
+          }
+        ],
+        "properties": {
+          "byte_length_verified": {"const": true},
+          "canonical_parent_equals_root_verified": {"const": true},
+          "delivery_relative_filename": {
+            "enum": [
+              "RELEVANCE_REGISTRATION.md",
+              "SCORING_REGISTRATION.md",
+              "SCOPE_REGISTRATION.md",
+              "SOURCE_DOSSIER.md"
+            ],
+            "type": "string"
+          },
+          "filename_syntax_verified": {"const": true},
+          "media_type_verified": {"const": true},
+          "no_follow_metadata_verified": {"const": true},
+          "non_reparse_verified": {"const": true},
+          "parent_identity_equals_root_verified": {"const": true},
+          "registered_evidence_identifier": {
+            "enum": [
+              "m15b-sealed-relevance-registration",
+              "m15b-sealed-scoring-registration",
+              "m15b-sealed-scope-registration",
+              "m15b-sealed-source-dossier"
+            ],
+            "type": "string"
+          },
+          "regular_file_verified": {"const": true},
+          "sha256_verified": {"const": true},
+          "stable_object_read_verified": {"const": true}
+        },
+        "required": [
+          "registered_evidence_identifier",
+          "delivery_relative_filename",
+          "filename_syntax_verified",
+          "no_follow_metadata_verified",
+          "regular_file_verified",
+          "non_reparse_verified",
+          "canonical_parent_equals_root_verified",
+          "parent_identity_equals_root_verified",
+          "stable_object_read_verified",
+          "byte_length_verified",
+          "sha256_verified",
+          "media_type_verified"
+        ],
+        "type": "object"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "generated_at_utc": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    },
+    "phase3_anchor": {
+      "additionalProperties": false,
+      "properties": {
+        "commit": {"const": "1f8d258030f1330e022dec34bab608fef46b54c9"},
+        "first_parent": {"const": "2b45c63128dad6793dd753ca9300538769af8c53"},
+        "second_parent": {"const": "61753ff5e3398f30f983682b59c04fc4ad0449f1"},
+        "tree": {"const": "772aba695aac5726df4c0b8193ba0bad5dbab24f"}
+      },
+      "required": ["commit", "tree", "first_parent", "second_parent"],
+      "type": "object"
+    },
+    "pre_reveal_lock": {
+      "const": "established"
+    },
+    "reveal_status": {
+      "enum": ["opened", "completed"],
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "generated_at_utc",
+    "phase3_anchor",
+    "pre_reveal_lock",
+    "delivery_root_verification",
+    "delivery_verification",
+    "reveal_status"
+  ],
+  "type": "object"
 }
