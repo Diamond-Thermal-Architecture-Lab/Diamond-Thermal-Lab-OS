@@ -1,0 +1,54 @@
+{
+  "manifest_version": "4.0",
+  "package_id": "m15b-phase4-protocol-completion-4.0",
+  "hash_algorithm": "sha256",
+  "self_hashing": "excluded; reviewer hashes this manifest separately",
+  "covered_file_count": 9,
+  "files": [
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_EVIDENCE_REVEAL_PROTOCOL.md",
+      "byte_length": 12247,
+      "sha256": "d7becd76cdafe0b7cc035aa464cce99933358426ee59d577cb8d872dea17ed8d"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_EXECUTOR_HANDOFF.md",
+      "byte_length": 1295,
+      "sha256": "8144cbca192b001a294ddc89549caa9097f4fc63818f4add36f3f309729946ec"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_OUTPUT_CONTRACT.json",
+      "byte_length": 22612,
+      "sha256": "04d2c79d2a595165185adc079f950f8990196b5b70019661bab8efdb8a4bf337"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_SEALED_DELIVERY_CONTRACT.json",
+      "byte_length": 9530,
+      "sha256": "2b2726d0695d7d34decc2fea97ed2f28cfac6a211b745c34f2fb1ab2e1deb54b"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/case_a_evidence_comparison.schema.json",
+      "byte_length": 8306,
+      "sha256": "b42aac4c35cb8057f17b58efd7e9b76d681987b5343b6759dfccba2f8977450e"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/case_b_applicability_disposition.schema.json",
+      "byte_length": 896,
+      "sha256": "3a98e25952fbc66beb9c9f87a0e096b36a3dc5d58d663e9853a40ab31c71c231"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/evidence_reveal_receipt.schema.json",
+      "byte_length": 7000,
+      "sha256": "2d3a24a10cb18797c2eae4036b975bc1c99f8ccf9c5d17207d925893d640858b"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/phase4_execution_manifest.schema.json",
+      "byte_length": 2300,
+      "sha256": "4c69b99cbf32cb0e0354a3d39b46d85af98857dc3bbc2b58b3e84adaa93653b2"
+    },
+    {
+      "path": "benchmarks/m15b-phase4-protocol/schemas/retrospective_leakage_assessment.schema.json",
+      "byte_length": 5648,
+      "sha256": "7042d13feb2c91459278d8c3631de70816e41db79149f18c16d6e44cc8909a3e"
+    }
+  ]
+}

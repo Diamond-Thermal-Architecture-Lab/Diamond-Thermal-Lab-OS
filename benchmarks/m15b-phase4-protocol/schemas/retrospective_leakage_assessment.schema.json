@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-thermal-lab.example/schemas/m15b-phase4/retrospective-leakage-assessment-3.0.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_id",
+    "coverage",
+    "assessments"
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "retrospective_leakage_assessment"
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_unit_count",
+        "assessed_unit_count",
+        "omitted_unit_count",
+        "duplicate_unit_count",
+        "required_unit_set_sha256",
+        "assessed_unit_set_sha256"
+      ],
+      "properties": {
+        "required_unit_count": {
+          "const": 280
+        },
+        "assessed_unit_count": {
+          "const": 280
+        },
+        "omitted_unit_count": {
+          "const": 0
+        },
+        "duplicate_unit_count": {
+          "const": 0
+        },
+        "required_unit_set_sha256": {
+          "const": "4a1d9fab7154166a5c1daa5bcdbfe88aa4f49db41f697dc189a739e546a81bd3"
+        },
+        "assessed_unit_set_sha256": {
+          "const": "4a1d9fab7154166a5c1daa5bcdbfe88aa4f49db41f697dc189a739e546a81bd3"
+        }
+      }
+    },
+    "assessments": {
+      "type": "array",
+      "minItems": 280,
+      "maxItems": 280,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assessment_id",
+          "blind_comparison_unit_id",
+          "authorized_input_provenance",
+          "overlap_category",
+          "distinctiveness",
+          "leakage_disposition",
+          "uncertainty",
+          "minimum_disclosure"
+        ],
+        "properties": {
+          "assessment_id": {
+            "type": "string",
+            "pattern": "^M15B-P4-LK-[0-9]{8}$"
+          },
+          "blind_comparison_unit_id": {
+            "type": "string",
+            "pattern": "^M15B-P4-CAU-[a-f0-9]{64}$"
+          },
+          "authorized_input_provenance": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "overlap_category": {
+            "type": "string",
+            "enum": [
+              "authorized_input",
+              "generic_domain_overlap",
+              "distinctive_evidence_specific_overlap",
+              "unsupported_evidence_specific_detail",
+              "indeterminate_overlap"
+            ]
+          },
+          "distinctiveness": {
+            "type": "string",
+            "enum": [
+              "generic",
+              "potentially_distinctive",
+              "distinctive",
+              "indeterminate"
+            ]
+          },
+          "leakage_disposition": {
+            "type": "string",
+            "enum": [
+              "no_evidence_of_leakage",
+              "requires_independent_review",
+              "evidence_of_leakage",
+              "indeterminate"
+            ]
+          },
+          "uncertainty": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "minimum_disclosure": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "evidence_reference": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "registered_evidence_identifier",
+              "locator"
+            ],
+            "properties": {
+              "registered_evidence_identifier": {
+                "type": "string",
+                "enum": [
+                  "m15b-sealed-relevance-registration",
+                  "m15b-sealed-scope-registration",
+                  "m15b-sealed-scoring-registration",
+                  "m15b-sealed-source-dossier"
+                ]
+              },
+              "locator": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "registered_evidence_identifier",
+                  "kind",
+                  "value"
+                ],
+                "properties": {
+                  "registered_evidence_identifier": {
+                    "type": "string",
+                    "enum": [
+                      "m15b-sealed-relevance-registration",
+                      "m15b-sealed-scope-registration",
+                      "m15b-sealed-scoring-registration",
+                      "m15b-sealed-source-dossier"
+                    ]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "page",
+                      "section",
+                      "figure",
+                      "table",
+                      "paragraph",
+                      "record"
+                    ]
+                  },
+                  "value": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!.*(?:[A-Za-z]:[\\\\/]|/|\\\\|https?://|token|credential|tmp|temp)).+$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "Mandatory semantic validation uses the identical frozen 280-unit Case A inventory in canonical path/locator order, enforces each blind_comparison_unit_id exactly once with no missing or extra ID, requires assessment_id M15B-P4-LK-00000001 through M15B-P4-LK-00000280 at the corresponding canonical positions, and requires the identical golden set digest. Correctness alone remains insufficient leakage evidence."
+    }
+  ]
+}

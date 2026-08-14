@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-thermal-lab.example/schemas/m15b-phase4/case-a-evidence-comparison-3.0.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_id",
+    "case_id",
+    "coverage",
+    "comparison_records"
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "case_a_evidence_comparison"
+    },
+    "case_id": {
+      "const": "m15b-case-a"
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_unit_count",
+        "evaluated_unit_count",
+        "omitted_unit_count",
+        "duplicate_unit_count",
+        "required_unit_set_sha256",
+        "evaluated_unit_set_sha256"
+      ],
+      "properties": {
+        "required_unit_count": {
+          "const": 280
+        },
+        "evaluated_unit_count": {
+          "const": 280
+        },
+        "omitted_unit_count": {
+          "const": 0
+        },
+        "duplicate_unit_count": {
+          "const": 0
+        },
+        "required_unit_set_sha256": {
+          "const": "4a1d9fab7154166a5c1daa5bcdbfe88aa4f49db41f697dc189a739e546a81bd3"
+        },
+        "evaluated_unit_set_sha256": {
+          "const": "4a1d9fab7154166a5c1daa5bcdbfe88aa4f49db41f697dc189a739e546a81bd3"
+        }
+      }
+    },
+    "comparison_records": {
+      "type": "array",
+      "minItems": 280,
+      "maxItems": 280,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "comparison_unit_id",
+          "frozen_phase3_artifact_path",
+          "blind_output_locator",
+          "evidence_references",
+          "relationship",
+          "materiality",
+          "discrepancy_category",
+          "effect_on_triage",
+          "effect_on_decision_board",
+          "effect_on_engineering_memory",
+          "rationale",
+          "uncertainty",
+          "corrective_lesson",
+          "future_change_recommendation_status"
+        ],
+        "properties": {
+          "comparison_unit_id": {
+            "type": "string",
+            "pattern": "^M15B-P4-CAU-[a-f0-9]{64}$"
+          },
+          "frozen_phase3_artifact_path": {
+            "type": "string",
+            "pattern": "^(cases/m15b-case-a/(10_claim_ledger\\.yml|11_engineering_memory_entry\\.md)|exports/m15b-case-a-phase3/(triage_result\\.json|decision_board_preview\\.json))$"
+          },
+          "blind_output_locator": {
+            "type": "string",
+            "oneOf": [
+              {
+                "enum": [
+                  "claim_id:CLM-001",
+                  "claim_id:CLM-002"
+                ]
+              },
+              {
+                "enum": [
+                  "heading:Lesson",
+                  "heading:Source Artifact",
+                  "heading:Reusable Pattern",
+                  "heading:Failed Assumption",
+                  "heading:Validated Assumption",
+                  "heading:Future Use",
+                  "heading:Draft Safety Note"
+                ]
+              },
+              {
+                "pattern": "^json_pointer:/(?:[^~/]|~[01])*(?:/(?:[^~/]|~[01])*)*$"
+              }
+            ]
+          },
+          "evidence_references": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "registered_evidence_identifier",
+                "locator_kind",
+                "locator_value"
+              ],
+              "properties": {
+                "registered_evidence_identifier": {
+                  "type": "string",
+                  "enum": [
+                    "m15b-sealed-relevance-registration",
+                    "m15b-sealed-scope-registration",
+                    "m15b-sealed-scoring-registration",
+                    "m15b-sealed-source-dossier"
+                  ]
+                },
+                "locator_kind": {
+                  "type": "string",
+                  "enum": [
+                    "page",
+                    "section",
+                    "figure",
+                    "table",
+                    "paragraph",
+                    "record"
+                  ]
+                },
+                "locator_value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[A-Za-z]:[\\\\/]|/|\\\\|https?://|token|credential|tmp|temp)).+$"
+                }
+              }
+            }
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "partially_supported",
+              "contradicted",
+              "not_evidenced",
+              "not_assessable"
+            ]
+          },
+          "materiality": {
+            "type": "string",
+            "enum": [
+              "material",
+              "moderate",
+              "immaterial",
+              "not_assessable"
+            ]
+          },
+          "discrepancy_category": {
+            "type": "string",
+            "enum": [
+              "none",
+              "scope",
+              "fact",
+              "causality",
+              "evidence_gap",
+              "reasoning",
+              "wording",
+              "governance",
+              "other"
+            ]
+          },
+          "effect_on_triage": {
+            "type": "string",
+            "enum": [
+              "no_change",
+              "clarify",
+              "review_required",
+              "blocked"
+            ]
+          },
+          "effect_on_decision_board": {
+            "type": "string",
+            "enum": [
+              "no_change",
+              "clarify",
+              "review_required",
+              "blocked"
+            ]
+          },
+          "effect_on_engineering_memory": {
+            "type": "string",
+            "enum": [
+              "no_change",
+              "clarify",
+              "review_required",
+              "blocked"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1200
+          },
+          "uncertainty": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "corrective_lesson": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "future_change_recommendation_status": {
+            "type": "string",
+            "enum": [
+              "none",
+              "defer_to_separate_reviewed_change",
+              "prohibited_in_phase4"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "relationship": {
+                  "const": "supported"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "discrepancy_category": {
+                  "const": "none"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "relationship": {
+                  "const": "contradicted"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "discrepancy_category": {
+                  "not": {
+                    "const": "none"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "relationship": {
+                  "const": "not_assessable"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "materiality": {
+                  "const": "not_assessable"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "Mandatory semantic validation binds all 280 path/locator/ID triples to the frozen inventory, enforces exact canonical ordering, all source counts, both golden digests, scalar-only JSON selection, H1 and container exclusion, strict duplicate-key/BOM rules, and material downstream-effect constraints. Schema pattern matching is not sufficient."
+    }
+  ]
+}

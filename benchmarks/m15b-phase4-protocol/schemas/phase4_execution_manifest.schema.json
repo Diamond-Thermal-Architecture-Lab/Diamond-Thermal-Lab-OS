@@ -1,0 +1,15 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://diamond-thermal-lab.example/schemas/m15b-phase4/phase4-execution-manifest-2.0.schema.json",
+  "type":"object","additionalProperties":false,
+  "required":["artifact_id","generated_at_utc","phase3_anchors","artifact_hashes","pre_commit_gates","completion_status"],
+  "properties":{
+    "artifact_id":{"const":"phase4_execution_manifest"},
+    "generated_at_utc":{"type":"string","format":"date-time","pattern":"Z$"},
+    "phase3_anchors":{"type":"object","additionalProperties":false,"required":["merge_commit","merge_tree"],"properties":{"merge_commit":{"const":"1f8d258030f1330e022dec34bab608fef46b54c9"},"merge_tree":{"const":"772aba695aac5726df4c0b8193ba0bad5dbab24f"}}},
+    "artifact_hashes":{"type":"array","minItems":6,"maxItems":6,"uniqueItems":true,"items":{"type":"object","additionalProperties":false,"required":["path","sha256","byte_length"],"properties":{"path":{"type":"string","enum":["exports/m15b-case-a-phase4/evidence_reveal_receipt.json","exports/m15b-case-a-phase4/case_a_evidence_comparison.json","exports/m15b-case-a-phase4/case_a_evidence_comparison_report.md","exports/m15b-case-b-phase4/case_b_applicability_disposition.json","exports/m15b-case-a-phase4/retrospective_leakage_assessment.json","exports/m15b-phase4/phase4_executor_handoff.md"]},"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"byte_length":{"type":"integer","minimum":0}}}},
+    "pre_commit_gates":{"type":"array","minItems":16,"maxItems":16,"uniqueItems":true,"items":{"type":"object","additionalProperties":false,"required":["gate","status"],"properties":{"gate":{"type":"string","enum":["frozen_phase3_anchor_verification","pre_reveal_lock","sealed_root_resolution","sealed_byte_provenance","reveal_opening","authorized_evidence_scope","case_a_comparison","case_b_disposition","leakage_assessment","schema_validation","deterministic_validation","disclosure_audit","targeted_tests","complete_tests","baseline_verifiers","protected_surface_audit"]},"status":{"const":"passed"}}}},
+    "completion_status":{"const":"ready_for_commit_not_frozen"}
+  },
+  "allOf":[{"$comment":"Mandatory semantic validator requires exactly the sixteen listed gates in normative order, each passed; commit/push is an external transition."}]
+}
