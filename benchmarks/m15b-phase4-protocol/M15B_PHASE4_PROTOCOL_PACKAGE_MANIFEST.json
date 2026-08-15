@@ -1,6 +1,6 @@
 {
-  "manifest_version": "4.0",
-  "package_id": "m15b-phase4-protocol-completion-4.0",
+  "manifest_version": "4.1",
+  "package_id": "m15b-phase4-protocol-completion-4.1",
   "hash_algorithm": "sha256",
   "self_hashing": "excluded; reviewer hashes this manifest separately",
   "covered_file_count": 9,
@@ -18,12 +18,12 @@
     {
       "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_OUTPUT_CONTRACT.json",
       "byte_length": 22612,
-      "sha256": "04d2c79d2a595165185adc079f950f8990196b5b70019661bab8efdb8a4bf337"
+      "sha256": "3530845eb146b3eb277f07bc3975db4720ccb1612adda6b04f4afdf08c5a3f91"
     },
     {
       "path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_SEALED_DELIVERY_CONTRACT.json",
-      "byte_length": 9530,
-      "sha256": "2b2726d0695d7d34decc2fea97ed2f28cfac6a211b745c34f2fb1ab2e1deb54b"
+      "byte_length": 9527,
+      "sha256": "64227f35d9db85162ea5661d578ad2a71e4898e8de194d275ec5e9f3c6b2f18f"
     },
     {
       "path": "benchmarks/m15b-phase4-protocol/schemas/case_a_evidence_comparison.schema.json",

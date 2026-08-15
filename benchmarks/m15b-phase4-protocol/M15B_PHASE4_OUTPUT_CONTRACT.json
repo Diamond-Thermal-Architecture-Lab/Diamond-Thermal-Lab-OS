@@ -236,7 +236,7 @@
       }
     }
   },
-  "contract_id": "m15b-phase4-output-contract-4.0",
+  "contract_id": "m15b-phase4-output-contract-4.1",
   "controlled_delivery_boundary": {
     "all_payload_barrier": {
       "byte_gate_range": "verification_order steps 1 through 13",
@@ -362,7 +362,7 @@
       "stable_root_directory_identity_retained_when_supported": true,
       "windows_reparsepoint_or_nonzero_tag_is_hard_stop": true
     },
-    "sealed_delivery_contract_id": "m15b-phase4-sealed-delivery-3.0",
+    "sealed_delivery_contract_id": "m15b-phase4-sealed-delivery-3.1",
     "stable_read": {
       "close_and_reopen_between_validation_hashing_or_read": false,
       "decode_source": "the same already length-and-SHA-256-verified raw-byte buffer",
