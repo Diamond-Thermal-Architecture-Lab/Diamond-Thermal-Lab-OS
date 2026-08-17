@@ -22,7 +22,7 @@
     "retain_stable_directory_identity_when_supported": true,
     "uncanonicalized_input_not_used_for_comparison": true
   },
-  "contract_id": "m15b-phase4-sealed-delivery-3.0",
+  "contract_id": "m15b-phase4-sealed-delivery-3.1",
   "controller_supplied_root": {
     "already_existing": true,
     "directory_required": true,
@@ -185,19 +185,19 @@
       "byte_length": 2583,
       "delivery_relative_filename": "RELEVANCE_REGISTRATION.md",
       "registered_evidence_identifier": "m15b-sealed-relevance-registration",
-      "sha256": "810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd222"
+      "sha256": "810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd22"
     },
     {
       "byte_length": 3167,
       "delivery_relative_filename": "SCOPE_REGISTRATION.md",
       "registered_evidence_identifier": "m15b-sealed-scope-registration",
-      "sha256": "23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d2551"
+      "sha256": "23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d251"
     },
     {
       "byte_length": 3088,
       "delivery_relative_filename": "SCORING_REGISTRATION.md",
       "registered_evidence_identifier": "m15b-sealed-scoring-registration",
-      "sha256": "03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34ee5"
+      "sha256": "03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34e5"
     },
     {
       "byte_length": 5450,
