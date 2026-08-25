@@ -1,0 +1,107 @@
+{
+  "artifact_hashes": [
+    {
+      "byte_length": 3143,
+      "path": "exports/m15b-case-a-phase4/evidence_reveal_receipt.json",
+      "sha256": "145ed9549657414a3d07377fc4fa393cd05ea4dc2e055fd1b336e286f8091f83"
+    },
+    {
+      "byte_length": 318781,
+      "path": "exports/m15b-case-a-phase4/case_a_evidence_comparison.json",
+      "sha256": "90f4f837b531bdddb66cadaaa7ac8d18c561ec522d079edd7fe8101a37a5f15a"
+    },
+    {
+      "byte_length": 161315,
+      "path": "exports/m15b-case-a-phase4/case_a_evidence_comparison_report.md",
+      "sha256": "2c7bf18e967d6d162fbf824ce5eae2c41d79f9aac1e6e7ed185d27093fa620ff"
+    },
+    {
+      "byte_length": 361,
+      "path": "exports/m15b-case-b-phase4/case_b_applicability_disposition.json",
+      "sha256": "cb2b0629d5c229018b6497becb63592a7f0efecdc559f00a4ebff8a54a1025ec"
+    },
+    {
+      "byte_length": 158063,
+      "path": "exports/m15b-case-a-phase4/retrospective_leakage_assessment.json",
+      "sha256": "f8ee24607ab2efed7b3c88822d1599b3d692081c8cbca893732b8cc11cba5670"
+    },
+    {
+      "byte_length": 1591,
+      "path": "exports/m15b-phase4/phase4_executor_handoff.md",
+      "sha256": "6b68e073fb5ef77c304112fb3b4c1a0dca0f280d7f6c6e93fa12a6048243936d"
+    }
+  ],
+  "artifact_id": "phase4_execution_manifest",
+  "completion_status": "ready_for_commit_not_frozen",
+  "generated_at_utc": "2026-08-25T06:03:39Z",
+  "phase3_anchors": {
+    "merge_commit": "1f8d258030f1330e022dec34bab608fef46b54c9",
+    "merge_tree": "772aba695aac5726df4c0b8193ba0bad5dbab24f"
+  },
+  "pre_commit_gates": [
+    {
+      "gate": "frozen_phase3_anchor_verification",
+      "status": "passed"
+    },
+    {
+      "gate": "pre_reveal_lock",
+      "status": "passed"
+    },
+    {
+      "gate": "sealed_root_resolution",
+      "status": "passed"
+    },
+    {
+      "gate": "sealed_byte_provenance",
+      "status": "passed"
+    },
+    {
+      "gate": "reveal_opening",
+      "status": "passed"
+    },
+    {
+      "gate": "authorized_evidence_scope",
+      "status": "passed"
+    },
+    {
+      "gate": "case_a_comparison",
+      "status": "passed"
+    },
+    {
+      "gate": "case_b_disposition",
+      "status": "passed"
+    },
+    {
+      "gate": "leakage_assessment",
+      "status": "passed"
+    },
+    {
+      "gate": "schema_validation",
+      "status": "passed"
+    },
+    {
+      "gate": "deterministic_validation",
+      "status": "passed"
+    },
+    {
+      "gate": "disclosure_audit",
+      "status": "passed"
+    },
+    {
+      "gate": "targeted_tests",
+      "status": "passed"
+    },
+    {
+      "gate": "complete_tests",
+      "status": "passed"
+    },
+    {
+      "gate": "baseline_verifiers",
+      "status": "passed"
+    },
+    {
+      "gate": "protected_surface_audit",
+      "status": "passed"
+    }
+  ]
+}
