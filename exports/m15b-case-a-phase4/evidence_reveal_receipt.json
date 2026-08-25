@@ -1,0 +1,82 @@
+{
+  "artifact_id": "evidence_reveal_receipt",
+  "delivery_root_verification": {
+    "absolute_path_verified": true,
+    "canonical_root_verified": true,
+    "controller_supplied_verified": true,
+    "exact_immediate_entry_set_verified": true,
+    "existing_directory_verified": true,
+    "no_follow_root_verified": true,
+    "outside_prohibited_locations_verified": true,
+    "path_components_non_reparse_verified": true,
+    "root_non_reparse_verified": true,
+    "textual_prefix_not_used_verified": true
+  },
+  "delivery_verification": [
+    {
+      "byte_length_verified": true,
+      "canonical_parent_equals_root_verified": true,
+      "delivery_relative_filename": "RELEVANCE_REGISTRATION.md",
+      "filename_syntax_verified": true,
+      "media_type_verified": true,
+      "no_follow_metadata_verified": true,
+      "non_reparse_verified": true,
+      "parent_identity_equals_root_verified": true,
+      "registered_evidence_identifier": "m15b-sealed-relevance-registration",
+      "regular_file_verified": true,
+      "sha256_verified": true,
+      "stable_object_read_verified": true
+    },
+    {
+      "byte_length_verified": true,
+      "canonical_parent_equals_root_verified": true,
+      "delivery_relative_filename": "SCORING_REGISTRATION.md",
+      "filename_syntax_verified": true,
+      "media_type_verified": true,
+      "no_follow_metadata_verified": true,
+      "non_reparse_verified": true,
+      "parent_identity_equals_root_verified": true,
+      "registered_evidence_identifier": "m15b-sealed-scoring-registration",
+      "regular_file_verified": true,
+      "sha256_verified": true,
+      "stable_object_read_verified": true
+    },
+    {
+      "byte_length_verified": true,
+      "canonical_parent_equals_root_verified": true,
+      "delivery_relative_filename": "SCOPE_REGISTRATION.md",
+      "filename_syntax_verified": true,
+      "media_type_verified": true,
+      "no_follow_metadata_verified": true,
+      "non_reparse_verified": true,
+      "parent_identity_equals_root_verified": true,
+      "registered_evidence_identifier": "m15b-sealed-scope-registration",
+      "regular_file_verified": true,
+      "sha256_verified": true,
+      "stable_object_read_verified": true
+    },
+    {
+      "byte_length_verified": true,
+      "canonical_parent_equals_root_verified": true,
+      "delivery_relative_filename": "SOURCE_DOSSIER.md",
+      "filename_syntax_verified": true,
+      "media_type_verified": true,
+      "no_follow_metadata_verified": true,
+      "non_reparse_verified": true,
+      "parent_identity_equals_root_verified": true,
+      "registered_evidence_identifier": "m15b-sealed-source-dossier",
+      "regular_file_verified": true,
+      "sha256_verified": true,
+      "stable_object_read_verified": true
+    }
+  ],
+  "generated_at_utc": "2026-08-25T06:03:39Z",
+  "phase3_anchor": {
+    "commit": "1f8d258030f1330e022dec34bab608fef46b54c9",
+    "first_parent": "2b45c63128dad6793dd753ca9300538769af8c53",
+    "second_parent": "61753ff5e3398f30f983682b59c04fc4ad0449f1",
+    "tree": "772aba695aac5726df4c0b8193ba0bad5dbab24f"
+  },
+  "pre_reveal_lock": "established",
+  "reveal_status": "completed"
+}

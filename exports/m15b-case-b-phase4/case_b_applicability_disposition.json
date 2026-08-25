@@ -1,0 +1,8 @@
+{
+  "applicability_status": "not_applicable",
+  "artifact_id": "case_b_applicability_disposition",
+  "basis_contract_path": "benchmarks/m15b-phase3/M15B_CASE_B_APPLICABILITY_CONTRACT.json",
+  "basis_contract_sha256": "85fbb83053f868bac21b451c6540990558b06981473e40a86e86bffbedba99f5",
+  "case_id": "M15B-CASE-B",
+  "handling_compliance": "contract_compliant"
+}
