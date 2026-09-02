@@ -1,0 +1,522 @@
+{
+  "anchor": {
+    "commit": "3aefad294e50b543f49b2b1b7660f44931e17f79",
+    "ordered_parents": [
+      "34799294b908a670fe54ba86f663109fb2ded0db",
+      "27ac1a430d732b1aaa4a22b587d6808ec68112a3"
+    ],
+    "protocol_blob": "0c142382d7f94a1cfcc19f065d21cb61fe1f5c3e",
+    "tree": "dd7a69e82e5bebb86dc5dcb16852fdbbba5af1d4"
+  },
+  "categorical_scoring_matrix": {
+    "controls": [
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md#15.5",
+          "frozen:M15A",
+          "protected-baseline:offline",
+          "protected-baseline:git-aware"
+        ],
+        "dimension": "M15A boundary control",
+        "id": "C1",
+        "rationale": "The frozen M15A bytes and hashes are unchanged, protected-baseline verification remains valid with zero findings, deterministic regression tests pass, and the strict-scope interpretation remains generalization_not_evaluable.",
+        "result": "PASS",
+        "rule_provenance": [
+          "protocol:§15.5"
+        ]
+      },
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "benchmarks/m15b-phase3/M15B_CASE_B_APPLICABILITY_CONTRACT.json",
+          "exports/m15b-case-b-phase4/case_b_applicability_disposition.json"
+        ],
+        "dimension": "Negative-control applicability",
+        "id": "C2",
+        "rationale": "The frozen negative control remains not_applicable under its five-gate contract, its Phase 4 handling is contract_compliant, and none of TRIAGE-THERMOMECH-001 through TRIAGE-THERMOMECH-007 was emitted for it.",
+        "result": "PASS",
+        "rule_provenance": [
+          "protocol:§15.5"
+        ]
+      }
+    ],
+    "primary_dimensions": [
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "exports/m15b-case-a-phase3/triage_result.json",
+          "registered:m15b-sealed-scope-registration",
+          "registered:m15b-sealed-relevance-registration"
+        ],
+        "dimension": "Applicability recognition",
+        "id": "P1",
+        "rationale": "The primary case was recognized as an elevated-temperature retained-layer integration on an already suspended membrane, and thermomechanical screening was activated rather than classified not applicable.",
+        "result": "PASS",
+        "rule_provenance": [
+          "protocol:§15.2",
+          "protocol:§15.4"
+        ]
+      },
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "exports/m15b-case-a-phase3/triage_result.json#TRIAGE-THERMOMECH-001",
+          "registered:m15b-sealed-scoring-registration"
+        ],
+        "dimension": "Material-property and reference-temperature gaps",
+        "id": "P2",
+        "rationale": "The output requests temperature-dependent material-property evidence and a stress-free or reference-temperature basis, preserves the qualitative evidence boundary, and makes no numerical prediction.",
+        "result": "PASS",
+        "rule_provenance": [
+          "protocol:§15.2",
+          "protocol:§15.4"
+        ]
+      },
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "benchmarks/m15b-phase3/inputs/BLIND_INPUT_PACKET.yml",
+          "exports/m15b-case-a-phase3/triage_result.json#TRIAGE-THERMOMECH-002",
+          "registered:m15b-sealed-scoring-registration",
+          "source-dossier:M15B-CASE-A:registered-primary-locator"
+        ],
+        "dimension": "Integration thermal-history gaps",
+        "id": "P3",
+        "rationale": "The output identifies the correct thermal-history family and the genuinely unresolved exposure duration and cooling route, but it also groups process temperature with the missing components even though the blind input supplied deposition and conversion temperatures. This conflates known and unresolved subcomponents without changing the conservative evidence boundary.",
+        "result": "PARTIAL",
+        "rule_provenance": [
+          "protocol:§13",
+          "protocol:§15.4"
+        ]
+      },
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "exports/m15b-case-a-phase3/triage_result.json#TRIAGE-THERMOMECH-003",
+          "registered:m15b-sealed-scoring-registration"
+        ],
+        "dimension": "Stress and shape-response evidence",
+        "id": "P4",
+        "rationale": "The output requests residual-stress and bow, warpage, or curvature evidence, applicable acceptance criteria, and an initial-versus-post-process comparison while avoiding a failure prediction.",
+        "result": "PASS",
+        "rule_provenance": [
+          "protocol:§15.2",
+          "protocol:§15.4"
+        ]
+      },
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "exports/m15b-case-a-phase3/triage_result.json#TRIAGE-THERMOMECH-005",
+          "registered:m15b-sealed-scoring-registration"
+        ],
+        "dimension": "Thermal/process boundary evidence",
+        "id": "P5",
+        "rationale": "The output distinguishes the process fixture, carrier, reactor, contact, and ambient boundary from a conventional package cooling boundary and requests the unresolved process-boundary basis.",
+        "result": "PASS",
+        "rule_provenance": [
+          "protocol:§13",
+          "protocol:§15.2",
+          "protocol:§15.4"
+        ]
+      },
+      {
+        "applicable": false,
+        "assessed": false,
+        "basis_references": [
+          "registered:m15b-sealed-relevance-registration"
+        ],
+        "dimension": "Geometry and scale-comparison evidence",
+        "id": "P6",
+        "rationale": "The sealed relevance registration declared this dimension not applicable before Phase 3; no post-reveal reassignment or scientific score was made.",
+        "result": "N/A",
+        "rule_provenance": [
+          "protocol:§14",
+          "protocol:§15.4"
+        ]
+      },
+      {
+        "applicable": true,
+        "assessed": true,
+        "basis_references": [
+          "exports/m15b-case-a-phase3/triage_result.json#TRIAGE-THERMOMECH-004",
+          "registered:m15b-sealed-scoring-registration",
+          "source-dossier:M15B-CASE-A:registered-primary-locator"
+        ],
+        "dimension": "Retained-interface or mechanical-integrity evidence",
+        "id": "P7",
+        "rationale": "The output requests adhesion, fracture, or delamination evidence for the retained integrated interface and expressly avoids predicting delamination or cracking.",
+        "result": "PASS",
+        "rule_provenance": [
+          "protocol:§13",
+          "protocol:§15.2",
+          "protocol:§15.4"
+        ]
+      },
+      {
+        "applicable": false,
+        "assessed": false,
+        "basis_references": [
+          "registered:m15b-sealed-relevance-registration"
+        ],
+        "dimension": "Downstream compatibility evidence",
+        "id": "P8",
+        "rationale": "The sealed relevance registration declared this dimension not applicable before Phase 3; no post-reveal reassignment or scientific score was made.",
+        "result": "N/A",
+        "rule_provenance": [
+          "protocol:§14",
+          "protocol:§15.4"
+        ]
+      }
+    ]
+  },
+  "coverage_relationship": {
+    "case_a_comparison_unit_count": 280,
+    "case_a_inventory_digest": "4a1d9fab7154166a5c1daa5bcdbfe88aa4f49db41f697dc189a739e546a81bd3",
+    "case_a_materiality_counts": {
+      "immaterial": 280
+    },
+    "case_a_relationship_counts": {
+      "not_evidenced": 280
+    },
+    "case_b_disposition": "not_applicable",
+    "case_b_handling": "contract_compliant",
+    "leakage_record_count": 280,
+    "scoring_role": "coverage_and_audit_input_only",
+    "used_as_scoring_denominator": false
+  },
+  "final_dispositions": {
+    "governance": {
+      "basis_references": [
+        "exports/m15b-case-a-phase3/triage_result.json",
+        "exports/m15b-case-a-phase3/decision_board_preview.json",
+        "protocol:§16:Governance-Disposition"
+      ],
+      "disposition": "governance_pass",
+      "rationale": "The frozen outputs make no numerical prediction, route approval, customer-facing performance claim, automatic calibration, automatic learning, or engineering-memory promotion.",
+      "rule_provenance": [
+        "protocol:§15.3",
+        "protocol:§16:Governance-Disposition",
+        "registered:m15b-sealed-scoring-registration"
+      ]
+    },
+    "scientific": {
+      "applicable_p2_p8_count": 5,
+      "basis_references": [
+        "categorical_scoring_matrix.primary_dimensions",
+        "categorical_scoring_matrix.controls",
+        "validity_gate",
+        "source_fidelity_audit",
+        "protocol:§16"
+      ],
+      "ceil_half_applicable": 3,
+      "disposition": "in_scope_generalization_supported",
+      "fail_count": 0,
+      "partial_count": 1,
+      "pass_count": 4,
+      "rationale": "Validity and source sufficiency pass; P1, C1, and C2 pass; no applicable P2-P8 dimension fails; four of five applicable dimensions pass, exceeding ceil(5/2)=3; the remaining applicable dimension is PARTIAL.",
+      "rule_provenance": [
+        "protocol:§16:Scientific-Disposition-Precedence",
+        "registered:m15b-sealed-relevance-registration",
+        "registered:m15b-sealed-scoring-registration"
+      ]
+    }
+  },
+  "input_bindings": {
+    "governing_protocol": {
+      "blob": "0c142382d7f94a1cfcc19f065d21cb61fe1f5c3e",
+      "byte_length": 34793,
+      "path": "docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md",
+      "sha256": "4c5a5c09fb0822f70c87fff9f6a5162bd318d72da18cd4909d60a0b0f8a4e9b5"
+    },
+    "phase4_artifacts": [
+      {
+        "byte_length": 3143,
+        "path": "exports/m15b-case-a-phase4/evidence_reveal_receipt.json",
+        "sha256": "145ed9549657414a3d07377fc4fa393cd05ea4dc2e055fd1b336e286f8091f83"
+      },
+      {
+        "byte_length": 318781,
+        "path": "exports/m15b-case-a-phase4/case_a_evidence_comparison.json",
+        "sha256": "90f4f837b531bdddb66cadaaa7ac8d18c561ec522d079edd7fe8101a37a5f15a"
+      },
+      {
+        "byte_length": 161315,
+        "path": "exports/m15b-case-a-phase4/case_a_evidence_comparison_report.md",
+        "sha256": "2c7bf18e967d6d162fbf824ce5eae2c41d79f9aac1e6e7ed185d27093fa620ff"
+      },
+      {
+        "byte_length": 361,
+        "path": "exports/m15b-case-b-phase4/case_b_applicability_disposition.json",
+        "sha256": "cb2b0629d5c229018b6497becb63592a7f0efecdc559f00a4ebff8a54a1025ec"
+      },
+      {
+        "byte_length": 158063,
+        "path": "exports/m15b-case-a-phase4/retrospective_leakage_assessment.json",
+        "sha256": "f8ee24607ab2efed7b3c88822d1599b3d692081c8cbca893732b8cc11cba5670"
+      },
+      {
+        "byte_length": 2763,
+        "path": "exports/m15b-phase4/phase4_execution_manifest.json",
+        "sha256": "f6a54ca39dc81bea367adbde428618a499ab1058f9cfdbe23e2315d5ecda70f4"
+      },
+      {
+        "byte_length": 1591,
+        "path": "exports/m15b-phase4/phase4_executor_handoff.md",
+        "sha256": "6b68e073fb5ef77c304112fb3b4c1a0dca0f280d7f6c6e93fa12a6048243936d"
+      }
+    ],
+    "phase4_protocol_package": {
+      "file_count": 10,
+      "manifest_byte_length": 2172,
+      "manifest_path": "benchmarks/m15b-phase4-protocol/M15B_PHASE4_PROTOCOL_PACKAGE_MANIFEST.json",
+      "manifest_sha256": "2559aae2a08577cb25d1f066d8a725134f181035024ee595f84f84f8092098a4"
+    },
+    "sealed_registrations": [
+      {
+        "artifact_id": "m15b-sealed-relevance-registration",
+        "byte_length": 2583,
+        "filename": "RELEVANCE_REGISTRATION.md",
+        "sha256": "810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd22"
+      },
+      {
+        "artifact_id": "m15b-sealed-scope-registration",
+        "byte_length": 3167,
+        "filename": "SCOPE_REGISTRATION.md",
+        "sha256": "23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d251"
+      },
+      {
+        "artifact_id": "m15b-sealed-scoring-registration",
+        "byte_length": 3088,
+        "filename": "SCORING_REGISTRATION.md",
+        "sha256": "03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34e5"
+      },
+      {
+        "artifact_id": "m15b-sealed-source-dossier",
+        "byte_length": 5450,
+        "filename": "SOURCE_DOSSIER.md",
+        "sha256": "d66ac855cd7f247838d8a0f1e24b4a8940589997a4b584f28ee23e69a589da40"
+      }
+    ]
+  },
+  "sealed_file_reveal_verification": {
+    "all_payload_predecode_barrier_passed": true,
+    "canonical_containment_passed": true,
+    "entries": [
+      {
+        "alternate_streams_absent": true,
+        "artifact_id": "m15b-sealed-relevance-registration",
+        "byte_length": 2583,
+        "decoded_from_verified_buffer": true,
+        "filename": "RELEVANCE_REGISTRATION.md",
+        "media_validation": "utf8_text_passed",
+        "ordinary_non_reparse_file": true,
+        "sha256": "810f88574ce132b2ba3bab0a591725569203d08c39eb1915bf22c72a4436cd22",
+        "stable_opened_object_identity": true,
+        "verification_result": "PASS"
+      },
+      {
+        "alternate_streams_absent": true,
+        "artifact_id": "m15b-sealed-scope-registration",
+        "byte_length": 3167,
+        "decoded_from_verified_buffer": true,
+        "filename": "SCOPE_REGISTRATION.md",
+        "media_validation": "utf8_text_passed",
+        "ordinary_non_reparse_file": true,
+        "sha256": "23fe19f5be95fec4eec7432d7b2fe4d75bd9ec576c5ac6df5552417a6232d251",
+        "stable_opened_object_identity": true,
+        "verification_result": "PASS"
+      },
+      {
+        "alternate_streams_absent": true,
+        "artifact_id": "m15b-sealed-scoring-registration",
+        "byte_length": 3088,
+        "decoded_from_verified_buffer": true,
+        "filename": "SCORING_REGISTRATION.md",
+        "media_validation": "utf8_text_passed",
+        "ordinary_non_reparse_file": true,
+        "sha256": "03c42c0b25140ae9697ae4ee0014f01f44e639bb63285514006a52a9d48e34e5",
+        "stable_opened_object_identity": true,
+        "verification_result": "PASS"
+      },
+      {
+        "alternate_streams_absent": true,
+        "artifact_id": "m15b-sealed-source-dossier",
+        "byte_length": 5450,
+        "decoded_from_verified_buffer": true,
+        "filename": "SOURCE_DOSSIER.md",
+        "media_validation": "utf8_text_passed",
+        "ordinary_non_reparse_file": true,
+        "sha256": "d66ac855cd7f247838d8a0f1e24b4a8940589997a4b584f28ee23e69a589da40",
+        "stable_opened_object_identity": true,
+        "verification_result": "PASS"
+      }
+    ],
+    "exact_four_entry_surface_passed": true,
+    "root_and_ancestor_boundary_passed": true,
+    "same_verified_buffers_used_for_hash_decode_and_assessment": true
+  },
+  "secondary_coherence_findings": [
+    {
+      "basis_references": [
+        "exports/m15b-case-a-phase3/triage_result.json",
+        "protocol:§15.3"
+      ],
+      "finding": "Generic triage correctly holds the case for missing data and activates the relevant thermomechanical guardrails. Its overall top uncertainty and next-best action prioritize generic heat-source geometry rather than the case-specific thermomechanical evidence sequence.",
+      "id": "S1",
+      "scored": false,
+      "title": "Generic triage coherence"
+    },
+    {
+      "basis_references": [
+        "exports/m15b-case-a-phase3/decision_board_preview.json",
+        "protocol:§15.3"
+      ],
+      "finding": "The Decision Board conservatively defers architecture selection, carries the thermomechanical evidence conditions, and prohibits route advancement without them. Its ordered next actions prioritize generic thermal inputs and interface resistance before explicit thermomechanical closure.",
+      "id": "S2",
+      "scored": false,
+      "title": "Decision Board coherence"
+    }
+  ],
+  "source_fidelity_audit": {
+    "access_records": [
+      {
+        "access_outcome": "primary_publication_accessed",
+        "evidence_identifier": "M15B-CASE-A",
+        "locator": "registered-primary-locator",
+        "sufficiency_effect": "Core process order, structural state, retained integration relationship, reported dimensions, and outcome-withholding comparison were directly checkable."
+      },
+      {
+        "access_outcome": "inaccessible_access_control",
+        "evidence_identifier": "M15B-CASE-A",
+        "locator": "registered-supplementary-material",
+        "sufficiency_effect": "The inaccessible supplementary endpoint was treated as unavailable evidence, not contradiction. It limits independent confirmation of recipe-level timing and cooling details but does not prevent reliable reveal or categorical comparison because those details were already represented as unresolved in the blind packet and frozen dossier."
+      },
+      {
+        "access_outcome": "primary_publication_accessed",
+        "evidence_identifier": "M15B-CASE-B",
+        "locator": "registered-primary-locator",
+        "sufficiency_effect": "The negative-control source was sufficient to confirm the frozen applicability predicate and consequence without importing it into Case A scoring."
+      }
+    ],
+    "checks": [
+      {
+        "check": "process_order",
+        "result": "PASS"
+      },
+      {
+        "check": "supported_versus_released_state",
+        "result": "PASS"
+      },
+      {
+        "check": "source_terminology",
+        "result": "PASS"
+      },
+      {
+        "check": "deposition_versus_post_deposition_conversion",
+        "result": "PASS"
+      },
+      {
+        "check": "retained_versus_sacrificial_interfaces",
+        "result": "PASS"
+      },
+      {
+        "check": "thermal_boundary_versus_mechanical_holder_constraints",
+        "result": "PASS"
+      },
+      {
+        "check": "direct_measurement_versus_inference",
+        "result": "PASS"
+      },
+      {
+        "check": "source_facts_versus_benchmark_assumptions",
+        "result": "PASS"
+      }
+    ],
+    "overall_result": "PASS",
+    "reliable_comparison_supported": true,
+    "rule_provenance": [
+      "protocol:§13",
+      "protocol:§16:Scientific-Disposition-Precedence",
+      "registered:m15b-sealed-source-dossier"
+    ]
+  },
+  "validity_gate": {
+    "checks": [
+      {
+        "basis_references": [
+          "registered:m15b-sealed-scope-registration",
+          "protocol:§15.1"
+        ],
+        "check": "strict_scope_pre_registered",
+        "passed": true,
+        "rationale": "Strict scope and all five candidate gates were frozen before blind execution."
+      },
+      {
+        "basis_references": [
+          "benchmarks/m15b-phase3/inputs/ROLE_D_INFORMATION_RECEIPT.md",
+          "exports/m15b-case-a-phase4/retrospective_leakage_assessment.json",
+          "protocol:§15.1"
+        ],
+        "check": "source_identity_and_outcomes_isolated_from_role_d",
+        "passed": true,
+        "rationale": "The Role D receipt, frozen blind inputs, and 280-unit retrospective leakage audit show no source-identity, outcome, or expected-rule leakage."
+      },
+      {
+        "basis_references": [
+          "exports/m15b-phase4/phase4_execution_manifest.json",
+          "protocol:§15.1",
+          "protocol:§18"
+        ],
+        "check": "frozen_files_and_hashes_intact",
+        "passed": true,
+        "rationale": "The anchor, all 28 frozen Phase 3 files, the 10-file Phase 4 protocol package, and all seven Phase 4 artifacts retain their frozen identities."
+      },
+      {
+        "basis_references": [
+          "benchmarks/m15b-phase3/inputs/BLIND_INPUT_PACKET.yml",
+          "source-dossier:M15B-CASE-A:registered-primary-locator",
+          "protocol:§13",
+          "protocol:§15.1"
+        ],
+        "check": "natural_terminology_preserved",
+        "passed": true,
+        "rationale": "The blind packet preserves source-faithful structural state, process order, integration terms, and uncertainty without outcome-derived rewriting."
+      },
+      {
+        "basis_references": [
+          "protected-baseline:offline",
+          "protected-baseline:git-aware",
+          "protocol:§15.1"
+        ],
+        "check": "no_m14_rule_changed",
+        "passed": true,
+        "rationale": "M14 rules, production files, protected surfaces, schemas, workflows, and dependencies remain identical to the frozen anchor and protected baseline."
+      },
+      {
+        "basis_references": [
+          "registered:sealed-registration-manifest",
+          "registered:corrected-delivery-contract",
+          "protocol:§14",
+          "protocol:§15.1"
+        ],
+        "check": "sealed_files_match_registered_hashes",
+        "passed": true,
+        "rationale": "All four sealed registrations passed the fresh controlled-delivery barrier and matched their precommitted lengths and SHA-256 values before decoding."
+      }
+    ],
+    "passed": true,
+    "rule_provenance": [
+      "protocol:§15.1",
+      "protocol:§17.2"
+    ]
+  }
+}
