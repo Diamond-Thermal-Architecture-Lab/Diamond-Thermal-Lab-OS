@@ -211,11 +211,18 @@ def _rule(
     )
 
 
-def _process_history_complete(lines: list[str]) -> bool:
-    temperature = _resolved_declaration(lines, ("growth temperature", "deposition temperature", "process temperature"), factual=True)
-    dwell = _resolved_declaration(lines, ("dwell", "exposure", "hour", "hours"), factual=True)
-    cooling = _resolved_declaration(lines, ("cooling", "cool-down", "cool down"), factual=True)
-    return temperature and dwell and cooling
+def _process_history_declarations(lines: list[str]) -> dict[str, bool]:
+    return {
+        "growth or deposition temperature": _resolved_declaration(
+            lines, ("growth temperature", "deposition temperature", "process temperature"), factual=True
+        ),
+        "dwell or exposure": _resolved_declaration(lines, ("dwell", "exposure", "hour", "hours"), factual=True),
+        "cooling route": _resolved_declaration(lines, ("cooling", "cool-down", "cool down"), factual=True),
+    }
+
+
+def _process_history_complete(declarations: dict[str, bool]) -> bool:
+    return all(declarations.values())
 
 
 def _lateral_dimensions(lines: list[str]) -> set[str]:
@@ -269,20 +276,21 @@ def screen_thermomechanical(case_path: Path, text: str) -> tuple[dict[str, objec
             "Obtain temperature-dependent material-property and stress-free-reference assumptions suitable for qualitative thermomechanical review.",
         ))
 
-    process_complete = _process_history_complete(lines)
+    process_history = _process_history_declarations(lines)
+    process_complete = _process_history_complete(process_history)
     if process_complete:
-        known.append("growth or deposition temperature, exposure, and cooling route are stated in case text")
+        known.append("growth or deposition temperature, exposure, and cooling route are stated context in case text; they are not independently reviewed evidence")
     else:
-        gap = "growth or deposition temperature, dwell or exposure, and cooling-route evidence"
-        missing.append(gap)
+        process_gaps = [component for component, declared in process_history.items() if not declared]
+        missing.extend(process_gaps)
         rules.append(_rule(
             "TRIAGE-THERMOMECH-002",
             "Process thermal history is incomplete",
             "The deposited-layer route lacks a resolved process thermal history for thermomechanical screening.",
             ["thermally significant integration process"],
-            [gap],
+            process_gaps,
             "A topic mention or an unresolved temperature statement does not define the heating, exposure, cooling, or reference context.",
-            "Define the public-safe growth or deposition temperature, dwell or exposure, cooling route, and relevant reference condition before advancing the route.",
+            f"Define the public-safe {'; '.join(process_gaps)} before advancing the route.",
         ))
 
     stress_state = _quantity_state(evidence, ("stress",))
