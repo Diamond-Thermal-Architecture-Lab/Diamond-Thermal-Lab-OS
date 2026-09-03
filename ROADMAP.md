@@ -62,13 +62,14 @@ M14 adds deterministic qualitative screening for elevated-temperature deposited-
 
 M15A adds a second public-safe, artifact-separated benchmark for the M14 rule family using a thermally grown SiO2 released-membrane literature case. It is outcome-value-withheld and retrospective, not agent-blind or prospective. The case records a strict M14 process-sequence scope boundary, unsupported adjacent-scope transfer, generic triage false positives, and Decision Board coherence defects without modifying M14 rules or frozen baseline artifacts.
 
-## M15B: Planned Independent In-Scope Generalization Benchmark
+## M15B: Independent In-Scope Generalization Benchmark
 
-M15B remains planned. It should use a knowledge-isolated phase-one execution, predeclared applicability and scoring, an in-scope thermally significant layer-integration process, an independent negative or boundary control, and adversarial final review. It must not tune rules in the same benchmark PR and must not claim general thermomechanical validation from one or two literature cases.
+M15B Phase 5 assessment and Phase 6 independent review are complete and merged. The accepted scientific disposition is `in_scope_generalization_supported`; the governance disposition is `governance_pass`; and P3 remains a historical `PARTIAL` assessment result.
+
+The subsequent M14 process-history correction was merged after known/synthetic regression validation. It did not re-score M15B, update its historical execution baseline, deploy a change, or produce new independent generalization evidence.
 
 The governing pre-registration protocol is
 [`docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md`](docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)
-and must be frozen before final candidate selection or phase-one execution.
 
 ## H1 Priorities
 
