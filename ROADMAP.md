@@ -62,13 +62,15 @@ M14 adds deterministic qualitative screening for elevated-temperature deposited-
 
 M15A adds a second public-safe, artifact-separated benchmark for the M14 rule family using a thermally grown SiO2 released-membrane literature case. It is outcome-value-withheld and retrospective, not agent-blind or prospective. The case records a strict M14 process-sequence scope boundary, unsupported adjacent-scope transfer, generic triage false positives, and Decision Board coherence defects without modifying M14 rules or frozen baseline artifacts.
 
-## M15B: Planned Independent In-Scope Generalization Benchmark
+## M15B: Completed Independent In-Scope Generalization Benchmark
 
-M15B remains planned. It should use a knowledge-isolated phase-one execution, predeclared applicability and scoring, an in-scope thermally significant layer-integration process, an independent negative or boundary control, and adversarial final review. It must not tune rules in the same benchmark PR and must not claim general thermomechanical validation from one or two literature cases.
+M15B's evidence-reveal results were frozen in [PR #33](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/33). Its assessment was independently reviewed and merged in [PR #34](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/34). The accepted scientific disposition is `in_scope_generalization_supported`, and the governance disposition is `governance_pass`. P3 remains `PARTIAL`. These are bounded benchmark findings, not general thermomechanical validation or deployment authorization.
 
-The governing pre-registration protocol is
-[`docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md`](docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)
-and must be frozen before final candidate selection or phase-one execution.
+A separate post-benchmark M14 process-history correction was independently reviewed and merged in [PR #35](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/35). It refines missing-evidence requests to identify only unresolved process-history components. Frozen M15B artifacts, scores, and historical baseline records remain unchanged. Known/synthetic regression validation of this correction is not new independent generalization evidence.
+
+The governing pre-registration protocol remains
+[`docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md`](https://chatgpt.com/g/g-p-6a4608ceaac481919fb248cb5e015e4a/c/docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md).
+The immutable M15B execution-baseline record describes its historical production state, not the later corrected production code.
 
 ## H1 Priorities
 
