@@ -14,6 +14,18 @@ For the MVP, this repository is also a GitHub-native thermal architecture decisi
 - Separate verified facts, assumptions, hypotheses, and open questions.
 - Do not claim performance metrics unless they are verified, source-backed, and appropriate for the repository.
 
+## Execution and Delivery Conventions
+
+- Base conclusions on the actual repository, applicable agreements, and executed verification. Treat user assumptions and prior conversation conclusions as unverified until evidenced; distinguish facts, inferences, and recommendations.
+- For authorized work, independently inspect, implement, troubleshoot, verify, and deliver. Do not require command-by-command direction for routine in-scope work or repeat an unchanged failure without new evidence.
+- These conventions grant no new authority. Obtain explicit authorization before expanding scope, changing freeze rules or protected semantics, merging, deploying, or taking destructive action; never bypass authentication, permissions, or approvals.
+- Preserve user work and frozen history. Do not make checks pass by changing historical expectations, weakening acceptance criteria, or rewriting historical results. Respect the current role's evidence-access and independence boundaries; author self-checks are not independent review.
+- Prefer the smallest necessary change and run verification proportionate to risk. Do not omit required checks, and do not add scientific-freeze or governance process to an ordinary documentation task. Report conclusions from actual runs and list checks not run.
+- When work fails, preserve safe, valuable work and necessary non-sensitive diagnostics. Do not delete user files, revert commits, or clear the worktree without authorization.
+- After each delivery, recommend one evidence-based next step with user value, minimum scope, acceptance criteria, risk, and required authorization. It is valid to recommend no development; do not create work merely to continue working.
+- Recommend a suitable model and reasoning level for the next step, without claiming that instructions switched models. State whether to continue the current conversation or open a project task or independent-review conversation.
+- Separate user operating instructions from task handoff. Provide a handoff prompt only when handoff is needed, and do not make users repeatedly copy long instructions within one task.
+
 ## Codex Should Do
 
 - Preserve confidentiality before completeness. If a request would expose restricted information, stop and ask for a sanitized direction.
