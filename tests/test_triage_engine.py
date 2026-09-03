@@ -264,6 +264,76 @@ class TriageEngineTests(unittest.TestCase):
             self.assertIn("TRIAGE-THERMOMECH-002", {rule.rule_id for rule in result.triggered_rules})
             self.assertIn("thermomechanical_validation_needed", result.secondary_classifications)
 
+    def test_process_history_requests_only_unresolved_components(self) -> None:
+        components = (
+            ("growth or deposition temperature", "growth temperature: 800 C"),
+            ("dwell or exposure", "exposure: 2 hours"),
+            ("cooling route", "cooling to room temperature."),
+        )
+        cases = (
+            ((True, False, False), ("dwell or exposure", "cooling route")),
+            ((False, True, True), ("growth or deposition temperature",)),
+            ((False, True, False), ("growth or deposition temperature", "cooling route")),
+            ((False, False, True), ("growth or deposition temperature", "dwell or exposure")),
+            ((True, False, True), ("dwell or exposure",)),
+            ((True, True, False), ("cooling route",)),
+            ((True, True, True), ()),
+            ((False, False, False), tuple(component for component, _ in components)),
+        )
+        for present, expected_missing in cases:
+            with self.subTest(present=present), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "case"
+                declarations = "\n".join(
+                    declaration for is_present, (_, declaration) in zip(present, components) if is_present
+                )
+                write_thermomechanical_case(path, declarations)
+                intake = path / "00_problem_intake.yml"
+                intake.write_text(
+                    intake.read_text(encoding="utf-8").replace(
+                        "cooling_boundary: defined heat sink boundary", "cooling_boundary: unknown"
+                    ),
+                    encoding="utf-8",
+                )
+                result = triage_case(path)
+                process_rules = [rule for rule in result.triggered_rules if rule.rule_id == "TRIAGE-THERMOMECH-002"]
+                self.assertEqual(bool(process_rules), bool(expected_missing))
+                if process_rules:
+                    self.assertEqual(process_rules[0].missing_evidence, list(expected_missing))
+                    self.assertEqual(
+                        process_rules[0].action_enabled,
+                        f"Define the public-safe {'; '.join(expected_missing)} before advancing the route.",
+                    )
+                else:
+                    self.assertNotIn(
+                        "growth or deposition temperature",
+                        result.thermomechanical_screening["missing_evidence"],
+                    )
+                    self.assertIn(
+                        "growth or deposition temperature, exposure, and cooling route are stated context in case text; they are not independently reviewed evidence",
+                        result.thermomechanical_screening["known_inputs"],
+                    )
+
+    def test_process_history_gap_preserves_generic_needs_data_and_hold(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "case"
+            write_thermomechanical_case(path, "growth temperature: 800 C")
+            intake = path / "00_problem_intake.yml"
+            intake.write_text(
+                intake.read_text(encoding="utf-8")
+                .replace("heat_source_geometry: defined die area", "heat_source_geometry: TODO")
+                .replace("cooling_boundary: defined heat sink boundary", "cooling_boundary: unknown"),
+                encoding="utf-8",
+            )
+            result = triage_case(path)
+            process_rule = next(rule for rule in result.triggered_rules if rule.rule_id == "TRIAGE-THERMOMECH-002")
+            self.assertEqual(result.status, "NEEDS_DATA")
+            self.assertEqual(process_rule.missing_evidence, ["dwell or exposure", "cooling route"])
+            self.assertIn("thermomechanical_validation_needed", result.secondary_classifications)
+            self.assertIn(
+                "Do not advance elevated-temperature membrane integration without the stated thermomechanical evidence.",
+                result.do_not_do_first,
+            )
+
     def test_fixture_identifiers_do_not_satisfy_thermal_boundary(self) -> None:
         for declaration in ("plasma frequency: 2.45 GHz", "fixture ID: 3", "reactor run 12"):
             with self.subTest(declaration=declaration), tempfile.TemporaryDirectory() as tmp:

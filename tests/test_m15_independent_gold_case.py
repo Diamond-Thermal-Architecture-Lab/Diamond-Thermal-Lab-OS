@@ -27,7 +27,6 @@ CASE = REPO_ROOT / "cases" / CASE_ID
 BASELINE = REPO_ROOT / "exports" / f"{CASE_ID}-baseline"
 M14_BASELINE = REPO_ROOT / "exports" / "literature-2021-diamond-on-gan-membrane-stress-baseline"
 SCRIPT = REPO_ROOT / "scripts" / "labos_case.py"
-M14_THERMOMECHANICAL_SOURCE = REPO_ROOT / "labos" / "triage" / "thermomechanical.py"
 SCHEMAS = REPO_ROOT / "labos" / "schemas"
 RECOGNIZED_DEPENDENCY_MANIFESTS = [
     "requirements.txt",
@@ -67,12 +66,37 @@ EXPECTED_M14_BASELINE_HASHES = {
     "review_manifest.json": "975a7dd162886b4b3932dbdb6be234071b5be013e51b05eac7c323fb512e81fe",
 }
 EXPECTED_M14_THERMOMECHANICAL_SHA256 = "d9e6e1fbd36c96fa83e88676ac30760449639bb2e40161fd63ba1e05e262618f"
+HISTORICAL_M14_SOURCE_COMMIT = "45d96b63a5db6e26a90e7986e4efc6b77415b97d"
+HISTORICAL_M14_SOURCE_PATH = "labos/triage/thermomechanical.py"
+EXPECTED_HISTORICAL_M14_SOURCE_BLOB = "1afbcd99ab846d156ab48147f452fc102afa4f0a"
 EXPECTED_SCHEMA_TREE_SHA256 = "e62fc8c9545c4d212da3eb20074e8568a9855a7b092c4e6b889edd0580f2459e"
 EXPECTED_DEPENDENCY_MANIFEST_HASHES: dict[str, str] = {}
 
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _git_bytes(*args: str) -> bytes:
+    completed = subprocess.run(
+        ["git", *args],
+        cwd=REPO_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.decode("utf-8", errors="replace").strip()
+        raise AssertionError(f"required Git object read failed: {' '.join(args)}: {detail}")
+    return completed.stdout
+
+
+def _historical_m14_source() -> tuple[str, bytes]:
+    """Read immutable M14 source bytes; this does not assess corrected current production."""
+    object_spec = f"{HISTORICAL_M14_SOURCE_COMMIT}:{HISTORICAL_M14_SOURCE_PATH}"
+    blob_id = _git_bytes("rev-parse", "--verify", object_spec).strip().decode("ascii")
+    _git_bytes("cat-file", "-e", f"{blob_id}^{{blob}}")
+    return blob_id, _git_bytes("cat-file", "blob", blob_id)
 
 
 def _triage_json(case_path: Path) -> str:
@@ -318,8 +342,16 @@ class M15EvidenceRevealTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertNotIn("Diamond is referenced without interface-risk discussion", completed.stdout)
 
-    def test_m14_rules_schemas_and_dependencies_are_unchanged(self) -> None:
-        self.assertEqual(_sha256(M14_THERMOMECHANICAL_SOURCE), EXPECTED_M14_THERMOMECHANICAL_SHA256)
+    def test_historical_m14_source_is_preserved_at_fixed_base(self) -> None:
+        blob_id, source = _historical_m14_source()
+        self.assertEqual(blob_id, EXPECTED_HISTORICAL_M14_SOURCE_BLOB)
+        self.assertEqual(hashlib.sha256(source).hexdigest(), EXPECTED_M14_THERMOMECHANICAL_SHA256)
+
+    def test_historical_m14_source_read_rejects_unavailable_object(self) -> None:
+        with self.assertRaisesRegex(AssertionError, "required Git object read failed"):
+            _git_bytes("cat-file", "blob", "0" * 40)
+
+    def test_current_schemas_and_dependencies_are_unchanged(self) -> None:
         self.assertEqual(_tree_sha256(SCHEMAS), EXPECTED_SCHEMA_TREE_SHA256)
 
         actual_manifests = {
