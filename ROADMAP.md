@@ -64,9 +64,9 @@ M15A adds a second public-safe, artifact-separated benchmark for the M14 rule fa
 
 ## M15B: Independent In-Scope Generalization Benchmark
 
-M15B Phase 5 assessment and Phase 6 independent review are complete and merged. The accepted scientific disposition is `in_scope_generalization_supported`; the governance disposition is `governance_pass`; and P3 remains a historical `PARTIAL` assessment result.
+M15B Phase 5 assessment is complete. The protocol-defined Phase 6 independent review issued `RECOMMEND_MERGE` for the exact candidate head [`1242a45fac5e248c14a7eb8b81e67f4b440634a8`](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/34#issuecomment-5472935707). The Phase 5 assessment artifacts were subsequently merged through [PR #34](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/34). The accepted scientific disposition is `in_scope_generalization_supported`; the governance disposition is `governance_pass`; and P3 remains a historical `PARTIAL` assessment result.
 
-The subsequent M14 process-history correction was merged after known/synthetic regression validation. It did not re-score M15B, update its historical execution baseline, deploy a change, or produce new independent generalization evidence.
+The subsequent M14 process-history correction in [PR #35](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/35) was merged after known/synthetic regression validation. It did not re-score M15B, update its historical execution baseline, or produce new independent generalization evidence. The repository/GitHub record does not establish a deployment conclusion for that correction.
 
 The governing pre-registration protocol is
 [`docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md`](docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)
