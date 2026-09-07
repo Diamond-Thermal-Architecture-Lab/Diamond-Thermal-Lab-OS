@@ -62,13 +62,14 @@ M14 adds deterministic qualitative screening for elevated-temperature deposited-
 
 M15A adds a second public-safe, artifact-separated benchmark for the M14 rule family using a thermally grown SiO2 released-membrane literature case. It is outcome-value-withheld and retrospective, not agent-blind or prospective. The case records a strict M14 process-sequence scope boundary, unsupported adjacent-scope transfer, generic triage false positives, and Decision Board coherence defects without modifying M14 rules or frozen baseline artifacts.
 
-## M15B: Planned Independent In-Scope Generalization Benchmark
+## M15B: Independent In-Scope Generalization Benchmark
 
-M15B remains planned. It should use a knowledge-isolated phase-one execution, predeclared applicability and scoring, an in-scope thermally significant layer-integration process, an independent negative or boundary control, and adversarial final review. It must not tune rules in the same benchmark PR and must not claim general thermomechanical validation from one or two literature cases.
+M15B Phase 5 assessment is complete. The protocol-defined Phase 6 independent review issued `RECOMMEND_MERGE` for the exact candidate head [`1242a45fac5e248c14a7eb8b81e67f4b440634a8`](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/34#issuecomment-5472935707). The Phase 5 assessment artifacts were subsequently merged through [PR #34](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/34). The accepted scientific disposition is `in_scope_generalization_supported`; the governance disposition is `governance_pass`; and P3 remains a historical `PARTIAL` assessment result.
+
+The subsequent M14 process-history correction in [PR #35](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/35) was merged after known/synthetic regression validation. It did not re-score M15B, update its historical execution baseline, or produce new independent generalization evidence. The repository/GitHub record does not establish a deployment conclusion for that correction.
 
 The governing pre-registration protocol is
 [`docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md`](docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)
-and must be frozen before final candidate selection or phase-one execution.
 
 ## H1 Priorities
 
