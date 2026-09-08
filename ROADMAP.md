@@ -71,6 +71,10 @@ The subsequent M14 process-history correction in [PR #35](https://github.com/Dia
 The governing pre-registration protocol is
 [`docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md`](docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)
 
+## Proposed M16A: Engineering Problem Compiler And Quantitative Thermal Core
+
+M16A is the next proposed quantitative engineering capability milestone. It will define a provenance-bearing Engineering Problem Representation and a deterministic, auditable first thermal core for unit normalization, steady-state 1D multilayer/TBR evaluation, candidate comparison, parameter sweeps, sensitivity, evidence gaps, and model-applicability checks. The initial vertical is a public-safe GaN/high-power device to diamond heat-spreader layer to downstream cooling path. Calculation remains separate from human review and canonical approval. See [`docs/M16A_ENGINEERING_PROBLEM_COMPILER.md`](docs/M16A_ENGINEERING_PROBLEM_COMPILER.md).
+
 ## H1 Priorities
 
 - Real Gold Cases with reviewed public-safe evidence.
@@ -84,4 +88,4 @@ The governing pre-registration protocol is
 
 ## Later Stages
 
-Future work may include an Engineering Problem Compiler, solver and experiment adapters, Agent support, and engineering benchmarks. These remain future capabilities and must not be represented as implemented.
+Future work beyond M16A may include extensions to the Engineering Problem Compiler, higher-fidelity solver and experiment adapters, Agent support, and engineering benchmarks. These remain future capabilities and must not be represented as implemented.
