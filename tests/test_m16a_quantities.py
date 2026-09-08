@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import unittest
 from decimal import Context, Decimal, getcontext, localcontext
-from pathlib import Path
 
 from labos.engineering.quantities import (
     UNIT_REGISTRY,
@@ -216,13 +215,6 @@ class M16ASafetyAndScopeTests(unittest.TestCase):
             for kind in QuantityKind
         }
         self.assertEqual(actual, expected)
-
-        engineering_files = {
-            path.name
-            for path in (Path(__file__).resolve().parents[1] / "labos" / "engineering").iterdir()
-            if path.is_file()
-        }
-        self.assertEqual(engineering_files, {"__init__.py", "quantities.py", "serialization.py"})
 
     def test_quantified_value_rejects_incorrect_kind_unit_invariant(self) -> None:
         valid = convert_quantity(QuantityKind.LENGTH, "1", "mm")

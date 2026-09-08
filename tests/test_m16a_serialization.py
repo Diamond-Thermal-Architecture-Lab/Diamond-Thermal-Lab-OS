@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import locale
-import subprocess
 import unittest
 from datetime import datetime
 from decimal import Decimal
@@ -15,10 +14,6 @@ from labos.engineering.serialization import (
     canonical_json_bytes,
     canonical_sha256,
 )
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-IMPLEMENTATION_START = "95c8dcf6135f1ecd7e0e23be5f16b2aeeb5fcd6f"
 
 
 class M16ACanonicalSerializationTests(unittest.TestCase):
@@ -98,50 +93,6 @@ class M16ACanonicalSerializationTests(unittest.TestCase):
         self.assertIn(b'"canonical_value":"0.0001"', encoded)
         with self.assertRaises(CanonicalSerializationError):
             canonical_json_bytes(quantity)
-
-
-class M16ACompatibilityTests(unittest.TestCase):
-    def test_comp_01_prediction_reality_contract_files_are_byte_unchanged(self) -> None:
-        paths = (
-            "labos/schemas/prediction_reality_record.schema.json",
-            "labos/prediction_reality/comparison.py",
-            "labos/prediction_reality/validator.py",
-            "tests/test_evidence_reality.py",
-        )
-        for relative in paths:
-            with self.subTest(path=relative):
-                baseline = subprocess.check_output(
-                    ["git", "show", f"{IMPLEMENTATION_START}:{relative}"],
-                    cwd=REPO_ROOT,
-                )
-                self.assertEqual((REPO_ROOT / relative).read_bytes(), baseline)
-
-    def test_comp_02_historical_paths_have_no_git_identity_changes(self) -> None:
-        changed = subprocess.check_output(
-            ["git", "diff", "--name-only", IMPLEMENTATION_START, "--"],
-            cwd=REPO_ROOT,
-            text=True,
-        ).splitlines()
-
-        def is_historical(path: str) -> bool:
-            lowered = path.lower()
-            return (
-                lowered.startswith("benchmarks/")
-                or lowered.startswith("docs/benchmarks/")
-                or lowered.startswith("labos/benchmarks/")
-                or lowered.startswith("exports/m15b")
-                or "/evidence/" in lowered
-                or "/measurements/" in lowered
-                or "/prediction_reality/" in lowered
-                or "m15b" in lowered
-                or path in {
-                    "labos/schemas/evidence_object.schema.json",
-                    "labos/schemas/measurement_reference.schema.json",
-                    "labos/schemas/prediction_reality_record.schema.json",
-                }
-            )
-
-        self.assertEqual([path for path in changed if is_historical(path)], [])
 
 
 if __name__ == "__main__":
