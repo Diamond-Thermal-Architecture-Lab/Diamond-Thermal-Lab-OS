@@ -20,13 +20,31 @@ from .serialization import (
     canonical_json_bytes,
     canonical_sha256,
 )
+from .problem import (
+    CANDIDATE_CONTENT_IDENTITY_VERSION,
+    COMPILER_POLICY_VERSION,
+    EPR_CONTENT_IDENTITY_VERSION,
+    HEAT_SOURCE_CONSISTENCY_POLICY_VERSION,
+    PROBLEM_FORMAT_VERSION,
+    EngineeringProblem,
+    EngineeringProblemValidationError,
+    candidate_content_sha256,
+    engineering_problem_content_sha256,
+)
 
 __all__ = [
     "CANONICAL_JSON_VERSION",
+    "CANDIDATE_CONTENT_IDENTITY_VERSION",
+    "COMPILER_POLICY_VERSION",
+    "EPR_CONTENT_IDENTITY_VERSION",
+    "HEAT_SOURCE_CONSISTENCY_POLICY_VERSION",
+    "PROBLEM_FORMAT_VERSION",
     "UNIT_REGISTRY_VERSION",
     "CanonicalSerializationError",
     "ConversionRecord",
     "DecimalParseError",
+    "EngineeringProblem",
+    "EngineeringProblemValidationError",
     "QuantityKind",
     "QuantityKindMismatchError",
     "QuantifiedValue",
@@ -36,6 +54,8 @@ __all__ = [
     "canonical_decimal_text",
     "canonical_json_bytes",
     "canonical_sha256",
+    "candidate_content_sha256",
     "convert_quantity",
+    "engineering_problem_content_sha256",
     "parse_decimal",
 ]
