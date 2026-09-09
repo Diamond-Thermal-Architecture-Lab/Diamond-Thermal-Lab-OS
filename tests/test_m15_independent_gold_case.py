@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -69,6 +70,8 @@ EXPECTED_M14_THERMOMECHANICAL_SHA256 = "d9e6e1fbd36c96fa83e88676ac30760449639bb2
 HISTORICAL_M14_SOURCE_COMMIT = "45d96b63a5db6e26a90e7986e4efc6b77415b97d"
 HISTORICAL_M14_SOURCE_PATH = "labos/triage/thermomechanical.py"
 EXPECTED_HISTORICAL_M14_SOURCE_BLOB = "1afbcd99ab846d156ab48147f452fc102afa4f0a"
+HISTORICAL_SCHEMA_FREEZE_COMMIT = "060b85fd1b58ed7f772165268aeedf1e6c4cbaf8"
+HISTORICAL_SCHEMA_ROOT = "labos/schemas"
 EXPECTED_SCHEMA_TREE_SHA256 = "e62fc8c9545c4d212da3eb20074e8568a9855a7b092c4e6b889edd0580f2459e"
 EXPECTED_DEPENDENCY_MANIFEST_HASHES: dict[str, str] = {}
 
@@ -113,11 +116,39 @@ def _triage_json(case_path: Path) -> str:
     return completed.stdout
 
 
-def _tree_sha256(root: Path) -> str:
+def _historical_schema_files() -> dict[str, bytes]:
+    tree = _git_bytes(
+        "ls-tree",
+        "-r",
+        "-z",
+        "--full-tree",
+        HISTORICAL_SCHEMA_FREEZE_COMMIT,
+        "--",
+        HISTORICAL_SCHEMA_ROOT,
+    )
+    prefix = f"{HISTORICAL_SCHEMA_ROOT}/"
+    files: dict[str, bytes] = {}
+    for entry in tree.split(b"\0"):
+        if not entry:
+            continue
+        metadata, repo_path_bytes = entry.split(b"\t", 1)
+        mode, object_type, object_id = metadata.split(b" ", 2)
+        repo_path = repo_path_bytes.decode("utf-8")
+        if object_type != b"blob" or not mode.startswith(b"100"):
+            raise AssertionError(f"historical schema is not a regular Git file: {repo_path}")
+        if not repo_path.startswith(prefix):
+            raise AssertionError(f"historical schema is outside {HISTORICAL_SCHEMA_ROOT}: {repo_path}")
+        relative = repo_path.removeprefix(prefix)
+        files[relative] = _git_bytes("cat-file", "blob", object_id.decode("ascii"))
+    if not files:
+        raise AssertionError("historical schema freeze contains no files")
+    return files
+
+
+def _tree_sha256_from_contents(files: dict[str, bytes]) -> str:
     digest = hashlib.sha256()
-    for path in sorted(item for item in root.rglob("*") if item.is_file()):
-        relative = path.relative_to(root).as_posix().encode("utf-8")
-        data = path.read_bytes()
+    for relative_path, data in sorted(files.items()):
+        relative = relative_path.encode("utf-8")
         digest.update(len(relative).to_bytes(4, "big"))
         digest.update(relative)
         digest.update(len(data).to_bytes(8, "big"))
@@ -351,9 +382,25 @@ class M15EvidenceRevealTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "required Git object read failed"):
             _git_bytes("cat-file", "blob", "0" * 40)
 
-    def test_current_schemas_and_dependencies_are_unchanged(self) -> None:
-        self.assertEqual(_tree_sha256(SCHEMAS), EXPECTED_SCHEMA_TREE_SHA256)
+    def test_historical_schemas_are_preserved_and_future_additions_are_allowed(self) -> None:
+        historical_schemas = _historical_schema_files()
+        self.assertEqual(_tree_sha256_from_contents(historical_schemas), EXPECTED_SCHEMA_TREE_SHA256)
 
+        for relative_path, historical_bytes in historical_schemas.items():
+            current_path = SCHEMAS / relative_path
+            with self.subTest(schema=relative_path):
+                self.assertTrue(current_path.exists(), f"historical schema is missing: {relative_path}")
+                self.assertTrue(
+                    stat.S_ISREG(current_path.lstat().st_mode),
+                    f"historical schema is not a regular file: {relative_path}",
+                )
+                self.assertEqual(
+                    current_path.read_bytes(),
+                    historical_bytes,
+                    f"historical schema bytes changed: {relative_path}",
+                )
+
+    def test_dependency_manifests_are_unchanged(self) -> None:
         actual_manifests = {
             manifest: _sha256(REPO_ROOT / manifest)
             for manifest in RECOGNIZED_DEPENDENCY_MANIFESTS
