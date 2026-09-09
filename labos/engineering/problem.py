@@ -359,7 +359,12 @@ def _validate_materials(value: Any, path: str) -> list[str]:
 
 def _validate_interfaces(value: Any, layer_order: Mapping[str, int], path: str) -> None:
     interfaces = _list(value, path)
+    ordered_layers = sorted(layer_order, key=layer_order.__getitem__)
+    expected_pairs = list(zip(ordered_layers, ordered_layers[1:]))
+    if len(interfaces) != len(expected_pairs):
+        _fail(path, f"must contain exactly {len(expected_pairs)} interface(s), one per adjacent layer pair")
     ids: list[str] = []
+    pairs: list[tuple[str, str]] = []
     for index, raw in enumerate(interfaces):
         interface_path = f"{path}/{index}"
         item = _closed(raw, ("interface_id", "upstream_layer_id", "downstream_layer_id", "representation_type", "value", "effective_area", "condition_basis"), interface_path)
@@ -370,6 +375,7 @@ def _validate_interfaces(value: Any, layer_order: Mapping[str, int], path: str) 
             _fail(interface_path, "interface layer references must resolve")
         if layer_order[downstream] != layer_order[upstream] + 1:
             _fail(interface_path, "interface layers must be adjacent and source-to-sink ordered")
+        pairs.append((upstream, downstream))
         representation = _enum(item["representation_type"], {"area_normalized_resistance", "absolute_resistance", "area_normalized_conductance", "ideal_zero"}, f"{interface_path}/representation_type")
         expected_kind = {
             "area_normalized_resistance": QuantityKind.AREA_THERMAL_RESISTANCE,
@@ -384,6 +390,10 @@ def _validate_interfaces(value: Any, layer_order: Mapping[str, int], path: str) 
         _non_empty(item["condition_basis"], f"{interface_path}/condition_basis")
     if len(ids) != len(set(ids)):
         _fail(path, "interface IDs must be unique")
+    if len(pairs) != len(set(pairs)):
+        _fail(path, "each adjacent layer pair must have exactly one interface")
+    if set(pairs) != set(expected_pairs):
+        _fail(path, "interfaces must cover every adjacent layer pair exactly once")
     expected = sorted(interfaces, key=lambda interface: (layer_order[interface["upstream_layer_id"]], interface["interface_id"]))
     if interfaces != expected:
         _fail(path, "interfaces must use upstream-layer then ID canonical order")
@@ -625,8 +635,12 @@ def _validate_epr(value: Mapping[str, Any]) -> None:
         candidate_ids.append(_identifier(candidate["candidate_id"], "candidate_id", f"{candidate_path}/candidate_id"))
         roles.append(_enum(candidate["candidate_role"], {"baseline", "variant"}, f"{candidate_path}/candidate_role"))
         _non_empty(candidate["label"], f"{candidate_path}/label")
-        parent = candidate["parent_requirement_id"]
-        if parent is not None and _identifier(parent, "requirement_id", f"{candidate_path}/parent_requirement_id") not in requirement_ids:
+        parent = _identifier(
+            candidate["parent_requirement_id"],
+            "requirement_id",
+            f"{candidate_path}/parent_requirement_id",
+        )
+        if parent not in requirement_ids:
             _fail(f"{candidate_path}/parent_requirement_id", "must reference an existing requirement")
         _validate_complete_problem_view(candidate["geometry"], candidate["materials"], candidate["interfaces"], candidate["boundary_conditions"], candidate_path)
         for field in ("changed_field_paths", "assumption_paths", "evidence_required_paths"):

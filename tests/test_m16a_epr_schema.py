@@ -244,6 +244,28 @@ def restamp(problem: dict) -> dict:
     return problem
 
 
+def add_third_layer(problem: dict) -> None:
+    problem["geometry"]["layers"].append(layer("LYR-003", 2, "MAT-003", "4"))
+    problem["materials"].append(material("MAT-003", "PRP-003", "Synthetic sink layer"))
+
+
+def second_interface() -> dict:
+    return {
+        "interface_id": "IFC-002",
+        "upstream_layer_id": "LYR-002",
+        "downstream_layer_id": "LYR-003",
+        "representation_type": "area_normalized_resistance",
+        "value": envelope(QuantityKind.AREA_THERMAL_RESISTANCE, "0.001", "mm^2*K/W"),
+        "effective_area": envelope(QuantityKind.AREA, "9", "mm^2"),
+        "condition_basis": "Synthetic fixture only.",
+    }
+
+
+def mirror_baseline(problem: dict) -> None:
+    for field in ("geometry", "materials", "interfaces", "boundary_conditions"):
+        problem["candidates"][0][field] = copy.deepcopy(problem[field])
+
+
 class M16AEPRSchemaTests(unittest.TestCase):
     def test_sch_01_valid_minimal_complete_epr_and_schema_identity(self) -> None:
         with open("labos/schemas/engineering_problem.schema.json", encoding="utf-8") as stream:
@@ -252,6 +274,10 @@ class M16AEPRSchemaTests(unittest.TestCase):
         self.assertEqual(schema["$id"], "labos/engineering_problem.schema.json")
         self.assertEqual(schema["properties"]["problem_format_version"]["const"], PROBLEM_FORMAT_VERSION)
         self.assertIn("quantified_value_envelope", schema["$defs"])
+        self.assertTrue(schema["properties"]["interfaces"]["uniqueItems"])
+        candidate_schema = schema["$defs"]["resolved_candidate"]["properties"]
+        self.assertEqual(candidate_schema["parent_requirement_id"], {"$ref": "#/$defs/requirement_id"})
+        self.assertTrue(candidate_schema["interfaces"]["uniqueItems"])
         self.assertEqual(set(schema["properties"]), {
             "problem_format_version", "problem_id", "case_id", "title", "purpose",
             "source_case_sha256", "requirements", "heat_sources", "geometry",
@@ -456,6 +482,66 @@ class M16AEPRIdentityAndAuthorityTests(unittest.TestCase):
             restamp(value)
             with self.subTest(mutate=mutate), self.assertRaises(EngineeringProblemValidationError):
                 EngineeringProblem.from_dict(value)
+
+    def test_cnd_02_parent_requirement_id_is_required_and_resolves(self) -> None:
+        EngineeringProblem.from_dict(base_problem())
+        for candidate_index in (0, 1):
+            for invalid_parent in (None, "REQ-999"):
+                value = base_problem()
+                value["candidates"][candidate_index]["parent_requirement_id"] = invalid_parent
+                restamp(value)
+                with self.subTest(candidate=candidate_index, parent=invalid_parent):
+                    with self.assertRaises(EngineeringProblemValidationError):
+                        EngineeringProblem.from_dict(value)
+
+    def test_ifc_01_two_layers_without_interface_is_rejected(self) -> None:
+        value = base_problem()
+        value["interfaces"] = []
+        restamp(value)
+        with self.assertRaisesRegex(EngineeringProblemValidationError, "exactly 1 interface"):
+            EngineeringProblem.from_dict(value)
+
+    def test_ifc_02_duplicate_adjacent_pair_is_rejected(self) -> None:
+        value = base_problem()
+        add_third_layer(value)
+        duplicate = copy.deepcopy(value["interfaces"][0])
+        duplicate["interface_id"] = "IFC-002"
+        value["interfaces"].append(duplicate)
+        restamp(value)
+        with self.assertRaisesRegex(EngineeringProblemValidationError, "adjacent layer pair"):
+            EngineeringProblem.from_dict(value)
+
+    def test_ifc_03_three_layers_with_incomplete_coverage_is_rejected(self) -> None:
+        value = base_problem()
+        add_third_layer(value)
+        restamp(value)
+        with self.assertRaisesRegex(EngineeringProblemValidationError, "exactly 2 interface"):
+            EngineeringProblem.from_dict(value)
+
+    def test_ifc_04_three_layers_with_complete_coverage_is_accepted(self) -> None:
+        value = base_problem()
+        add_third_layer(value)
+        value["interfaces"].append(second_interface())
+        mirror_baseline(value)
+        restamp(value)
+        EngineeringProblem.from_dict(value)
+
+    def test_ifc_05_one_layer_with_empty_interfaces_is_accepted(self) -> None:
+        value = base_problem()
+        value["geometry"]["layers"] = value["geometry"]["layers"][:1]
+        value["materials"] = value["materials"][:1]
+        value["interfaces"] = []
+        mirror_baseline(value)
+        restamp(value)
+        EngineeringProblem.from_dict(value)
+
+    def test_ifc_06_one_layer_with_interface_is_rejected(self) -> None:
+        value = base_problem()
+        value["geometry"]["layers"] = value["geometry"]["layers"][:1]
+        value["materials"] = value["materials"][:1]
+        restamp(value)
+        with self.assertRaisesRegex(EngineeringProblemValidationError, "exactly 0 interface"):
+            EngineeringProblem.from_dict(value)
 
     def test_order_01_noncanonical_persisted_collections_fail(self) -> None:
         mutations = (
