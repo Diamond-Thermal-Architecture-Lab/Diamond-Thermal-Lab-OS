@@ -106,6 +106,9 @@ That closed schema will define the Evaluation Plan, Model Manifest, result envel
 | Evaluation input identity | `m16a-evaluation-input-identity-1.0` |
 | EER content identity | `m16a-eer-content-identity-1.0` |
 | Prediction–Reality adapter | `m16a-prediction-reality-adapter-1.0` |
+| Deterministic evaluation runtime policy | `m16a-evaluation-runtime-1.0` |
+
+The I3 v1 EER binds `unit_registry_version: "m16a-unit-registry-1.0"` and `deterministic_runtime_policy_version: "m16a-evaluation-runtime-1.0"` explicitly at top level. `DETERMINISTIC_RUNTIME_POLICY_VERSION` is the implementation constant name reserved for the latter value.
 
 EER IDs are sequential case-local identifiers `EER-001`, `EER-002`, and so on, matching `^EER-[0-9]{3}$`. Timestamps and random UUIDs must not be used as EER identity.
 
@@ -145,10 +148,12 @@ The canonical Evaluation Plan is an immutable, closed, canonical-JSON-compatible
 | `parameter_sweeps` | Canonically ordered zero-or-more scenario requests. |
 | `sensitivity_request` | Null or one closed OAT request. |
 | `assumption_acknowledgements` | Exact, canonical, structured per-evaluation acknowledgements. |
-| `model_options` | Closed canonical-JSON-compatible model-request options defined by the requested model contract; no unregistered physics defaults. |
+| `model_options` | Canonical-JSON-compatible model-request options; I3-owned generic controls are closed by I3, while model-specific physical options require a typed selected-model contract. |
 | `maximum_requested_combination_count` | Explicit positive integer plan ceiling covering the requested sweep combination count. |
 
 The plan does not contain reviewer name, approval status, timestamp, hostname, absolute path, EER ID, or a self-hash. The enclosing EER owns `evaluation_plan_sha256`.
+
+I3A validates `model_options` for canonical JSON shape and validates any I3-owned generic controls it defines. It does not validate model-specific semantics. A physical option must use a model-specific typed quantity contract supplied by the selected model in I4; placing a bare physical value inside `model_options` does not make it valid. I4 validates model-specific option meaning and input compatibility. No layer may introduce a hidden physical default.
 
 ### 6.1 Plan content identity
 
@@ -187,9 +192,9 @@ Initial metrics reserved for I4 are:
 | --- | --- | --- |
 | `source_temperature` | `minimize` | `reference_requirement_id` may be null unless the model contract requires one. |
 | `total_thermal_resistance` | `minimize` | `reference_requirement_id` may be null unless the model contract requires one. |
-| `temperature_margin` | `maximize` | A non-null compatible EPR requirement ID is required. |
+| `temperature_margin` | `maximize` | `reference_requirement_id` must resolve to an existing EPR requirement with a non-null target compatible with `absolute_temperature`. |
 
-I3 validates structure, vocabulary, direction consistency, reference existence, and the explicit compatibility requirement for `temperature_margin`. It calculates no objective.
+I3 validates structure, vocabulary, direction consistency, reference existence, and the explicit target compatibility requirement for `temperature_margin`. If that requirement target is assumed and the selected model consumes it, the path participates in the global model-bound acknowledgement closure defined in Section 7. I3 does not calculate the margin.
 
 ### 6.5 Constraint handling
 
@@ -211,23 +216,23 @@ An acknowledgement is one of two closed structured forms:
 | Candidate | `scope: "candidate"`, `candidate_id: "CND-###"`, `field_path` | RFC 6901 path relative to the selected resolved candidate view. |
 | Global | `scope: "global"`, `candidate_id: null`, `field_path` | RFC 6901 path in global EPR authority. |
 
-Candidate-domain fields are `geometry`, `materials`, `interfaces`, and `boundary_conditions`. Required candidate-domain acknowledgements are derived from each selected candidate's own `assumption_paths`, not from the authoring baseline and not from another candidate. This prevents an assumption inherited by `CND-001` but replaced by a provided value in `CND-002` from being falsely required for `CND-002`.
+Candidate-domain fields are `geometry`, `materials`, `interfaces`, and `boundary_conditions`. Candidate-domain acknowledgement addressability is derived from each selected candidate's own `assumption_paths`, not from the authoring baseline and not from another candidate. Model-bound completeness is determined later from consumed inputs. This prevents an assumption inherited by `CND-001` but replaced by a provided value in `CND-002` from being falsely required for `CND-002`.
 
 Applicable structured assumptions outside the candidate-domain view are global, including assumptions in `requirements`, `heat_sources`, and `constraints`.
 
-Validation must deterministically:
+Ownership is deliberately split:
 
-1. reconstruct the exact bound EPR;
-2. resolve each selected candidate independently;
-3. determine which assumed fields the requested evaluation declares it will use, without inventing model-specific physics requirements in I3;
-4. build exact required candidate-scoped and global acknowledgement records;
-5. canonicalize records by scope, candidate ID with null first, then RFC 6901 path;
-6. require exact set equality between required and supplied acknowledgements; and
-7. resolve every supplied record to an actual `status: assumed` field under its declared authority.
+| Layer | Exact acknowledgement responsibility |
+| --- | --- |
+| I3A | Define the acknowledgement record schema, candidate/global scopes, RFC 6901 representation, canonical ordering, and identity representation. |
+| I3B | Perform model-independent structural validation only: reconstruct the bound EPR; require the supplied path to exist; require a candidate scope to name a selected candidate; require correct candidate/global authority; require the resolved field to have `status: assumed`; reject duplicates, unknown paths, unselected candidates, and acknowledgement of `provided`, `missing`, `conflicting`, or `evidence_required` fields. |
+| I4 selected-model binding | Before arithmetic, deterministically resolve the model's `consumed_input_paths`; derive the required used-assumption set as every consumed path whose bound EPR value has `status: assumed`; require exact equality with the supplied acknowledgement set for each relevant selected-candidate/global input closure. |
 
-Reject a missing required acknowledgement, an extra acknowledgement, an unknown path, acknowledgement of a provided or otherwise non-assumed value, acknowledgement for an unselected candidate, a duplicate, or a non-canonical list. `reviewed_by` is neither required nor permitted.
+I3B must not claim to know the complete set of assumptions consumed by an arbitrary selected model. It validates only that each supplied acknowledgement is structurally truthful and addressable. The Model Manifest's `input_binding_policy_version`, `required_input_features`, and `prohibited_input_features` bind the later selected-model input contract without inventing strict-1D paths in I3.
 
-Every required assumed field used by the requested evaluation must be acknowledged. I3 must not silently acknowledge an assumption or invent a missing value.
+At the model-bound step, a missing acknowledgement blocks that candidate and permits no arithmetic for it. An extra acknowledgement is a model-bound validation failure for that requested evaluation and must not be silently ignored. Exact set equality is evaluated before any model arithmetic. This deterministic input binding does not make I4 a human-review layer.
+
+Acknowledgement records are canonicalized by scope, candidate ID with null first, then RFC 6901 path. `reviewed_by` is neither required nor permitted. No layer may silently acknowledge an assumption, invent a missing value, or mutate EPR assumption status.
 
 ## 8. Representation, Hold, Failure, and Execution Boundary
 
@@ -236,12 +241,12 @@ Representation validity and evaluation execution are separate.
 | Condition | Required behavior |
 | --- | --- |
 | Invalid plan structure or identity | Reject before execution; no EER. |
-| EPR `compilation.outcome = FAIL` | Evaluation execution is forbidden; no attempted calculation. |
+| EPR `compilation.outcome = FAIL` | No executable Evaluation Plan and no EER. Evaluation execution is forbidden. |
 | EPR `HOLD_FOR_INPUT` | Do not globally fill gaps. A later evaluator may mark a selected candidate `blocked` when its required inputs are unavailable; other selected candidates may still be evaluated in the same EER. |
 | EPR `READY_WITH_ASSUMPTIONS` | Arithmetic is allowed only after all exact acknowledgements required by the requested evaluation are present. |
 | EPR `READY` | No acknowledgement is required unless a selected candidate actually contains an assumed field used by the evaluation. |
 
-I3 validates the representation and binding. It does not determine model-specific required physics inputs. A software/runtime structural failure that prevents a truthful result must produce no EER, not an EER containing an arbitrary exception trace.
+I3 validates the representation and binding. It does not determine model-specific required physics inputs. `not_evaluated` is reserved for a structurally valid evaluation request whose actual model-bound execution evaluates zero candidates, for example because every selected candidate is blocked or not applicable. It must not be used to record an invalid plan or an EPR compilation `FAIL`. A software/runtime structural failure that prevents a truthful result must produce no EER, not an EER containing an arbitrary exception trace.
 
 ## 9. Parameter-Sweep Contract
 
@@ -249,14 +254,32 @@ Sweeps are evaluation scenarios. They do not create EPR candidates and do not ch
 
 Each sweep is a closed object containing `sweep_id`, `candidate_id`, `field_path`, and exactly one value specification:
 
-- explicit grid: a non-empty canonical list of explicit typed values; or
-- range: exact `start`, `stop`, and `step` values plus an explicit endpoint policy.
+- explicit grid: a non-empty ordered list of explicit typed values; or
+- range: exact typed `start`, `stop`, and `step` values plus `endpoint_policy` of `include_stop` or `exclude_stop`.
 
-The endpoint policy must be declared; it must not be inferred from arithmetic coincidence. Sweep IDs must be stable, unique, and canonically ordered. The target candidate must be selected, and `field_path` must resolve to an existing quantified-value field within that candidate.
+Sweep IDs match `^SWP-[0-9]{3}$`, are unique, and the sweep list is canonically ordered by lexical/numeric sweep ID. The target candidate must be selected, and `field_path` must resolve to an existing quantified-value field within that candidate.
 
 Every physical sweep point uses the target QuantityKind and a registered dimensionally compatible unit. A sweep may replace only the numeric value of the existing quantified field for an evaluation scenario. It must not alter provenance, uncertainty, confidence, status, quantity kind, unit identity, geometry membership, material membership, or interface membership. There are no JSON Patch semantics and no hidden candidate mutation.
 
-The plan's `maximum_requested_combination_count` must be explicit and must be at least the deterministically calculated requested combination count. Later execution-policy hard ceilings are separately versioned policy and must not be silently inferred or represented as plan intent.
+For an explicit grid, point order is plan authority and must be preserved exactly; point values are not sorted. The grid must be non-empty, every point must be typed with the same QuantityKind as the target and a compatible unit, and duplicate numeric points after exact canonical conversion are rejected.
+
+For a range, `step` must be nonzero and its sign must move from `start` toward `stop`. The implementation must not correct the sign automatically. Progression uses exact Decimal arithmetic with no tolerance-based endpoint snapping. The stop value is included only when both conditions hold:
+
+1. `endpoint_policy = include_stop`; and
+2. the exact Decimal progression lands exactly on `stop`.
+
+Otherwise the stop value is not synthesized. `exclude_stop` excludes it even when the progression lands exactly on it. Invalid direction, zero step, inexact progression, or an empty point set rejects the sweep rather than changing author intent.
+
+For one selected candidate, all sweeps targeting that candidate form the Cartesian product of their requested point lists. Sweeps belonging to different candidates never form cross-candidate Cartesian products. A selected candidate with no sweep contributes exactly one baseline scenario.
+
+The deterministic total requested combination count is:
+
+```text
+sum over selected candidates of
+    product(number_of_points for every sweep targeting that candidate)
+```
+
+The empty product is exactly `1`. The plan's `maximum_requested_combination_count` must be explicit and at least this exact total. The count is calculated from the authoritatively ordered point sets without executing the engineering model. No hidden runtime maximum belongs in Plan identity. Any later execution hard ceiling belongs to separately versioned runtime policy and must not be silently inferred from the plan.
 
 Every requested sweep point must eventually have an explicit EER result disposition, including invalid, blocked, or not-applicable points. I3 does not execute sweeps.
 
@@ -271,9 +294,11 @@ A non-null sensitivity request is a closed object containing:
 - `output_metric` using an explicitly supported metric; and
 - a non-empty canonical parameter list.
 
-Each parameter declares `candidate_id`, `field_path`, `minus_value`, and `plus_value`. Both perturbations must have the same QuantityKind as the resolved target field and use compatible registered units. I3 validates the request only.
+Each parameter declares `candidate_id`, `field_path`, `minus_value`, and `plus_value`. Every parameter `candidate_id` must exactly equal `baseline_candidate_id`; cross-candidate OAT parameters are rejected. The parameter list is canonically ordered by `field_path`, and duplicate field paths are rejected. Both perturbations must have the same QuantityKind as the resolved target field, use dimensionally compatible registered units, and be numerically distinct from one another after exact canonical conversion. I3 validates the request only.
 
 A zero reference, invalid point, or unsupported metric is an explicit I4 result finding. The evaluator must not silently alter the method, substitute a denominator, or choose a different metric.
+
+I3 v1 intentionally supports explicit `minus_value`/`plus_value` authoring only. The architecture may reserve perturbation-fraction authoring for a future compatible version, but I3 v1 must not infer a fraction or automatically generate percentage perturbations.
 
 ## 11. Model Manifest Snapshot
 
@@ -287,16 +312,23 @@ The embedded closed Model Manifest contains at minimum:
 - `equation_set_version`;
 - `implementation_version`;
 - `applicability_policy_version`;
+- `applicability_rule_ids`;
 - `numerical_policy_version`;
+- `input_binding_policy_version`;
+- `serialization_policy_version`;
 - `result_payload_schema_id`;
 - `result_payload_schema_version`;
+- `required_input_features`;
+- `prohibited_input_features`;
 - `accepted_quantity_kinds`;
 - `canonical_units`;
 - `known_limitations`;
 - `source_references`; and
 - `implementation_git_commit`.
 
-`model_manifest_format_version` is `m16a-model-manifest-1.0`. Collections must be unique and canonically ordered. `canonical_units` must bind accepted I1 kinds to exact registry canonical units. Known limitations and source references must be public-safe, deterministic content without credentials or local paths.
+`model_manifest_format_version` is `m16a-model-manifest-1.0`. For I3 v1, `serialization_policy_version` is exactly `m16a-canonical-json-1.0`. I3 defines the `input_binding_policy_version` field; I4 later supplies the first strict-1D value and its actual model input contract. I3 does not invent strict-1D feature paths or rule IDs.
+
+`required_input_features`, `prohibited_input_features`, `applicability_rule_ids`, `accepted_quantity_kinds`, `known_limitations`, and `source_references` are deterministic, unique, and canonically ordered collections. `canonical_units` must bind accepted I1 kinds to exact registry canonical units with canonically ordered keys. Required/prohibited features expose the selected model's input contract without turning I3 into a physics validator.
 
 `implementation_git_commit` may be null when unavailable. If present, it must be a lowercase Git commit identifier. Timestamp, hostname, user name, and local filesystem path are forbidden.
 
@@ -307,7 +339,9 @@ model_manifest_identity_version
 model_manifest
 ```
 
-The identity version is `m16a-model-manifest-content-identity-1.0`; `model_manifest` is the complete embedded snapshot. Changes to equations, validity/applicability rules, numerical policy, result contract, or implementation identity must change an appropriate version/content field and therefore the manifest identity.
+The identity version is `m16a-model-manifest-content-identity-1.0`; `model_manifest` is the complete embedded snapshot. Changes to equations, validity/applicability rules, model numerical policy, input binding, serialization policy, result contract, required/prohibited features, or implementation identity must change an appropriate version/content field and therefore the manifest identity.
+
+The model-specific `numerical_policy_version` belongs to the Model Manifest and I4. It controls the selected model's numerical behavior. It is not equivalent to `deterministic_runtime_policy_version`, which is an I3 model-independent orchestration contract.
 
 ## 12. Evaluation Input Reproducibility Identity
 
@@ -318,14 +352,19 @@ evaluation_input_identity_version
 epr_compiled_content_sha256
 evaluation_plan_sha256
 model_manifest_sha256
+unit_registry_version
+deterministic_runtime_policy_version
 ```
 
-`evaluation_input_identity_version` is `m16a-evaluation-input-identity-1.0`.
+`evaluation_input_identity_version` is `m16a-evaluation-input-identity-1.0`. For I3 v1, `unit_registry_version` is exactly `m16a-unit-registry-1.0` and `deterministic_runtime_policy_version` is exactly `m16a-evaluation-runtime-1.0`. Unit-registry identity is explicit and must not be hidden only inside nested quantities.
+
+The deterministic evaluation runtime policy governs model-independent orchestration semantics: canonical candidate and scenario ordering, exact sweep-product enumeration, outcome derivation, result-envelope assembly, and plan/manifest/EPR binding behavior. It does not define thermal equations or replace the selected model's `numerical_policy_version`.
 
 The projection excludes EER ID, EER filename/path, result values, timestamps, reviewers, hostname, absolute paths, and display strings. Therefore:
 
 ```text
 same EPR + same Evaluation Plan + same Model Manifest
++ same unit registry + same deterministic runtime policy
     -> same evaluation_input_sha256
 ```
 
@@ -345,6 +384,8 @@ The future EER is a closed, immutable canonical object with at least these top-l
 | `epr_file_sha256` | SHA-256 of exact persisted EPR bytes read for evaluation. |
 | `evaluation_plan` / `evaluation_plan_sha256` | Complete embedded plan and reconstructed hash. |
 | `model_manifest` / `model_manifest_sha256` | Complete actual manifest snapshot and reconstructed hash. |
+| `unit_registry_version` | Exact `m16a-unit-registry-1.0`; explicit input-identity component. |
+| `deterministic_runtime_policy_version` | Exact `m16a-evaluation-runtime-1.0`; model-independent orchestration policy. |
 | `evaluation_input_sha256` | Reconstructed input identity. |
 | `execution_outcome` | `completed`, `partial`, or `not_evaluated`. |
 | `candidate_execution` | Exactly one execution record per selected candidate. |
@@ -353,9 +394,16 @@ The future EER is a closed, immutable canonical object with at least these top-l
 | `prediction_outputs` | Normalized typed numerical outputs for legacy-independent consumption. |
 | `findings` / `warnings` | Deterministic public-safe structured result diagnostics. |
 | `confidentiality_level` | Deterministic non-downgraded level. |
+| `calculation_not_approval_notice` | Required exact calculation-authority warning. |
 | `eer_content_sha256` | Reconstructed EER authoritative-content identity. |
 
-An EER has no `reviewed_by`, approval, canonical decision, timestamp, user name, host name, or absolute path. Human review remains outside the calculation artifact.
+`calculation_not_approval_notice` must equal this exact constant, including punctuation and capitalization:
+
+```text
+This is a model result, not validation, approval, or a canonical engineering decision.
+```
+
+An EER has no `reviewed_by`, approval, canonical decision, timestamp, user name, host name, or absolute path. Human review remains outside the calculation artifact. The mandatory notice states the boundary but does not itself confer or record review authority.
 
 ### 13.1 Execution outcome
 
@@ -403,7 +451,7 @@ I3 validates wrapper shape, canonical compatibility, schema-identity match, and 
 
 ### 13.4 Actual assumptions used
 
-`assumptions_used` contains the canonical acknowledgement records actually consumed by evaluated execution. It must be a subset of the embedded plan's acknowledgements. Each candidate execution record's `assumption_acknowledgements_used` must also be consistent with the top-level set and its candidate/global scope.
+`assumptions_used` contains the canonical acknowledgement records actually consumed by evaluated execution. It must be a subset of the embedded plan's acknowledgements. For each evaluated candidate, `assumption_acknowledgements_used` must equal the exact model-bound required used-assumption set derived before arithmetic; the top-level array is the canonical union of the records actually consumed across execution. Candidate records and the top-level set must remain consistent with candidate/global scope.
 
 An assumption must not be claimed as used for a blocked or non-executed candidate unless the model explicitly consumed it before reaching that status and its versioned execution contract records that behavior. EPR assumption status is never modified.
 
@@ -434,7 +482,7 @@ Prediction–Reality consumers must not depend on model-specific payload interna
 - `eer_identity_version: "m16a-eer-content-identity-1.0"`; and
 - every authoritative EER top-level field except `eer_content_sha256` itself.
 
-The allowlist therefore includes EER format and ID; EPR binding and exact file hash; the embedded plan and plan hash; embedded manifest and manifest hash; evaluation-input identity; execution outcome; candidate execution records; actual assumptions used; result payload; prediction outputs; findings and warnings; and confidentiality level.
+The allowlist therefore includes EER format and ID; EPR binding and exact file hash; the embedded plan and plan hash; embedded manifest and manifest hash; unit-registry version; deterministic runtime policy version; evaluation-input identity; execution outcome; candidate execution records; actual assumptions used; result payload; prediction outputs; findings and warnings; confidentiality level; and the exact calculation-not-approval notice.
 
 Only the self-hash is excluded. Because time, user, host, reviewer, approval, and absolute-path fields are absent, the same authoritative EER content must yield byte-identical canonical JSON and the same hash.
 
@@ -513,7 +561,27 @@ No semantic aliasing is inferred. `junction_temperature` does not silently equal
 
 ### 15.2 Exact legacy unit projection
 
-The old comparator must never be modified to add conversions. The adapter converts before projection using exact `Decimal` and the closed I1 registry; float is forbidden.
+The old comparator must never be modified to add conversions. The current I1 public API provides forward `convert_quantity` but no reviewed canonical-to-target-unit operation. The adapter must not import private I1 names such as `_lookup_unit` or `_DECIMAL_CONTEXT`, duplicate registry scale/offset constants, or implement a second registry.
+
+At a separately authorized I3B implementation gate, I3B may include one narrow backward-compatible I1 API extension:
+
+```text
+convert_canonical_to_unit(...)
+```
+
+It is owned by `labos/engineering/quantities.py` and exported by `labos/engineering/__init__.py`. Its exact signature may be finalized at that gate, but its contract is fixed:
+
+- input: exact QuantityKind, exact canonical Decimal/canonical quantity, and exact registered target unit;
+- output: exact target-unit Decimal/text suitable for audit and projection;
+- reuse the existing `UNIT_REGISTRY` definitions and exact Decimal safety policy;
+- use no float, add no unit, and make no registry-version change;
+- apply inverse scale/offset exactly;
+- require the target unit to belong to the same QuantityKind;
+- round-trip through public `convert_quantity`;
+- require the resulting canonical numeric identity to equal the input identity; and
+- fail an inexact conversion.
+
+This compatible extension requires focused I1 regression tests when I3B is separately authorized. The Prediction–Reality adapter calls only public quantity APIs.
 
 I1 converts a target-unit input `x` to canonical value `c` as:
 
@@ -527,7 +595,7 @@ For a canonical EER value, the adapter derives the exact target-unit value as:
 x = (c - offset) / scale
 ```
 
-The operation must use the I1 exact Decimal context and reject inexact arithmetic. The target unit must be registered for the same QuantityKind. The adapter must then round-trip the derived target value and target token through I1 `convert_quantity` and require exact numeric identity with the canonical EER quantity. Absolute temperature and temperature difference remain distinct kinds.
+The public reverse-conversion API performs this inverse under the existing I1 exact Decimal policy and rejects inexact arithmetic. The adapter consumes its audited result rather than reproducing the formula or accessing private registry/context internals. Absolute temperature and temperature difference remain distinct kinds.
 
 Example: canonical absolute temperature `323.15 K` converts to exact target value `50 degC`. This does not authorize treating an absolute temperature as a temperature difference.
 
@@ -612,9 +680,14 @@ All identifiers, hashes, values, statuses, and references in this subsection are
     "equation_set_version": "synthetic-equations-1.0",
     "implementation_version": "synthetic-implementation-1.0",
     "applicability_policy_version": "synthetic-applicability-1.0",
+    "applicability_rule_ids": ["SYNTHETIC-APPLICABILITY-001"],
     "numerical_policy_version": "synthetic-numerical-1.0",
+    "input_binding_policy_version": "synthetic-input-binding-1.0",
+    "serialization_policy_version": "m16a-canonical-json-1.0",
     "result_payload_schema_id": "synthetic-strict-1d-result",
     "result_payload_schema_version": "1.0",
+    "required_input_features": ["synthetic-required-feature"],
+    "prohibited_input_features": ["synthetic-prohibited-feature"],
     "accepted_quantity_kinds": ["absolute_temperature"],
     "canonical_units": {"absolute_temperature": "K"},
     "known_limitations": ["Synthetic fixture only."],
@@ -624,6 +697,9 @@ All identifiers, hashes, values, statuses, and references in this subsection are
   "model_manifest_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "eer": {
     "evaluation_id": "EER-001",
+    "unit_registry_version": "m16a-unit-registry-1.0",
+    "deterministic_runtime_policy_version": "m16a-evaluation-runtime-1.0",
+    "calculation_not_approval_notice": "This is a model result, not validation, approval, or a canonical engineering decision.",
     "candidate_execution": [
       {
         "candidate_id": "CND-001",
@@ -639,7 +715,14 @@ All identifiers, hashes, values, statuses, and references in this subsection are
     "result_payload": {
       "schema_id": "synthetic-strict-1d-result",
       "schema_version": "1.0",
-      "content": {"synthetic_result": "not an engineering claim"},
+      "content": {
+        "candidate_results": [
+          {
+            "candidate_id": "CND-001",
+            "junction_temperature": "323.15"
+          }
+        ]
+      },
       "content_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     },
     "prediction_outputs": [
@@ -690,10 +773,13 @@ I3A has no filesystem planning, writer, Prediction–Reality adapter, solver, mo
 I3B later owns focused modules for:
 
 - EPR-bound plan validation/compiler;
+- model-independent structural acknowledgement validation only;
 - stale-source-safe EER persistence; and
 - the typed Prediction–Reality projection adapter.
 
-I3B has no solver. It should not freeze unnecessary framework abstractions. No CLI is required in I3A; a CLI remains deferred unless separately reviewed for I3B.
+For the projection adapter only, the later I3B gate may authorize the minimal backward-compatible `convert_canonical_to_unit` extension in `labos/engineering/quantities.py`, its public export from `labos/engineering/__init__.py`, and focused I1 regression coverage. That possible authorization is limited to the public reverse-conversion contract in Section 15.2; it permits no second registry, private-API dependency, new unit, or registry-version change.
+
+I3B has no solver and cannot infer arbitrary model used-assumption closure. It should not freeze unnecessary framework abstractions. No CLI is required in I3A; a CLI remains deferred unless separately reviewed for I3B.
 
 ### M16A-I4 — strict-1D implementation
 
@@ -701,6 +787,7 @@ I4 later owns:
 
 - the strict steady-state constant-area 1D Model Manifest;
 - model applicability;
+- deterministic `consumed_input_paths` resolution and model-bound exact acknowledgement closure before arithmetic;
 - thermal equations;
 - candidate evaluation and ranking;
 - constraint execution;
@@ -718,20 +805,33 @@ All tests use synthetic/public-safe fixtures. Test names may add descriptive suf
 | PLAN-02 | Change model/version, selected candidate, objective, sweep, or acknowledgement independently. | Each authoritative change produces a different plan hash. |
 | PLAN-03 | Create multiple plans against one EPR. | Plan changes do not change EPR bytes or `compiled_content_sha256`. |
 | PLAN-04 | Select an unknown candidate or reference an unselected candidate from a sweep/sensitivity/acknowledgement. | Reject; no executable plan/EER. |
-| ACK-01 | Supply all exact used assumption records for every selected candidate/global field. | Acknowledgement validation passes. |
-| ACK-02 | Omit one required acknowledgement. | Execution is blocked or plan rejected according to the validation stage; no silent assumption. |
-| ACK-03 | Add extra, provided-value, unknown-path, duplicate, or wrong-scope acknowledgement. | Reject. |
+| ACK-01 | Give I3B a canonical acknowledgement that resolves under the correct selected candidate/global scope to an actual `status: assumed` field. | Model-independent structural validation passes without claiming complete used-assumption closure. |
+| ACK-02 | At I4 model binding, omit one consumed assumed path from supplied acknowledgements. | The relevant candidate is blocked and no arithmetic occurs. |
+| ACK-03 | Supply a provided/missing/conflicting/evidence-required/unknown/unselected/duplicate/wrong-scope acknowledgement, or a structurally valid assumed path that is extra to the model-consumed set. | I3B rejects structural violations; model-bound validation rejects the extra-to-consumed acknowledgement. |
 | ACK-04 | Candidate `CND-002` replaces an assumed baseline field with a provided value. | No false acknowledgement is required for `CND-002`; `CND-001` remains candidate-scoped. |
+| ACK-05 | Ask I3B to derive the complete used-assumption set without a selected-model input contract. | I3B refuses to infer model-bound closure. |
+| ACK-06 | Resolve I4 `consumed_input_paths` containing assumed candidate/global fields. | Before arithmetic, supplied acknowledgements must exactly equal the required used-assumption set. |
 | MAN-01 | Reconstruct the same logical manifest. | Canonical manifest bytes and hash are identical. |
-| MAN-02 | Change model/equation/implementation/applicability/numerical/result-schema identity. | Manifest hash changes. |
-| RID-01 | Reuse the same EPR content identity, plan hash, and manifest hash. | `evaluation_input_sha256` is identical. |
+| MAN-02 | Change model/equation/implementation/applicability/numerical/input-binding/serialization/result-schema identity or required/prohibited features. | Manifest hash changes. |
+| RID-01 | Reuse the same EPR content identity, plan hash, manifest hash, unit-registry version, and deterministic runtime policy version. | `evaluation_input_sha256` is identical. |
 | RID-02 | Change EER ID or case-local EER filename only. | `evaluation_input_sha256` remains identical. |
+| RID-03 | Change `unit_registry_version` only. | `evaluation_input_sha256` changes. |
+| RID-04 | Change `deterministic_runtime_policy_version` only. | `evaluation_input_sha256` changes. |
 | EER-01 | Reconstruct the same authoritative EER content. | Canonical EER bytes and `eer_content_sha256` are identical. |
 | EER-02 | Change model-specific payload content. | Payload `content_sha256` and EER hash change. |
 | EER-03 | Alter embedded plan without its hash or supply a wrong plan hash. | Reject. |
 | EER-04 | Alter embedded manifest without its hash or supply a wrong manifest hash. | Reject. |
 | EER-05 | Represent no evaluated candidate with `execution_outcome: not_evaluated`. | Null payload, false result presence, and empty prediction outputs are accepted. |
 | EER-06 | Represent an evaluated numerical result. | Bound non-null payload, evaluated candidate record, resolving result pointer, and consistent typed prediction output are required. |
+| EER-07 | Omit or alter `calculation_not_approval_notice`. | Reject unless the exact mandatory constant is present. |
+| SWP-01 | Supply `SWP-###` sweeps in or out of canonical ID order. | Only unique valid IDs in canonical lexical/numeric order pass; explicit-grid point order remains authoritative. |
+| SWP-02 | Exercise include/exclude endpoints with exact and non-landing Decimal progressions. | Stop is included only for `include_stop` with an exact landing; it is never snapped or synthesized. |
+| SWP-03 | Use multiple sweeps on one candidate and sweeps on another candidate. | Same-candidate points form a Cartesian product; no cross-candidate product is formed; unswept candidate contributes one baseline. |
+| SWP-04 | Calculate total combinations and vary `maximum_requested_combination_count`. | Exact sum-of-per-candidate-products is enforced; a lower maximum rejects the plan. |
+| SEN-01 | Give an OAT parameter a candidate different from `baseline_candidate_id`. | Reject. |
+| SEN-02 | Duplicate or disorder OAT `field_path` values. | Duplicates reject; canonical field-path order is required. |
+| OBJ-01 | Use `temperature_margin` with a missing, null-target, or non-absolute-temperature requirement. | Reject; only an existing compatible absolute-temperature target is accepted. |
+| FAIL-01 | Bind a plan to an EPR with `compilation.outcome: FAIL`. | No executable plan and no EER. |
 | SRC-01 | Read a persisted EPR at the canonical case-local path. | Exact bytes/hash, case/problem identity, canonical reconstruction, and content hash are verified. |
 | SRC-02 | Change the EPR bytes after evaluation snapshot and before EER write. | Stale-source failure; no EER write. |
 | SAFE-01 | Write the same canonical EER bytes twice to the same valid target. | Second write is idempotent success. |
@@ -743,6 +843,7 @@ All tests use synthetic/public-safe fixtures. Test names may add descriptive suf
 | PRJ-04 | Use a target unit registered for a different QuantityKind or not registered. | Reject. |
 | PRJ-05 | Project a high-precision Decimal that changes through the legacy JSON-number decode path. | Reject; no rounding or float approximation. |
 | PRJ-06 | Compare baseline files/tests before and after adapter implementation. | Old comparator, schema, and `tests/test_evidence_reality.py` are unchanged. |
+| UNIT-PRJ-01 | Inspect adapter imports/conversion and the focused I1 extension tests. | Adapter uses only public reverse conversion; no private I1 dependency, duplicated registry, float, new unit, or registry-version change. |
 | SEP-01 | Represent a not-applicable selected candidate. | Explicit status/findings are valid and no numerical rank/output is present. |
 | SEP-02 | Search EER schema/runtime and fixture output for approval/reviewer authority. | EER contains no approval or reviewer semantics. |
 | SEP-03 | Inspect I3 modules and run arithmetic-boundary tests. | No solver, applicability physics, ranking, sweep execution, or sensitivity calculation exists in I3. |
