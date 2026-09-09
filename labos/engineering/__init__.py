@@ -31,6 +31,12 @@ from .problem import (
     candidate_content_sha256,
     engineering_problem_content_sha256,
 )
+from .compiler import (
+    CompilationFailure,
+    CompiledEngineeringProblem,
+    compile_engineering_problem,
+    write_engineering_problem,
+)
 
 __all__ = [
     "CANONICAL_JSON_VERSION",
@@ -41,6 +47,8 @@ __all__ = [
     "PROBLEM_FORMAT_VERSION",
     "UNIT_REGISTRY_VERSION",
     "CanonicalSerializationError",
+    "CompilationFailure",
+    "CompiledEngineeringProblem",
     "ConversionRecord",
     "DecimalParseError",
     "EngineeringProblem",
@@ -55,7 +63,9 @@ __all__ = [
     "canonical_json_bytes",
     "canonical_sha256",
     "candidate_content_sha256",
+    "compile_engineering_problem",
     "convert_quantity",
     "engineering_problem_content_sha256",
     "parse_decimal",
+    "write_engineering_problem",
 ]
