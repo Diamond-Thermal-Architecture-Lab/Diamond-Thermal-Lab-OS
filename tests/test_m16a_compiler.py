@@ -73,11 +73,19 @@ def evidence_object(case_id: str, *, evidence_id: str = "EVD-001", status: str =
     }
 
 
-def measurement_reference(case_id: str, *, evidence_id: str = "EVD-001", status: str = "reviewed") -> dict:
+def measurement_reference(
+    case_id: str,
+    *,
+    evidence_id: str = "EVD-001",
+    status: str = "reviewed",
+    quantity: str = "power",
+    value: int | float | None = 10,
+    unit: str | None = "W",
+) -> dict:
     return {
         "measurement_format_version": "1.0", "measurement_id": "MSR-001",
         "case_id": case_id, "evidence_id": evidence_id, "status": status,
-        "quantity": "power", "value": 10, "unit": "W",
+        "quantity": quantity, "value": value, "unit": unit,
         "sample_id": "ANON-COMPILER-001", "method": "Synthetic measurement method.",
         "operating_conditions": "Synthetic ambient conditions.",
         "uncertainty": {"numeric_value": 0.1, "unit": "W", "basis": "Synthetic bound."},
@@ -231,6 +239,7 @@ class CandidateAcceptanceTests(CompilerCase):
     def test_cnd_03_missing_duplicate_and_overlapping_targets_fail(self) -> None:
         sets = (
             [{"path": "/geometry/missing", "value": "x"}],
+            [{"path": "/geometry/~2invalid", "value": "x"}],
             [{"path": "/geometry/source_to_sink_direction", "value": "+x"}] * 2,
             [{"path": "/geometry", "value": "not-a-geometry-object"}],
             [
@@ -241,10 +250,9 @@ class CandidateAcceptanceTests(CompilerCase):
         for overrides in sets:
             raw = authoring(self.case.name)
             raw["candidates"][1]["overrides"] = overrides
-            with self.subTest(overrides=overrides):
-                result = self.compile(raw).engineering_problem.to_dict()
-                self.assertEqual(result["compilation"]["outcome"], "FAIL")
-                self.assertIn("M16A-EPR-CND-003", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+            with self.subTest(overrides=overrides), self.assertRaisesRegex(CompilationFailure, "M16A-EPR-CND-003"):
+                self.compile(raw)
+            self.assertFalse((self.case / "engineering").exists())
 
     def test_cnd_04_authoring_mutation_after_compile_is_detached(self) -> None:
         raw = authoring(self.case.name)
@@ -365,6 +373,62 @@ class SeparationAndWriterAcceptanceTests(CompilerCase):
         self.assertEqual(outside.read_bytes(), b"outside\n")
 
 
+class StructuralPolicyAcceptanceTests(CompilerCase):
+    def test_constraint_length_target_and_length_threshold_are_compatible(self) -> None:
+        raw = authoring(self.case.name)
+        raw["constraints"][0]["operator"] = "le"
+        raw["constraints"][0]["threshold"] = envelope(QuantityKind.LENGTH, "0.2", "mm")
+        result = self.compile(raw).engineering_problem.to_dict()
+        self.assertEqual(result["compilation"]["outcome"], "READY")
+        self.assertNotIn("M16A-EPR-QTY-004", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+
+    def test_constraint_length_target_and_power_threshold_fail_dimensionally(self) -> None:
+        raw = authoring(self.case.name)
+        raw["constraints"][0]["operator"] = "le"
+        raw["constraints"][0]["threshold"] = envelope(QuantityKind.POWER, "1", "W")
+        result = self.compile(raw).engineering_problem.to_dict()
+        self.assertEqual(result["compilation"]["outcome"], "FAIL")
+        self.assertIn("M16A-EPR-QTY-004", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+
+    def test_review_only_null_threshold_remains_valid(self) -> None:
+        result = self.compile().engineering_problem.to_dict()
+        self.assertEqual(result["constraints"][0]["operator"], "review_only")
+        self.assertIsNone(result["constraints"][0]["threshold"])
+        self.assertNotIn("M16A-EPR-QTY-004", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+
+    def test_generic_dimensionless_value_above_one_is_not_globally_clamped(self) -> None:
+        raw = authoring(self.case.name)
+        raw["requirements"][0]["target"] = envelope(QuantityKind.PHYSICAL_DIMENSIONLESS, "1.5", "1")
+        raw["constraints"][0]["target_path"] = "/boundary_conditions/source_side/heat_flow_fraction"
+        raw["constraints"][0]["operator"] = "le"
+        raw["constraints"][0]["threshold"] = envelope(QuantityKind.PHYSICAL_DIMENSIONLESS, "1.5", "1")
+        self.assertEqual(self.compile(raw).engineering_problem.to_dict()["compilation"]["outcome"], "READY")
+
+    def test_heat_flow_fraction_range_applies_to_provided_and_assumed(self) -> None:
+        for status in ("provided", "assumed"):
+            raw = authoring(self.case.name)
+            raw["baseline"]["boundary_conditions"]["source_side"]["heat_flow_fraction"] = envelope(
+                QuantityKind.PHYSICAL_DIMENSIONLESS, "1.1", "1", status=status,
+                source_type="assumption" if status == "assumed" else "synthetic_fixture",
+            )
+            with self.subTest(status=status):
+                result = self.compile(raw).engineering_problem.to_dict()
+                self.assertEqual(result["compilation"]["outcome"], "FAIL")
+                self.assertIn("M16A-EPR-QTY-003", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+
+    def test_duty_cycle_range_applies_to_provided_and_assumed(self) -> None:
+        for status in ("provided", "assumed"):
+            raw = authoring(self.case.name)
+            raw["heat_sources"][0]["duty_cycle"] = envelope(
+                QuantityKind.PHYSICAL_DIMENSIONLESS, "1.1", "1", status=status,
+                source_type="assumption" if status == "assumed" else "synthetic_fixture",
+            )
+            with self.subTest(status=status):
+                result = self.compile(raw).engineering_problem.to_dict()
+                self.assertEqual(result["compilation"]["outcome"], "FAIL")
+                self.assertIn("M16A-EPR-QTY-003", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+
+
 class EvidenceRealityAcceptanceTests(CompilerCase):
     def set_provenance(self, raw: dict, source_type: str, reference: str, digest: str, *, evd: str = "EVD-001", review: str = "reviewed") -> None:
         provenance = {
@@ -387,6 +451,105 @@ class EvidenceRealityAcceptanceTests(CompilerCase):
         raw = authoring(self.case.name)
         self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest)
         self.assertEqual(self.compile(raw).engineering_problem.to_dict()["compilation"]["outcome"], "READY")
+
+    def test_msr_equivalent_units_bind_through_i1_numeric_identity(self) -> None:
+        self.write_json("evidence/EVD-001.json", evidence_object(self.case.name, measurements=["MSR-001"]))
+        _, digest = self.write_json(
+            "measurements/MSR-001.json",
+            measurement_reference(self.case.name, value=10000, unit="mW"),
+        )
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest)
+        self.assertEqual(self.compile(raw).engineering_problem.to_dict()["compilation"]["outcome"], "READY")
+
+    def test_msr_numeric_mismatch_cannot_be_ready(self) -> None:
+        self.write_json("evidence/EVD-001.json", evidence_object(self.case.name, measurements=["MSR-001"]))
+        _, digest = self.write_json("measurements/MSR-001.json", measurement_reference(self.case.name, value=11))
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest)
+        self.assert_provenance_failure(raw)
+
+    def test_msr_quantity_kind_mismatch_cannot_be_ready(self) -> None:
+        self.write_json("evidence/EVD-001.json", evidence_object(self.case.name, measurements=["MSR-001"]))
+        _, digest = self.write_json(
+            "measurements/MSR-001.json",
+            measurement_reference(self.case.name, quantity="length", value=10, unit="mm"),
+        )
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest)
+        self.assert_provenance_failure(raw)
+
+    def test_reviewed_msr_with_draft_owning_evd_cannot_be_reviewed(self) -> None:
+        self.write_json(
+            "evidence/EVD-001.json",
+            evidence_object(self.case.name, status="draft", measurements=["MSR-001"]),
+        )
+        _, digest = self.write_json("measurements/MSR-001.json", measurement_reference(self.case.name))
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest)
+        self.assert_provenance_failure(raw)
+
+    def test_deprecated_owning_evd_cannot_support_provided_ready_value(self) -> None:
+        self.write_json(
+            "evidence/EVD-001.json",
+            evidence_object(self.case.name, status="deprecated", measurements=["MSR-001"]),
+        )
+        _, digest = self.write_json("measurements/MSR-001.json", measurement_reference(self.case.name))
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest, review="unverified")
+        self.assert_provenance_failure(raw)
+
+    def test_direct_deprecated_evd_cannot_support_provided_ready_value(self) -> None:
+        _, digest = self.write_json(
+            "evidence/EVD-001.json",
+            evidence_object(self.case.name, status="deprecated"),
+        )
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "evidence_object", "evidence/EVD-001.json", digest, review="unverified")
+        self.assert_provenance_failure(raw)
+
+    def test_planned_msr_without_numeric_value_cannot_substantiate_provided_value(self) -> None:
+        self.write_json("evidence/EVD-001.json", evidence_object(self.case.name, measurements=["MSR-001"]))
+        _, digest = self.write_json(
+            "measurements/MSR-001.json",
+            measurement_reference(self.case.name, status="planned", value=None, unit=None),
+        )
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest, review="unverified")
+        self.assert_provenance_failure(raw)
+
+    def test_stale_evidence_parent_symlink_is_rejected_even_with_same_bytes(self) -> None:
+        _, digest = self.write_json("evidence/EVD-001.json", evidence_object(self.case.name))
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "evidence_object", "evidence/EVD-001.json", digest)
+        result = self.compile(raw)
+        evidence = self.case / "evidence"
+        relocated = self.case / "relocated-evidence"
+        evidence.rename(relocated)
+        try:
+            evidence.symlink_to(relocated, target_is_directory=True)
+        except OSError:
+            self.skipTest("symlink creation is unavailable")
+        with self.assertRaisesRegex(CompilationFailure, "M16A-EPR-SOURCE-004"):
+            write_engineering_problem(result)
+        self.assertFalse((self.case / "engineering" / "problems" / "EPR-001.json").exists())
+
+    def test_stale_measurement_parent_symlink_is_rejected_even_with_same_bytes(self) -> None:
+        self.write_json("evidence/EVD-001.json", evidence_object(self.case.name, measurements=["MSR-001"]))
+        _, digest = self.write_json("measurements/MSR-001.json", measurement_reference(self.case.name))
+        raw = authoring(self.case.name)
+        self.set_provenance(raw, "measurement_reference", "measurements/MSR-001.json", digest)
+        result = self.compile(raw)
+        measurements = self.case / "measurements"
+        relocated = self.case / "relocated-measurements"
+        measurements.rename(relocated)
+        try:
+            measurements.symlink_to(relocated, target_is_directory=True)
+        except OSError:
+            self.skipTest("symlink creation is unavailable")
+        with self.assertRaisesRegex(CompilationFailure, "M16A-EPR-SOURCE-004"):
+            write_engineering_problem(result)
+        self.assertFalse((self.case / "engineering" / "problems" / "EPR-001.json").exists())
 
     def assert_provenance_failure(self, raw: dict) -> None:
         result = self.compile(raw).engineering_problem.to_dict()

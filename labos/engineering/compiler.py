@@ -67,6 +67,7 @@ _INTAKE_CASE_ID = re.compile(
 )
 _USABLE_STATUSES = {"provided", "assumed", "evidence_required"}
 _STATUS_RANK = {"unverified": 0, "source_documented": 1, "reviewed": 2}
+_MEASUREMENT_QUANTITY_KINDS = {kind.value: kind for kind in QuantityKind}
 
 
 @dataclass(frozen=True)
@@ -380,7 +381,7 @@ def _finding(rule_id: str, paths: Sequence[str], message: str, action: str) -> d
     }
 
 
-def _resolve_candidate(baseline: dict[str, Any], declaration: Mapping[str, Any], candidate_path: str) -> tuple[dict[str, Any], list[str], list[dict[str, Any]]]:
+def _resolve_candidate(baseline: dict[str, Any], declaration: Mapping[str, Any], candidate_path: str) -> tuple[dict[str, Any], list[str]]:
     declaration = _closed_mapping(declaration, _CANDIDATE_AUTHORING_FIELDS, candidate_path, "M16A-EPR-CND-001")
     overrides = declaration["overrides"]
     if type(overrides) is not list:
@@ -405,12 +406,11 @@ def _resolve_candidate(baseline: dict[str, Any], declaration: Mapping[str, Any],
         if len(left) < len(right) and right[:len(left)] == left:
             issues.append("ancestor/descendant override overlap")
     if issues:
-        finding = _finding(
-            "M16A-EPR-CND-003", [candidate_path],
+        _abort(
+            "M16A-EPR-CND-003", candidate_path,
             "Candidate override set is unresolved: " + "; ".join(sorted(set(issues))) + ".",
             "Correct the replace-only non-overlapping pointers and recompile.",
         )
-        return copy.deepcopy(baseline), [], [finding]
     resolved = copy.deepcopy(baseline)
     for pointer, tokens, replacement in sorted(parsed, key=lambda item: item[0]):
         parent, key = _pointer_target(resolved, tokens)
@@ -421,14 +421,13 @@ def _resolve_candidate(baseline: dict[str, Any], declaration: Mapping[str, Any],
             normalized["geometry"], normalized["materials"], normalized["interfaces"],
             normalized["boundary_conditions"], candidate_path,
         )
-    except (CompilationFailure, EngineeringProblemValidationError, AttributeError, KeyError, TypeError) as exc:
-        finding = _finding(
-            "M16A-EPR-CND-003", [candidate_path],
+    except (CompilationFailure, EngineeringProblemValidationError, AttributeError, KeyError, TypeError, ValueError) as exc:
+        _abort(
+            "M16A-EPR-CND-003", candidate_path,
             f"Candidate replacement does not resolve to a valid complete view: {exc}",
             "Correct the replacement shape or references and recompile.",
         )
-        return copy.deepcopy(baseline), [], [finding]
-    return normalized, sorted(pointers), []
+    return normalized, sorted(pointers)
 
 
 def _walk_envelopes(value: Any, path: str = "") -> list[tuple[str, Mapping[str, Any]]]:
@@ -445,19 +444,23 @@ def _walk_envelopes(value: Any, path: str = "") -> list[tuple[str, Mapping[str, 
     return found
 
 
-def _walk_provenance(value: Any, path: str = "", envelope_status: str | None = None) -> list[tuple[str, Mapping[str, Any], str | None]]:
-    found: list[tuple[str, Mapping[str, Any], str | None]] = []
+def _walk_provenance(
+    value: Any,
+    path: str = "",
+    envelope: Mapping[str, Any] | None = None,
+) -> list[tuple[str, Mapping[str, Any], Mapping[str, Any] | None]]:
+    found: list[tuple[str, Mapping[str, Any], Mapping[str, Any] | None]] = []
     if isinstance(value, Mapping):
-        status = value.get("status") if _ENVELOPE_FIELDS.issubset(value) else envelope_status
+        enclosing = value if _ENVELOPE_FIELDS.issubset(value) else envelope
         for key, item in value.items():
             child = f"{path}/{_escape(str(key))}"
             if key == "provenance" and isinstance(item, Mapping) and set(item) == _PROVENANCE_FIELDS:
-                found.append((child, item, status))
+                found.append((child, item, enclosing))
             else:
-                found.extend(_walk_provenance(item, child, status))
+                found.extend(_walk_provenance(item, child, enclosing))
     elif type(value) is list:
         for index, item in enumerate(value):
-            found.extend(_walk_provenance(item, f"{path}/{index}", envelope_status))
+            found.extend(_walk_provenance(item, f"{path}/{index}", envelope))
     return found
 
 
@@ -496,17 +499,20 @@ def _actual_review_status(source_type: str, sidecar_status: Any) -> str:
 def _provenance_reality(case_dir: Path, problem: Mapping[str, Any]) -> tuple[list[dict[str, Any]], dict[str, str]]:
     findings: list[dict[str, Any]] = []
     snapshots: dict[str, str] = {}
-    for path, provenance, envelope_status in _walk_provenance(problem):
+    for path, provenance, envelope in _walk_provenance(problem):
         source_type = provenance.get("source_type")
         if source_type not in {"evidence_object", "measurement_reference"}:
             continue
         try:
+            envelope_status = envelope.get("status") if envelope is not None else None
             evd_id = provenance["evidence_object_ids"][0]
+            owning_evd_status: Any = None
             if source_type == "evidence_object":
                 declared_id = evd_id
                 sidecar_path, data, sidecar = _safe_sidecar(case_dir, provenance["reference"], "evidence", f"{evd_id}.json")
                 validation = validate_evidence(case_dir, sidecar_path)
                 id_field = "evidence_id"
+                owning_evd_status = sidecar.get("status")
             else:
                 msr_id = provenance["measurement_reference_ids"][0]
                 declared_id = msr_id
@@ -520,6 +526,7 @@ def _provenance_reality(case_dir: Path, problem: Mapping[str, Any]) -> tuple[lis
                     raise ValueError("owning Evidence Object fails repository validation or identity binding")
                 if sidecar.get("evidence_id") != evd_id:
                     raise ValueError("Measurement Reference points to the wrong Evidence Object")
+                owning_evd_status = evd.get("status")
             digest = hashlib.sha256(data).hexdigest()
             snapshots[provenance["reference"]] = digest
             if validation.status == "FAIL":
@@ -536,12 +543,42 @@ def _provenance_reality(case_dir: Path, problem: Mapping[str, Any]) -> tuple[lis
                 raise ValueError("EPR review_status overclaims the linked sidecar status")
             if declared == "reviewed" and actual != "reviewed":
                 raise ValueError("reviewed disposition requires a reviewed sidecar")
+            owning_actual = _actual_review_status("evidence_object", owning_evd_status)
+            if (
+                source_type == "measurement_reference"
+                and declared in _STATUS_RANK
+                and owning_actual in _STATUS_RANK
+                and _STATUS_RANK[declared] > _STATUS_RANK[owning_actual]
+            ):
+                raise ValueError("EPR review_status overclaims the owning Evidence Object status")
+            if source_type == "measurement_reference" and declared == "reviewed" and owning_evd_status != "reviewed":
+                raise ValueError("reviewed measurement provenance also requires a reviewed owning Evidence Object")
             if declared == "rejected" and actual != "rejected":
                 raise ValueError("rejected disposition requires a rejected sidecar")
             if actual == "rejected" and envelope_status not in {"conflicting", "evidence_required"}:
                 raise ValueError("rejected sidecar requires conflicting or evidence_required value status")
+            if owning_evd_status in {"rejected", "deprecated"} and envelope_status not in {"conflicting", "evidence_required"}:
+                raise ValueError("rejected or deprecated Evidence Object cannot support a normal usable value")
             if declared == "not_applicable":
                 raise ValueError("linked sidecar cannot use not_applicable review disposition")
+            if source_type == "measurement_reference":
+                measurement_status = sidecar.get("status")
+                measurement_value = sidecar.get("value")
+                measurement_unit = sidecar.get("unit")
+                if measurement_status in {"completed", "reviewed"}:
+                    if envelope is None or measurement_value is None or type(measurement_unit) is not str:
+                        raise ValueError("completed or reviewed measurement lacks an enclosing numeric EPR quantity")
+                    measurement_kind = _MEASUREMENT_QUANTITY_KINDS.get(sidecar.get("quantity"))
+                    if measurement_kind is None:
+                        raise ValueError("Measurement Reference quantity does not map to an I1 QuantityKind")
+                    if envelope.get("quantity_kind") != measurement_kind.value:
+                        raise ValueError("Measurement Reference quantity kind is incompatible with the enclosing EPR quantity")
+                    measurement_quantity = convert_quantity(measurement_kind, str(measurement_value), measurement_unit)
+                    epr_quantity = convert_quantity(measurement_kind, envelope.get("value"), envelope.get("unit"))
+                    if not measurement_quantity.same_numeric_identity(epr_quantity):
+                        raise ValueError("Measurement Reference numeric identity differs from the enclosing EPR quantity")
+                elif measurement_status == "planned" and measurement_value is None and envelope_status not in {"conflicting", "evidence_required"}:
+                    raise ValueError("planned measurement without a numeric value cannot substantiate a normal usable EPR quantity")
         except (CompilationFailure, IndexError, KeyError, OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
             findings.append(_finding(
                 "M16A-EPR-PROV-001", [path], f"Linked provenance does not match repository reality: {exc}.",
@@ -579,6 +616,13 @@ def _unknowns_and_findings(problem: Mapping[str, Any]) -> tuple[list[dict[str, A
         state = envelope["status"]
         if envelope["uncertainty"]["kind"] == "not_provided":
             warnings.append(_finding("M16A-EPR-UNC-001", [path + "/uncertainty"], "Numeric uncertainty was not provided.", "Document uncertainty when available; do not treat it as zero."))
+        if state != "missing" and envelope["value"] is not None:
+            value = Decimal(envelope["value"])
+            kind = envelope["quantity_kind"]
+            fraction_field = path.endswith("/heat_flow_fraction") or path.endswith("/duty_cycle")
+            if (kind != QuantityKind.TEMPERATURE_DIFFERENCE.value and value < 0) or (fraction_field and value > 1):
+                has_fail = True
+                blocking.append(_finding("M16A-EPR-QTY-003", [path], "Quantity violates the model-independent field-specific physical range policy.", "Correct the explicit sign or field-specific fraction range."))
         if state not in {"missing", "assumed", "conflicting", "evidence_required"}:
             continue
         impact = "requires_later_acknowledgement" if state == "assumed" else "blocking"
@@ -598,12 +642,6 @@ def _unknowns_and_findings(problem: Mapping[str, Any]) -> tuple[list[dict[str, A
             blocking.append(_finding("M16A-EPR-QTY-002", [path], "A persisted quantity is explicitly conflicting.", "Resolve the conflicting authoritative inputs before evaluation."))
         elif state == "evidence_required" or (state == "missing" and impact == "blocking"):
             has_hold = True
-        if state != "missing" and envelope["value"] is not None:
-            value = Decimal(envelope["value"])
-            kind = envelope["quantity_kind"]
-            if (kind != QuantityKind.TEMPERATURE_DIFFERENCE.value and value < 0) or (kind == QuantityKind.PHYSICAL_DIMENSIONLESS.value and value > 1):
-                has_fail = True
-                blocking.append(_finding("M16A-EPR-QTY-003", [path], "Quantity violates the model-independent physical range policy.", "Correct the explicit sign or fraction range."))
     unknowns: list[dict[str, Any]] = []
     for index, record in enumerate(sorted(set(records)), start=1):
         path, state, reason, consequence, impact, action = record
@@ -613,6 +651,49 @@ def _unknowns_and_findings(problem: Mapping[str, Any]) -> tuple[list[dict[str, A
             "next_evidence_action": action,
         })
     return unknowns, blocking, warnings, sorted(set(assumptions)), has_hold, has_fail
+
+
+def _resolve_problem_pointer(document: Mapping[str, Any], pointer: Any) -> Any:
+    if type(pointer) is not str or not pointer.startswith("/") or pointer == "/":
+        raise ValueError("target_path must be a non-empty RFC 6901 pointer")
+    tokens: list[str] = []
+    for raw in pointer.split("/")[1:]:
+        if re.search(r"~(?![01])", raw):
+            raise ValueError("target_path contains an invalid RFC 6901 escape")
+        token = raw.replace("~1", "/").replace("~0", "~")
+        if not token or token in {"*", "-"} or "*" in token:
+            raise ValueError("target_path contains a forbidden token")
+        tokens.append(token)
+    parent, key = _pointer_target(document, tokens)
+    return parent[key]
+
+
+def _constraint_findings(problem: Mapping[str, Any]) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    for index, constraint in enumerate(problem["constraints"]):
+        if constraint.get("operator") == "review_only" or constraint.get("threshold") is None:
+            continue
+        constraint_path = f"/constraints/{index}"
+        target_path = constraint.get("target_path")
+        threshold = constraint["threshold"]
+        try:
+            target = _resolve_problem_pointer(problem, target_path)
+            compatible = (
+                isinstance(target, Mapping)
+                and _ENVELOPE_FIELDS.issubset(target)
+                and isinstance(threshold, Mapping)
+                and target.get("quantity_kind") == threshold.get("quantity_kind")
+            )
+        except (IndexError, KeyError, TypeError, ValueError):
+            compatible = False
+        if not compatible:
+            findings.append(_finding(
+                "M16A-EPR-QTY-004",
+                [constraint_path + "/threshold", target_path] if type(target_path) is str else [constraint_path + "/threshold"],
+                "Quantitative constraint threshold is not dimensionally compatible with its target quantity envelope.",
+                "Target a quantified-value envelope and use the same I1 quantity_kind for the threshold.",
+            ))
+    return findings
 
 
 def _heat_findings(problem: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -722,10 +803,9 @@ def _compile_engineering_problem(
     baseline_candidate["resolved_content_sha256"] = "0" * 64
     baseline_candidate["resolved_content_sha256"] = candidate_content_sha256(baseline_candidate)
     candidates = [baseline_candidate]
-    candidate_findings: list[dict[str, Any]] = []
     for index, declaration in enumerate(candidate_declarations, start=1):
         declaration_path = f"/candidates/{index}"
-        resolved, changed, issues = _resolve_candidate(baseline, declaration, declaration_path)
+        resolved, changed = _resolve_candidate(baseline, declaration, declaration_path)
         candidate = {
             "candidate_id": declaration.get("candidate_id") if isinstance(declaration, Mapping) else None,
             "candidate_role": "variant",
@@ -741,7 +821,6 @@ def _compile_engineering_problem(
         candidate["resolved_content_sha256"] = "0" * 64
         candidate["resolved_content_sha256"] = candidate_content_sha256(candidate)
         candidates.append(candidate)
-        candidate_findings.extend(issues)
     candidates[1:] = sorted(candidates[1:], key=lambda item: item.get("candidate_id", ""))
     problem: dict[str, Any] = {
         "problem_format_version": PROBLEM_FORMAT_VERSION,
@@ -756,7 +835,7 @@ def _compile_engineering_problem(
     }
     provenance_findings, sidecar_hashes = _provenance_reality(case_dir, problem)
     unknowns, quantity_findings, warnings, assumptions, has_hold, has_fail = _unknowns_and_findings(problem)
-    blocking = candidate_findings + provenance_findings + quantity_findings + _heat_findings(problem)
+    blocking = provenance_findings + quantity_findings + _constraint_findings(problem) + _heat_findings(problem)
     has_fail = has_fail or bool(blocking)
     problem["unknowns"] = unknowns
     outcome = "FAIL" if has_fail else "HOLD_FOR_INPUT" if has_hold else "READY_WITH_ASSUMPTIONS" if assumptions else "READY"
@@ -815,14 +894,11 @@ def _assert_sources_fresh(result: CompiledEngineeringProblem) -> None:
     for reference, expected in result._sidecar_sha256.items():
         try:
             parts = _safe_relative_parts(reference, "/provenance/reference", rule_id="M16A-EPR-SOURCE-004")
-            path = result.case_path.joinpath(*parts)
-            if path.is_symlink():
-                raise OSError("sidecar became a symlink")
-            resolved = path.resolve(strict=True)
-            if result.case_path not in resolved.parents or not resolved.is_file():
-                raise OSError("sidecar left the case or changed type")
-            actual = hashlib.sha256(resolved.read_bytes()).hexdigest()
-        except (CompilationFailure, OSError, RuntimeError) as exc:
+            if len(parts) != 2 or parts[0] not in {"evidence", "measurements"}:
+                raise ValueError("recorded sidecar is outside an exact approved folder")
+            _, data, _ = _safe_sidecar(result.case_path, reference, parts[0], parts[1])
+            actual = hashlib.sha256(data).hexdigest()
+        except (CompilationFailure, OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
             _abort("M16A-EPR-SOURCE-004", "/provenance/reference", f"Recorded sidecar is stale or unsafe: {exc}", "Recompile from current sidecars.")
         if actual != expected:
             _abort("M16A-EPR-SOURCE-004", "/provenance/reference", "Recorded sidecar exact bytes changed after compilation.", "Recompile from current sidecars.")
