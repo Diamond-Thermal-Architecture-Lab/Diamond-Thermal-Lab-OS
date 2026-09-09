@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "labos/engineering_problem.schema.json",
+  "title": "M16A Engineering Problem Representation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "problem_format_version", "problem_id", "case_id", "title", "purpose",
+    "source_case_sha256", "requirements", "heat_sources", "geometry",
+    "materials", "interfaces", "boundary_conditions", "constraints",
+    "candidates", "unknowns", "compilation", "confidentiality_level",
+    "compiled_content_sha256"
+  ],
+  "properties": {
+    "problem_format_version": {"const": "m16a-engineering-problem-1.0"},
+    "problem_id": {"$ref": "#/$defs/problem_id"},
+    "case_id": {"$ref": "#/$defs/case_id"},
+    "title": {"$ref": "#/$defs/non_empty_string"},
+    "purpose": {"$ref": "#/$defs/non_empty_string"},
+    "source_case_sha256": {"$ref": "#/$defs/source_case_sha256"},
+    "requirements": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/requirement"}},
+    "heat_sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/heat_source"}},
+    "geometry": {"$ref": "#/$defs/geometry"},
+    "materials": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/material"}},
+    "interfaces": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/interface"}},
+    "boundary_conditions": {"$ref": "#/$defs/boundary_conditions"},
+    "constraints": {"type": "array", "items": {"$ref": "#/$defs/constraint"}},
+    "candidates": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/resolved_candidate"}},
+    "unknowns": {"type": "array", "items": {"$ref": "#/$defs/unknown"}},
+    "compilation": {"$ref": "#/$defs/compilation"},
+    "confidentiality_level": {"$ref": "#/$defs/confidentiality_level"},
+    "compiled_content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "non_empty_string": {"type": "string", "minLength": 1},
+    "nullable_string": {"type": ["string", "null"]},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "problem_id": {"type": "string", "pattern": "^EPR-[0-9]{3}$"},
+    "case_id": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
+    "json_pointer": {"type": "string", "pattern": "^(/([^~/]|~[01])*)+$"},
+    "requirement_id": {"type": "string", "pattern": "^REQ-[0-9]{3}$"},
+    "layer_id": {"type": "string", "pattern": "^LYR-[0-9]{3}$"},
+    "material_id": {"type": "string", "pattern": "^MAT-[0-9]{3}$"},
+    "constraint_id": {"type": "string", "pattern": "^CON-[0-9]{3}$"},
+    "quantity_kind": {
+      "enum": ["power", "heat_flux", "length", "area", "thermal_conductivity",
+        "area_thermal_resistance", "absolute_thermal_resistance",
+        "area_thermal_conductance", "absolute_temperature",
+        "temperature_difference", "physical_dimensionless"]
+    },
+    "canonical_unit": {
+      "enum": ["W", "W/m^2", "m", "m^2", "W/(m*K)", "m^2*K/W",
+        "K/W", "W/(m^2*K)", "K", "1"]
+    },
+    "decimal_string": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "i1_conversion_record": {
+      "type": "object", "additionalProperties": false,
+      "required": ["original_value", "original_unit", "canonical_value", "canonical_unit", "conversion_rule_id", "unit_registry_version"],
+      "properties": {
+        "original_value": {"$ref": "#/$defs/decimal_string"},
+        "original_unit": {"$ref": "#/$defs/non_empty_string"},
+        "canonical_value": {"$ref": "#/$defs/decimal_string"},
+        "canonical_unit": {"$ref": "#/$defs/canonical_unit"},
+        "conversion_rule_id": {"type": "string", "pattern": "^M16A-UNIT-[A-Z0-9-]+$"},
+        "unit_registry_version": {"const": "m16a-unit-registry-1.0"}
+      }
+    },
+    "quantity_helper": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "unit", "quantity_kind", "conversion"],
+      "properties": {
+        "value": {"$ref": "#/$defs/decimal_string"},
+        "unit": {"$ref": "#/$defs/canonical_unit"},
+        "quantity_kind": {"$ref": "#/$defs/quantity_kind"},
+        "conversion": {"$ref": "#/$defs/i1_conversion_record"}
+      }
+    },
+    "uncertainty": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "basis"],
+          "properties": {"kind": {"const": "not_provided"}, "basis": {"$ref": "#/$defs/non_empty_string"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "basis"],
+          "properties": {"kind": {"const": "not_applicable"}, "basis": {"$ref": "#/$defs/non_empty_string"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "basis", "amount"],
+          "properties": {"kind": {"const": "absolute"}, "basis": {"$ref": "#/$defs/non_empty_string"}, "amount": {"$ref": "#/$defs/quantity_helper"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "basis", "fraction"],
+          "properties": {"kind": {"const": "relative"}, "basis": {"$ref": "#/$defs/non_empty_string"}, "fraction": {"$ref": "#/$defs/quantity_helper"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "basis", "lower", "upper"],
+          "properties": {"kind": {"const": "interval"}, "basis": {"$ref": "#/$defs/non_empty_string"}, "lower": {"$ref": "#/$defs/quantity_helper"}, "upper": {"$ref": "#/$defs/quantity_helper"}}}
+      ]
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_type", "reference", "evidence_object_ids", "measurement_reference_ids", "source_sha256", "review_status", "rationale"],
+      "properties": {
+        "source_type": {"enum": ["requirement", "evidence_object", "measurement_reference", "literature", "supplier", "expert_judgment", "assumption", "synthetic_fixture"]},
+        "reference": {"type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$)).+$"},
+        "evidence_object_ids": {"type": "array", "maxItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^EVD-[0-9]{3}$"}},
+        "measurement_reference_ids": {"type": "array", "maxItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^MSR-[0-9]{3}$"}},
+        "source_sha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "review_status": {"enum": ["unverified", "source_documented", "reviewed", "rejected", "not_applicable"]},
+        "rationale": {"$ref": "#/$defs/nullable_string"}
+      },
+      "allOf": [
+        {"if": {"properties": {"source_type": {"const": "evidence_object"}}, "required": ["source_type"]},
+          "then": {"properties": {"evidence_object_ids": {"minItems": 1}, "measurement_reference_ids": {"maxItems": 0}}}},
+        {"if": {"properties": {"source_type": {"const": "measurement_reference"}}, "required": ["source_type"]},
+          "then": {"properties": {"evidence_object_ids": {"minItems": 1}, "measurement_reference_ids": {"minItems": 1}}}},
+        {"if": {"properties": {"source_type": {"not": {"enum": ["evidence_object", "measurement_reference"]}}}, "required": ["source_type"]},
+          "then": {"properties": {"evidence_object_ids": {"maxItems": 0}, "measurement_reference_ids": {"maxItems": 0}}}}
+      ]
+    },
+    "quantified_value_envelope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "unit", "quantity_kind", "provenance", "uncertainty", "confidence", "status", "conversion"],
+      "properties": {
+        "value": {"oneOf": [{"$ref": "#/$defs/decimal_string"}, {"type": "null"}]},
+        "unit": {"$ref": "#/$defs/canonical_unit"},
+        "quantity_kind": {"$ref": "#/$defs/quantity_kind"},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "uncertainty": {"$ref": "#/$defs/uncertainty"},
+        "confidence": {"enum": ["unknown", "low", "medium", "high", "not_applicable"]},
+        "status": {"enum": ["provided", "assumed", "missing", "conflicting", "evidence_required"]},
+        "conversion": {"oneOf": [{"$ref": "#/$defs/i1_conversion_record"}, {"type": "null"}]}
+      }
+    },
+    "source_case_sha256": {
+      "type": "object", "minProperties": 1,
+      "required": ["00_problem_intake.yml"],
+      "propertyNames": {"enum": ["00_problem_intake.yml", "01_thermal_design_passport.yml", "02_decision_board.md", "03_architecture_genomes.yml", "04_design_space_scorecard.md", "05_red_flags.md", "06_next_best_action.md", "07_validation_plan.md", "08_supplier_specification.md", "09_customer_memo.md", "10_claim_ledger.yml", "11_engineering_memory_entry.md"]},
+      "additionalProperties": {"$ref": "#/$defs/sha256"}
+    },
+    "requirement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["requirement_id", "description", "target_path", "provenance"],
+      "properties": {
+        "requirement_id": {"$ref": "#/$defs/requirement_id"},
+        "description": {"$ref": "#/$defs/non_empty_string"},
+        "target_path": {"$ref": "#/$defs/json_pointer"},
+        "target": {"$ref": "#/$defs/quantified_value_envelope"},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    },
+    "source_location": {
+      "type": "object", "additionalProperties": false,
+      "required": ["layer_id", "location_type", "region_name"],
+      "properties": {
+        "layer_id": {"$ref": "#/$defs/layer_id"},
+        "location_type": {"enum": ["source_side", "sink_side", "named_region"]},
+        "region_name": {"$ref": "#/$defs/nullable_string"}
+      }
+    },
+    "footprint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["shape", "dimensions", "profile_reference"],
+      "properties": {
+        "shape": {"$ref": "#/$defs/non_empty_string"},
+        "dimensions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/quantified_value_envelope"}},
+        "profile_reference": {"$ref": "#/$defs/nullable_string"}
+      }
+    },
+    "heat_source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_id", "source_location", "total_power", "heat_flux", "footprint", "heated_area", "spatial_profile", "operating_mode", "duty_cycle"],
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^HSR-[0-9]{3}$"},
+        "source_location": {"$ref": "#/$defs/source_location"},
+        "total_power": {"$ref": "#/$defs/quantified_value_envelope"},
+        "heat_flux": {"$ref": "#/$defs/quantified_value_envelope"},
+        "footprint": {"$ref": "#/$defs/footprint"},
+        "heated_area": {"$ref": "#/$defs/quantified_value_envelope"},
+        "spatial_profile": {"enum": ["uniform_surface", "nonuniform_surface", "volumetric", "distributed", "other"]},
+        "operating_mode": {"enum": ["steady_state", "transient", "pulsed", "other"]},
+        "duty_cycle": {"oneOf": [{"$ref": "#/$defs/quantified_value_envelope"}, {"type": "null"}]}
+      }
+    },
+    "orientation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["stack_normal_axis", "rotation_description"],
+      "properties": {
+        "stack_normal_axis": {"enum": ["x", "y", "z", "other"]},
+        "rotation_description": {"$ref": "#/$defs/nullable_string"}
+      }
+    },
+    "layer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["layer_id", "order", "role", "material_id", "thickness", "footprint_dimensions", "footprint_area", "orientation"],
+      "properties": {
+        "layer_id": {"$ref": "#/$defs/layer_id"},
+        "order": {"type": "integer", "minimum": 0},
+        "role": {"$ref": "#/$defs/non_empty_string"},
+        "material_id": {"$ref": "#/$defs/material_id"},
+        "thickness": {"$ref": "#/$defs/quantified_value_envelope"},
+        "footprint_dimensions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/quantified_value_envelope"}},
+        "footprint_area": {"$ref": "#/$defs/quantified_value_envelope"},
+        "orientation": {"$ref": "#/$defs/orientation"}
+      }
+    },
+    "geometry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["stack_id", "source_to_sink_direction", "layers"],
+      "properties": {
+        "stack_id": {"type": "string", "pattern": "^STK-[0-9]{3}$"},
+        "source_to_sink_direction": {"$ref": "#/$defs/non_empty_string"},
+        "layers": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/layer"}}
+      }
+    },
+    "thermal_property": {
+      "type": "object", "additionalProperties": false,
+      "required": ["property_id", "component", "thermal_conductivity", "temperature_basis", "condition_basis"],
+      "properties": {
+        "property_id": {"type": "string", "pattern": "^PRP-[0-9]{3}$"},
+        "component": {"enum": ["isotropic", "x", "y", "z", "xy", "xz", "yz", "other"]},
+        "thermal_conductivity": {"$ref": "#/$defs/quantified_value_envelope"},
+        "temperature_basis": {"$ref": "#/$defs/non_empty_string"},
+        "condition_basis": {"$ref": "#/$defs/non_empty_string"}
+      }
+    },
+    "material": {
+      "type": "object", "additionalProperties": false,
+      "required": ["material_id", "label", "material_class", "anisotropy_representation", "thermal_properties"],
+      "properties": {
+        "material_id": {"$ref": "#/$defs/material_id"},
+        "label": {"$ref": "#/$defs/non_empty_string"},
+        "material_class": {"$ref": "#/$defs/non_empty_string"},
+        "anisotropy_representation": {"enum": ["isotropic", "principal_components", "rotated_tensor", "other"]},
+        "thermal_properties": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/thermal_property"}}
+      }
+    },
+    "interface": {
+      "type": "object", "additionalProperties": false,
+      "required": ["interface_id", "upstream_layer_id", "downstream_layer_id", "representation_type", "value", "effective_area", "condition_basis"],
+      "properties": {
+        "interface_id": {"type": "string", "pattern": "^IFC-[0-9]{3}$"},
+        "upstream_layer_id": {"$ref": "#/$defs/layer_id"},
+        "downstream_layer_id": {"$ref": "#/$defs/layer_id"},
+        "representation_type": {"enum": ["area_normalized_resistance", "absolute_resistance", "area_normalized_conductance", "ideal_zero"]},
+        "value": {"$ref": "#/$defs/quantified_value_envelope"},
+        "effective_area": {"$ref": "#/$defs/quantified_value_envelope"},
+        "condition_basis": {"$ref": "#/$defs/non_empty_string"}
+      }
+    },
+    "source_side_boundary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["heat_flow_fraction", "path_disposition"],
+      "properties": {
+        "heat_flow_fraction": {"$ref": "#/$defs/quantified_value_envelope"},
+        "path_disposition": {"enum": ["adiabatic_other_paths", "declared_parallel_paths", "unknown"]}
+      }
+    },
+    "downstream_boundary": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["representation_type", "terminal_plane", "reference_temperature"], "properties": {
+          "representation_type": {"const": "fixed_temperature"}, "terminal_plane": {"$ref": "#/$defs/non_empty_string"}, "reference_temperature": {"$ref": "#/$defs/quantified_value_envelope"}}},
+        {"type": "object", "additionalProperties": false, "required": ["representation_type", "resistance", "reference_temperature", "operating_basis"], "properties": {
+          "representation_type": {"const": "absolute_resistance"}, "resistance": {"$ref": "#/$defs/quantified_value_envelope"}, "reference_temperature": {"$ref": "#/$defs/quantified_value_envelope"}, "operating_basis": {"$ref": "#/$defs/non_empty_string"}}},
+        {"type": "object", "additionalProperties": false, "required": ["representation_type", "heat_transfer_coefficient", "boundary_area", "ambient_temperature", "operating_basis"], "properties": {
+          "representation_type": {"const": "direct_convection"}, "heat_transfer_coefficient": {"$ref": "#/$defs/quantified_value_envelope"}, "boundary_area": {"$ref": "#/$defs/quantified_value_envelope"}, "ambient_temperature": {"$ref": "#/$defs/quantified_value_envelope"}, "operating_basis": {"$ref": "#/$defs/non_empty_string"}}},
+        {"type": "object", "additionalProperties": false, "required": ["representation_type", "description"], "properties": {
+          "representation_type": {"const": "other"}, "description": {"$ref": "#/$defs/non_empty_string"}}}
+      ]
+    },
+    "boundary_conditions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_side", "downstream"],
+      "properties": {"source_side": {"$ref": "#/$defs/source_side_boundary"}, "downstream": {"$ref": "#/$defs/downstream_boundary"}}
+    },
+    "constraint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["constraint_id", "target_path", "operator", "threshold", "severity", "provenance", "evaluation_disposition"],
+      "properties": {
+        "constraint_id": {"$ref": "#/$defs/constraint_id"},
+        "target_path": {"$ref": "#/$defs/json_pointer"},
+        "operator": {"enum": ["lt", "le", "eq", "ge", "gt", "in", "not_in", "review_only"]},
+        "threshold": {"oneOf": [{"$ref": "#/$defs/quantified_value_envelope"}, {"type": "null"}]},
+        "severity": {"enum": ["blocking", "warning", "advisory"]},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "evaluation_disposition": {"enum": ["machine_evaluable", "review_required", "not_evaluable_in_epr"]}
+      }
+    },
+    "unknown": {
+      "type": "object", "additionalProperties": false,
+      "required": ["unknown_id", "field_path", "state", "reason", "consequence", "readiness_impact", "next_evidence_action"],
+      "properties": {
+        "unknown_id": {"type": "string", "pattern": "^UNK-[0-9]{3}$"},
+        "field_path": {"$ref": "#/$defs/json_pointer"},
+        "state": {"enum": ["missing", "assumed", "conflicting", "evidence_required"]},
+        "reason": {"$ref": "#/$defs/non_empty_string"},
+        "consequence": {"$ref": "#/$defs/non_empty_string"},
+        "readiness_impact": {"enum": ["blocking", "requires_later_acknowledgement", "non_blocking"]},
+        "next_evidence_action": {"$ref": "#/$defs/non_empty_string"}
+      }
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rule_id", "classification", "field_paths", "message", "required_action"],
+      "properties": {
+        "rule_id": {"type": "string", "pattern": "^M16A-EPR-(SCHEMA|ID|QTY|PROV|UNC|REF|SOURCE|HEAT|GEOM|MAT|IFC|BC|CND|UNKNOWN|CONF)-[0-9]{3}$"},
+        "classification": {"const": "STRUCTURAL_MODEL_INDEPENDENT"},
+        "field_paths": {"type": "array", "items": {"$ref": "#/$defs/json_pointer"}},
+        "message": {"$ref": "#/$defs/non_empty_string"},
+        "required_action": {"$ref": "#/$defs/non_empty_string"}
+      }
+    },
+    "compilation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["compiler_policy_version", "unit_registry_version", "canonical_json_version", "heat_source_consistency_policy_version", "outcome", "blocking_findings", "non_blocking_findings", "warnings", "assumptions_present", "assumptions_requiring_later_acknowledgement"],
+      "properties": {
+        "compiler_policy_version": {"const": "m16a-epr-compiler-1.0"},
+        "unit_registry_version": {"const": "m16a-unit-registry-1.0"},
+        "canonical_json_version": {"const": "m16a-canonical-json-1.0"},
+        "heat_source_consistency_policy_version": {"const": "m16a-heat-source-consistency-1.0"},
+        "outcome": {"enum": ["FAIL", "HOLD_FOR_INPUT", "READY_WITH_ASSUMPTIONS", "READY"]},
+        "blocking_findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+        "non_blocking_findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+        "warnings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+        "assumptions_present": {"type": "array", "items": {"$ref": "#/$defs/json_pointer"}},
+        "assumptions_requiring_later_acknowledgement": {"type": "array", "items": {"$ref": "#/$defs/json_pointer"}}
+      }
+    },
+    "resolved_candidate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["candidate_id", "candidate_role", "label", "parent_requirement_id", "geometry", "materials", "interfaces", "boundary_conditions", "changed_field_paths", "applicable_constraint_ids", "assumption_paths", "evidence_required_paths", "resolved_content_sha256"],
+      "properties": {
+        "candidate_id": {"type": "string", "pattern": "^CND-[0-9]{3}$"},
+        "candidate_role": {"enum": ["baseline", "variant"]},
+        "label": {"$ref": "#/$defs/non_empty_string"},
+        "parent_requirement_id": {"$ref": "#/$defs/requirement_id"},
+        "geometry": {"$ref": "#/$defs/geometry"},
+        "materials": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/material"}},
+        "interfaces": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/interface"}},
+        "boundary_conditions": {"$ref": "#/$defs/boundary_conditions"},
+        "changed_field_paths": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/json_pointer"}},
+        "applicable_constraint_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/constraint_id"}},
+        "assumption_paths": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/json_pointer"}},
+        "evidence_required_paths": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/json_pointer"}},
+        "resolved_content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "confidentiality_level": {"enum": ["public", "internal", "customer-confidential", "restricted"]}
+  }
+}
