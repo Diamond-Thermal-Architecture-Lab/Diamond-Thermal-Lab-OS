@@ -404,29 +404,39 @@ class StructuralPolicyAcceptanceTests(CompilerCase):
         raw["constraints"][0]["threshold"] = envelope(QuantityKind.PHYSICAL_DIMENSIONLESS, "1.5", "1")
         self.assertEqual(self.compile(raw).engineering_problem.to_dict()["compilation"]["outcome"], "READY")
 
+    def test_generic_dimensionless_negative_value_is_not_globally_rejected(self) -> None:
+        raw = authoring(self.case.name)
+        raw["requirements"][0]["target"] = envelope(QuantityKind.PHYSICAL_DIMENSIONLESS, "-0.5", "1")
+        raw["constraints"][0]["target_path"] = "/boundary_conditions/source_side/heat_flow_fraction"
+        raw["constraints"][0]["operator"] = "ge"
+        raw["constraints"][0]["threshold"] = envelope(QuantityKind.PHYSICAL_DIMENSIONLESS, "-0.5", "1")
+        self.assertEqual(self.compile(raw).engineering_problem.to_dict()["compilation"]["outcome"], "READY")
+
     def test_heat_flow_fraction_range_applies_to_provided_and_assumed(self) -> None:
-        for status in ("provided", "assumed"):
-            raw = authoring(self.case.name)
-            raw["baseline"]["boundary_conditions"]["source_side"]["heat_flow_fraction"] = envelope(
-                QuantityKind.PHYSICAL_DIMENSIONLESS, "1.1", "1", status=status,
-                source_type="assumption" if status == "assumed" else "synthetic_fixture",
-            )
-            with self.subTest(status=status):
-                result = self.compile(raw).engineering_problem.to_dict()
-                self.assertEqual(result["compilation"]["outcome"], "FAIL")
-                self.assertIn("M16A-EPR-QTY-003", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+        for value in ("-0.1", "1.1"):
+            for status in ("provided", "assumed"):
+                raw = authoring(self.case.name)
+                raw["baseline"]["boundary_conditions"]["source_side"]["heat_flow_fraction"] = envelope(
+                    QuantityKind.PHYSICAL_DIMENSIONLESS, value, "1", status=status,
+                    source_type="assumption" if status == "assumed" else "synthetic_fixture",
+                )
+                with self.subTest(value=value, status=status):
+                    result = self.compile(raw).engineering_problem.to_dict()
+                    self.assertEqual(result["compilation"]["outcome"], "FAIL")
+                    self.assertIn("M16A-EPR-QTY-003", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
 
     def test_duty_cycle_range_applies_to_provided_and_assumed(self) -> None:
-        for status in ("provided", "assumed"):
-            raw = authoring(self.case.name)
-            raw["heat_sources"][0]["duty_cycle"] = envelope(
-                QuantityKind.PHYSICAL_DIMENSIONLESS, "1.1", "1", status=status,
-                source_type="assumption" if status == "assumed" else "synthetic_fixture",
-            )
-            with self.subTest(status=status):
-                result = self.compile(raw).engineering_problem.to_dict()
-                self.assertEqual(result["compilation"]["outcome"], "FAIL")
-                self.assertIn("M16A-EPR-QTY-003", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
+        for value in ("-0.1", "1.1"):
+            for status in ("provided", "assumed"):
+                raw = authoring(self.case.name)
+                raw["heat_sources"][0]["duty_cycle"] = envelope(
+                    QuantityKind.PHYSICAL_DIMENSIONLESS, value, "1", status=status,
+                    source_type="assumption" if status == "assumed" else "synthetic_fixture",
+                )
+                with self.subTest(value=value, status=status):
+                    result = self.compile(raw).engineering_problem.to_dict()
+                    self.assertEqual(result["compilation"]["outcome"], "FAIL")
+                    self.assertIn("M16A-EPR-QTY-003", [item["rule_id"] for item in result["compilation"]["blocking_findings"]])
 
 
 class EvidenceRealityAcceptanceTests(CompilerCase):

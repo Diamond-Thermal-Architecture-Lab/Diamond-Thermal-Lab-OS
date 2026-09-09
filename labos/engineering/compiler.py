@@ -620,7 +620,15 @@ def _unknowns_and_findings(problem: Mapping[str, Any]) -> tuple[list[dict[str, A
             value = Decimal(envelope["value"])
             kind = envelope["quantity_kind"]
             fraction_field = path.endswith("/heat_flow_fraction") or path.endswith("/duty_cycle")
-            if (kind != QuantityKind.TEMPERATURE_DIFFERENCE.value and value < 0) or (fraction_field and value > 1):
+            signed_kind = kind in {
+                QuantityKind.TEMPERATURE_DIFFERENCE.value,
+                QuantityKind.PHYSICAL_DIMENSIONLESS.value,
+            }
+            out_of_range = (
+                not Decimal("0") <= value <= Decimal("1")
+                if fraction_field else not signed_kind and value < 0
+            )
+            if out_of_range:
                 has_fail = True
                 blocking.append(_finding("M16A-EPR-QTY-003", [path], "Quantity violates the model-independent field-specific physical range policy.", "Correct the explicit sign or field-specific fraction range."))
         if state not in {"missing", "assumed", "conflicting", "evidence_required"}:
