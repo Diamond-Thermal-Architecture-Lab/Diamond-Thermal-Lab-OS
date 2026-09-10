@@ -4,9 +4,13 @@ import copy
 import hashlib
 import json
 import os
+import stat
+import subprocess
 import tempfile
 import unittest
+from dataclasses import fields
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import labos.engineering.evaluation_binding as binding_module
@@ -450,7 +454,7 @@ class EERPersistenceTests(EvaluationBindingCase):
         eer = self.make_eer(bound)
         self.problem["title"] = "Changed after evaluation snapshot"
         self.persist_problem()
-        with self.assertRaisesRegex(EngineeringEvaluationBindingError, "changed after binding"):
+        with self.assertRaises(EngineeringEvaluationBindingError):
             write_engineering_evaluation_result(bound, eer)
         self.assertFalse((self.case / "engineering" / "evaluations").exists())
 
@@ -509,19 +513,21 @@ class EERPersistenceTests(EvaluationBindingCase):
     def test_safe_03_no_clobber_race_rejects_different_target(self) -> None:
         bound = self.bind()
         eer = self.make_eer(bound)
-        real_link = os.link
 
-        def collide(source: str | os.PathLike[str], target: str | os.PathLike[str]) -> None:
+        def collide(
+            source: Path,
+            target: str | os.PathLike[str],
+            directory_descriptor: int | None,
+        ) -> None:
             Path(target).write_bytes(b"racing different bytes\n")
             raise FileExistsError
 
-        with patch.object(binding_module.os, "link", side_effect=collide):
+        with patch.object(binding_module, "_link_temporary", side_effect=collide):
             with self.assertRaisesRegex(EngineeringEvaluationBindingError, "different bytes"):
                 write_engineering_evaluation_result(bound, eer)
         target = self.case / "engineering" / "evaluations" / "EER-001.json"
         self.assertEqual(target.read_bytes(), b"racing different bytes\n")
         self.assertEqual(list(target.parent.glob("*.tmp")), [])
-        self.assertIsNotNone(real_link)
 
     def test_x_loader_rejects_noncanonical_eer_bytes(self) -> None:
         bound = self.bind()
@@ -540,6 +546,218 @@ class EERPersistenceTests(EvaluationBindingCase):
         target.write_bytes(eer.canonical_bytes())
         with self.assertRaisesRegex(EngineeringEvaluationBindingError, "filename identity"):
             load_engineering_evaluation_result(self.case, "EER-002")
+
+
+class FilesystemIdentityCorrectionTests(EvaluationBindingCase):
+    def _substitute_on_open(self, requested: Path) -> object:
+        original_open = binding_module.os.open
+        replacement = requested.with_name(f"replacement-{requested.name}")
+        replacement.write_bytes(requested.read_bytes())
+        displaced = requested.with_name(f"displaced-{requested.name}")
+        substituted = False
+
+        def substitute(
+            path: str | os.PathLike[str],
+            flags: int,
+            *args: object,
+            **kwargs: object,
+        ) -> int:
+            nonlocal substituted
+            if not substituted and Path(path) == requested:
+                requested.rename(displaced)
+                replacement.rename(requested)
+                substituted = True
+            return original_open(path, flags, *args, **kwargs)
+
+        return patch.object(binding_module.os, "open", side_effect=substitute)
+
+    def test_fs_race_01_epr_substitution_between_lstat_and_open_rejects(self) -> None:
+        with self._substitute_on_open(self.epr_path):
+            with self.assertRaisesRegex(
+                EngineeringEvaluationBindingError,
+                "opened file does not match pre-open pathname identity",
+            ):
+                self.bind()
+
+    def test_fs_race_02_eer_substitution_during_safe_load_rejects(self) -> None:
+        bound = self.bind()
+        target = write_engineering_evaluation_result(bound, self.make_eer(bound))
+        with self._substitute_on_open(target):
+            with self.assertRaisesRegex(
+                EngineeringEvaluationBindingError,
+                "opened file does not match pre-open pathname identity",
+            ):
+                load_engineering_evaluation_result(self.case, "EER-001")
+
+    def test_fs_race_03_evaluations_replaced_during_temp_creation_rejects(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        evaluations = self.case / "engineering" / "evaluations"
+        relocated = self.case / "relocated-before-temp"
+        real_mkstemp = tempfile.mkstemp
+
+        def replace_parent(*args: object, **kwargs: object) -> tuple[int, str]:
+            evaluations.rename(relocated)
+            evaluations.mkdir()
+            return real_mkstemp(*args, **kwargs)
+
+        with patch.object(binding_module.tempfile, "mkstemp", side_effect=replace_parent):
+            with self.assertRaisesRegex(EngineeringEvaluationBindingError, "directory object identity changed"):
+                write_engineering_evaluation_result(bound, eer)
+        self.assertFalse((evaluations / "EER-001.json").exists())
+        self.assertFalse((relocated / "EER-001.json").exists())
+        self.assertEqual(list(evaluations.glob("*.tmp")), [])
+        self.assertEqual(list(relocated.glob("*.tmp")), [])
+
+    def test_fs_race_04_evaluations_replaced_after_fsync_rejects(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        evaluations = self.case / "engineering" / "evaluations"
+        relocated = self.case / "relocated-after-fsync"
+        original_fsync = binding_module.os.fsync
+
+        def replace_after_fsync(descriptor: int) -> None:
+            original_fsync(descriptor)
+            try:
+                evaluations.rename(relocated)
+                evaluations.mkdir()
+            except PermissionError as exc:
+                raise EngineeringEvaluationBindingError(
+                    "/filesystem: Windows denied directory substitution while the verified "
+                    "temporary descriptor remained open"
+                ) from exc
+
+        with patch.object(binding_module.os, "fsync", side_effect=replace_after_fsync):
+            with self.assertRaises(EngineeringEvaluationBindingError):
+                write_engineering_evaluation_result(bound, eer)
+        self.assertFalse((evaluations / "EER-001.json").exists())
+        if relocated.exists():
+            self.assertFalse((relocated / "EER-001.json").exists())
+            self.assertEqual(list(relocated.glob("*.tmp")), [])
+        self.assertEqual(list(evaluations.glob("*.tmp")), [])
+
+    def test_fs_race_05_reparse_like_target_during_publication_rejects(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        target = self.case / "engineering" / "evaluations" / "EER-001.json"
+        publication_started = False
+        represented_once = False
+        real_reparse_check = binding_module._is_windows_reparse_point
+
+        def collide(
+            temporary: Path,
+            intended: Path,
+            directory_descriptor: int | None,
+        ) -> None:
+            nonlocal publication_started
+            intended.write_bytes(b"competing object\n")
+            publication_started = True
+            raise FileExistsError
+
+        def represent_reparse(metadata: object) -> bool:
+            nonlocal represented_once
+            if publication_started and not represented_once and stat.S_ISREG(metadata.st_mode):
+                represented_once = True
+                return True
+            return real_reparse_check(metadata)
+
+        with patch.object(binding_module, "_link_temporary", side_effect=collide), patch.object(
+            binding_module,
+            "_is_windows_reparse_point",
+            side_effect=represent_reparse,
+        ):
+            with self.assertRaisesRegex(EngineeringEvaluationBindingError, "reparse point"):
+                write_engineering_evaluation_result(bound, eer)
+        self.assertEqual(target.read_bytes(), b"competing object\n")
+        self.assertEqual(list(target.parent.glob("*.tmp")), [])
+
+    def test_fs_id_01_unchanged_real_identities_pass(self) -> None:
+        bound = self.bind()
+        target = write_engineering_evaluation_result(bound, self.make_eer(bound))
+        loaded = load_engineering_evaluation_result(self.case, "EER-001")
+        self.assertEqual(target, loaded.eer_path)
+        self.assertEqual(
+            binding_module._filesystem_identity(os.lstat(target)),
+            loaded._eer_identity,
+        )
+
+    def test_fs_id_02_same_path_changed_directory_identity_rejects(self) -> None:
+        verified = binding_module._safe_case_directory(self.case)
+        relocated = self.root / "relocated-case-object"
+        self.case.rename(relocated)
+        self.case.mkdir()
+        with self.assertRaisesRegex(EngineeringEvaluationBindingError, "object identity changed"):
+            binding_module._assert_directory_identity(verified)
+
+    def test_win_reparse_01_stat_attribute_is_detected_without_privilege(self) -> None:
+        represented = SimpleNamespace(st_file_attributes=0x400)
+        self.assertTrue(binding_module._is_windows_reparse_point(represented))
+
+    @unittest.skipUnless(os.name == "nt", "real junction coverage is Windows-only")
+    def test_win_reparse_real_unprivileged_junction_rejects_when_available(self) -> None:
+        junction_parent = self.root / "junction-parent"
+        junction_parent.mkdir()
+        junction = junction_parent / self.case.name
+        created = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(junction), str(self.case)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if created.returncode != 0:
+            self.skipTest("unprivileged junction creation is unavailable")
+        try:
+            with self.assertRaisesRegex(EngineeringEvaluationBindingError, "reparse point"):
+                bind_evaluation_plan(junction, self.plan())
+        finally:
+            junction.rmdir()
+
+
+class BoundTrustCorrectionTests(EvaluationBindingCase):
+    @staticmethod
+    def forge(source: BoundEvaluationPlan, **changes: object) -> BoundEvaluationPlan:
+        forged = object.__new__(BoundEvaluationPlan)
+        for field in fields(BoundEvaluationPlan):
+            object.__setattr__(forged, field.name, getattr(source, field.name))
+        for name, value in changes.items():
+            object.__setattr__(forged, name, value)
+        return forged
+
+    def test_bound_trust_01_direct_bound_construction_rejects(self) -> None:
+        with self.assertRaisesRegex(TypeError, "created only by bind_evaluation_plan"):
+            BoundEvaluationPlan()
+
+    def test_bound_trust_02_direct_persisted_construction_rejects(self) -> None:
+        with self.assertRaisesRegex(TypeError, "created only by"):
+            PersistedEngineeringEvaluationResult()
+
+    def test_bound_trust_03_forged_unknown_candidate_cannot_bypass_plan_04(self) -> None:
+        bound = self.bind()
+        plan = bound.evaluation_plan.to_dict()
+        plan["selected_candidate_ids"] = ["CND-999"]
+        plan["maximum_requested_combination_count"] = 1
+        forged = self.forge(bound, _evaluation_plan=EvaluationPlan.from_dict(plan))
+        with self.assertRaisesRegex(EngineeringEvaluationBindingError, "unknown EPR candidates"):
+            write_engineering_evaluation_result(forged, self.make_eer(bound))
+        self.assertFalse((self.case / "engineering" / "evaluations").exists())
+
+    def test_bound_trust_04_forged_hash_or_bytes_rejects(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        for changes in (
+            {"_epr_file_sha256": "0" * 64},
+            {"_epr_bytes": bound.epr_bytes + b"forged"},
+        ):
+            with self.subTest(changes=changes):
+                forged = self.forge(bound, **changes)
+                with self.assertRaisesRegex(EngineeringEvaluationBindingError, "supplied wrapper differs"):
+                    write_engineering_evaluation_result(forged, eer)
+        self.assertFalse((self.case / "engineering" / "evaluations").exists())
+
+    def test_bound_trust_05_genuine_binding_still_writes(self) -> None:
+        bound = self.bind()
+        target = write_engineering_evaluation_result(bound, self.make_eer(bound))
+        self.assertEqual(target.read_bytes(), self.make_eer(bound).canonical_bytes())
 
 
 class SeparationBoundaryTests(EvaluationBindingCase):

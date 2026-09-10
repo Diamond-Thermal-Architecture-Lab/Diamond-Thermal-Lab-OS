@@ -16,7 +16,6 @@ from typing import Any
 from .evaluation import (
     EngineeringEvaluationResult,
     EvaluationPlan,
-    evaluation_plan_sha256,
 )
 from .problem import EngineeringProblem
 from .quantities import QuantifiedValue, QuantityKind
@@ -69,6 +68,26 @@ def _fail(path: str, message: str) -> None:
 
 
 @dataclass(frozen=True, slots=True)
+class _FilesystemIdentity:
+    device: int
+    inode: int
+    object_type: int
+
+
+@dataclass(frozen=True, slots=True)
+class _VerifiedDirectory:
+    path: Path
+    identity: _FilesystemIdentity
+
+
+@dataclass(frozen=True, slots=True)
+class _DescriptorRead:
+    path: Path
+    data: bytes
+    identity: _FilesystemIdentity
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class BoundEvaluationPlan:
     """Deeply immutable runtime binding to exact persisted EPR bytes."""
 
@@ -78,6 +97,13 @@ class BoundEvaluationPlan:
     _epr_path: Path
     _epr_bytes: bytes
     _epr_file_sha256: str
+    _case_identity: _FilesystemIdentity
+    _engineering_identity: _FilesystemIdentity
+    _problems_identity: _FilesystemIdentity
+    _epr_identity: _FilesystemIdentity
+
+    def __init__(self) -> None:
+        raise TypeError("BoundEvaluationPlan instances are created only by bind_evaluation_plan")
 
     @property
     def evaluation_plan(self) -> EvaluationPlan:
@@ -108,7 +134,7 @@ class BoundEvaluationPlan:
         return f"engineering/problems/{self._engineering_problem.problem_id}.json"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class PersistedEngineeringEvaluationResult:
     """Deeply immutable runtime binding to exact persisted EER bytes."""
 
@@ -117,6 +143,16 @@ class PersistedEngineeringEvaluationResult:
     _eer_path: Path
     _eer_bytes: bytes
     _eer_file_sha256: str
+    _case_identity: _FilesystemIdentity
+    _engineering_identity: _FilesystemIdentity
+    _evaluations_identity: _FilesystemIdentity
+    _eer_identity: _FilesystemIdentity
+
+    def __init__(self) -> None:
+        raise TypeError(
+            "PersistedEngineeringEvaluationResult instances are created only by "
+            "load_engineering_evaluation_result"
+        )
 
     @property
     def evaluation_result(self) -> EngineeringEvaluationResult:
@@ -139,65 +175,217 @@ class PersistedEngineeringEvaluationResult:
         return self._eer_file_sha256
 
 
-def _safe_case_directory(case_path: str | os.PathLike[str]) -> Path:
-    path = Path(case_path)
+def _new_bound_evaluation_plan(
+    plan: EvaluationPlan,
+    problem: EngineeringProblem,
+    case: _VerifiedDirectory,
+    engineering: _VerifiedDirectory,
+    problems: _VerifiedDirectory,
+    persisted: _DescriptorRead,
+    digest: str,
+) -> BoundEvaluationPlan:
+    bound = object.__new__(BoundEvaluationPlan)
+    values = {
+        "_evaluation_plan": plan,
+        "_engineering_problem": problem,
+        "_case_path": case.path,
+        "_epr_path": persisted.path,
+        "_epr_bytes": persisted.data,
+        "_epr_file_sha256": digest,
+        "_case_identity": case.identity,
+        "_engineering_identity": engineering.identity,
+        "_problems_identity": problems.identity,
+        "_epr_identity": persisted.identity,
+    }
+    for field, value in values.items():
+        object.__setattr__(bound, field, value)
+    return bound
+
+
+def _new_persisted_evaluation_result(
+    result: EngineeringEvaluationResult,
+    case: _VerifiedDirectory,
+    engineering: _VerifiedDirectory,
+    evaluations: _VerifiedDirectory,
+    persisted: _DescriptorRead,
+) -> PersistedEngineeringEvaluationResult:
+    loaded = object.__new__(PersistedEngineeringEvaluationResult)
+    values = {
+        "_evaluation_result": result,
+        "_case_path": case.path,
+        "_eer_path": persisted.path,
+        "_eer_bytes": persisted.data,
+        "_eer_file_sha256": hashlib.sha256(persisted.data).hexdigest(),
+        "_case_identity": case.identity,
+        "_engineering_identity": engineering.identity,
+        "_evaluations_identity": evaluations.identity,
+        "_eer_identity": persisted.identity,
+    }
+    for field, value in values.items():
+        object.__setattr__(loaded, field, value)
+    return loaded
+
+
+def _is_windows_reparse_point(metadata: Any) -> bool:
+    """Return whether stat metadata carries the Windows reparse-point bit."""
+
+    reparse_bit = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    return bool(getattr(metadata, "st_file_attributes", 0) & reparse_bit)
+
+
+def _filesystem_identity(metadata: Any) -> _FilesystemIdentity:
+    return _FilesystemIdentity(
+        int(metadata.st_dev),
+        int(metadata.st_ino),
+        stat.S_IFMT(metadata.st_mode),
+    )
+
+
+def _timestamp_ns(metadata: Any, field: str) -> int:
+    nanoseconds = getattr(metadata, f"{field}_ns", None)
+    if nanoseconds is not None:
+        return int(nanoseconds)
+    return int(getattr(metadata, field) * 1_000_000_000)
+
+
+def _file_version(metadata: Any) -> tuple[_FilesystemIdentity, int, int]:
+    return (
+        _filesystem_identity(metadata),
+        int(metadata.st_size),
+        _timestamp_ns(metadata, "st_mtime"),
+    )
+
+
+def _require_safe_metadata(metadata: Any, *, directory: bool, label: str) -> None:
+    if stat.S_ISLNK(metadata.st_mode):
+        raise OSError(f"{label} is a symlink")
+    if _is_windows_reparse_point(metadata):
+        raise OSError(f"{label} is a Windows reparse point")
+    predicate = stat.S_ISDIR if directory else stat.S_ISREG
+    if not predicate(metadata.st_mode):
+        kind = "directory" if directory else "regular file"
+        raise OSError(f"{label} is not a {kind}")
+    if int(metadata.st_ino) == 0:
+        raise OSError(f"{label} has no stable filesystem object identity")
+
+
+def _absolute_path(path: str | os.PathLike[str]) -> Path:
+    return Path(os.path.abspath(os.fspath(path)))
+
+
+def _verify_directory_path(
+    path: str | os.PathLike[str],
+    *,
+    label: str,
+    expected_parent: _VerifiedDirectory | None = None,
+) -> _VerifiedDirectory:
+    candidate = _absolute_path(path)
     try:
-        if path.is_symlink():
-            raise OSError("case path is a symlink")
-        resolved = path.resolve(strict=True)
-        if not resolved.is_dir() or resolved.is_symlink():
-            raise OSError("case path is not a real directory")
+        if expected_parent is not None:
+            _assert_directory_identity(expected_parent)
+            if candidate.parent != expected_parent.path:
+                raise OSError("directory is not the exact expected child path")
+        before = os.lstat(candidate)
+        _require_safe_metadata(before, directory=True, label=label)
+        resolved = candidate.resolve(strict=True)
+        if resolved != candidate:
+            raise OSError("directory path is not exact and canonical")
+        after = os.lstat(candidate)
+        _require_safe_metadata(after, directory=True, label=label)
+        if _filesystem_identity(before) != _filesystem_identity(after):
+            raise OSError("directory object identity changed during verification")
+        verified = _VerifiedDirectory(candidate, _filesystem_identity(after))
+        if expected_parent is not None:
+            _assert_directory_identity(expected_parent)
     except (OSError, RuntimeError) as exc:
-        _fail("/case_path", f"unsafe or missing case directory: {exc}")
-    if _CASE_ID.fullmatch(resolved.name) is None:
+        _fail("/filesystem", f"unsafe {label}: {exc}")
+    return verified
+
+
+def _assert_directory_identity(directory: _VerifiedDirectory) -> None:
+    try:
+        current = os.lstat(directory.path)
+        _require_safe_metadata(current, directory=True, label=str(directory.path))
+        if directory.path.resolve(strict=True) != directory.path:
+            raise OSError("directory is no longer exact and canonical")
+        if _filesystem_identity(current) != directory.identity:
+            raise OSError("directory object identity changed")
+    except (OSError, RuntimeError) as exc:
+        _fail("/filesystem", f"verified directory became unsafe: {exc}")
+
+
+def _safe_case_directory(case_path: str | os.PathLike[str]) -> _VerifiedDirectory:
+    case = _verify_directory_path(case_path, label="case directory")
+    if _CASE_ID.fullmatch(case.path.name) is None:
         _fail("/case_path", "case directory name has invalid case ID syntax")
-    return resolved
+    return case
 
 
-def _safe_directory(parent: Path, name: str, *, create: bool = False) -> Path:
-    candidate = parent / name
+def _safe_directory(
+    parent: _VerifiedDirectory,
+    name: str,
+    *,
+    create: bool = False,
+) -> _VerifiedDirectory:
+    candidate = parent.path / name
+    _assert_directory_identity(parent)
+    if create:
+        try:
+            os.mkdir(candidate)
+        except FileExistsError:
+            pass
+        except OSError as exc:
+            _fail("/filesystem", f"cannot create safe {name!r} directory: {exc}")
+    child = _verify_directory_path(candidate, label=f"{name!r} directory", expected_parent=parent)
+    _assert_directory_identity(parent)
+    return child
+
+
+def _safe_regular_file(parent: _VerifiedDirectory, filename: str) -> _DescriptorRead:
+    if Path(filename).name != filename or filename in {"", ".", ".."}:
+        _fail("/filesystem", "file name must be one exact child name")
+    candidate = parent.path / filename
+    descriptor: int | None = None
     try:
-        if not candidate.exists() and not candidate.is_symlink():
-            if not create:
-                raise OSError("directory is missing")
-            try:
-                candidate.mkdir()
-            except FileExistsError:
-                pass
-        if candidate.is_symlink():
-            raise OSError("directory is a symlink")
-        resolved = candidate.resolve(strict=True)
-        if resolved.parent != parent or not resolved.is_dir() or candidate.is_symlink():
-            raise OSError("directory escaped case-local containment or is not real")
-    except (OSError, RuntimeError) as exc:
-        _fail("/filesystem", f"unsafe {name!r} directory: {exc}")
-    return resolved
-
-
-def _safe_regular_file(parent: Path, filename: str) -> tuple[Path, bytes]:
-    candidate = parent / filename
-    try:
-        if candidate.is_symlink():
-            raise OSError("target is a symlink")
-        before = candidate.stat(follow_symlinks=False)
-        if not stat.S_ISREG(before.st_mode):
-            raise OSError("target is not a regular file")
-        resolved = candidate.resolve(strict=True)
-        if resolved.parent != parent or resolved != candidate:
-            raise OSError("target escaped its exact case-local directory")
-        data = candidate.read_bytes()
-        after = candidate.stat(follow_symlinks=False)
-        if (before.st_dev, before.st_ino, before.st_size) != (
-            after.st_dev,
-            after.st_ino,
-            after.st_size,
-        ):
-            raise OSError("target changed during safe read")
-        if candidate.is_symlink() or candidate.resolve(strict=True) != resolved:
-            raise OSError("target changed or became unsafe during safe read")
+        _assert_directory_identity(parent)
+        before = os.lstat(candidate)
+        _require_safe_metadata(before, directory=False, label=filename)
+        if candidate.resolve(strict=True) != candidate:
+            raise OSError("file path is not exact and canonical")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        if os.name != "nt":
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(candidate, flags)
+        opened = os.fstat(descriptor)
+        _require_safe_metadata(opened, directory=False, label=filename)
+        if _filesystem_identity(before) != _filesystem_identity(opened):
+            raise OSError("opened file does not match pre-open pathname identity")
+        if _file_version(before) != _file_version(opened):
+            raise OSError("file changed between lstat and descriptor open")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        final_descriptor = os.fstat(descriptor)
+        _require_safe_metadata(final_descriptor, directory=False, label=filename)
+        if _file_version(opened) != _file_version(final_descriptor):
+            raise OSError("opened file changed during descriptor-bound read")
+        after = os.lstat(candidate)
+        _require_safe_metadata(after, directory=False, label=filename)
+        if _file_version(final_descriptor) != _file_version(after):
+            raise OSError("pathname no longer identifies the descriptor-bound file")
+        if candidate.resolve(strict=True) != candidate:
+            raise OSError("file path changed or became non-canonical during read")
+        _assert_directory_identity(parent)
+        return _DescriptorRead(candidate, b"".join(chunks), _filesystem_identity(opened))
     except (OSError, RuntimeError) as exc:
         _fail("/filesystem", f"cannot safely read {filename!r}: {exc}")
-    return resolved, data
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
 
 
 def _structured_json(data: bytes, path: str) -> Mapping[str, Any]:
@@ -214,10 +402,17 @@ def _structured_json(data: bytes, path: str) -> Mapping[str, Any]:
     return value
 
 
-def _read_epr(case_dir: Path, problem_id: str) -> tuple[Path, bytes, EngineeringProblem, str]:
+def _read_epr(
+    case_dir: _VerifiedDirectory,
+    problem_id: str,
+) -> tuple[_VerifiedDirectory, _VerifiedDirectory, _DescriptorRead, EngineeringProblem, str]:
     engineering = _safe_directory(case_dir, "engineering")
     problems = _safe_directory(engineering, "problems")
-    epr_path, data = _safe_regular_file(problems, f"{problem_id}.json")
+    persisted = _safe_regular_file(problems, f"{problem_id}.json")
+    data = persisted.data
+    _assert_directory_identity(case_dir)
+    _assert_directory_identity(engineering)
+    _assert_directory_identity(problems)
     value = _structured_json(data, "/epr")
     try:
         problem = EngineeringProblem.from_dict(value)
@@ -226,11 +421,11 @@ def _read_epr(case_dir: Path, problem_id: str) -> tuple[Path, bytes, Engineering
     if canonical_json_bytes(problem.to_dict()) != data:
         _fail("/epr", "persisted EPR bytes are not the exact canonical representation")
     problem_data = problem.to_dict()
-    if problem_data["case_id"] != case_dir.name:
+    if problem_data["case_id"] != case_dir.path.name:
         _fail("/epr/case_id", "does not equal the canonical case directory name")
-    if problem.problem_id != problem_id or epr_path.stem != problem.problem_id:
+    if problem.problem_id != problem_id or persisted.path.stem != problem.problem_id:
         _fail("/epr/problem_id", "does not equal the requested EPR filename identity")
-    return epr_path, data, problem, hashlib.sha256(data).hexdigest()
+    return engineering, problems, persisted, problem, hashlib.sha256(data).hexdigest()
 
 
 def _decode_pointer(pointer: Any, path: str) -> tuple[str, ...]:
@@ -456,9 +651,12 @@ def bind_evaluation_plan(
         raise TypeError("evaluation_plan must be an EvaluationPlan or mapping")
     plan_data = plan.to_dict()
     case_dir = _safe_case_directory(case_path)
-    if plan_data["case_id"] != case_dir.name:
+    if plan_data["case_id"] != case_dir.path.name:
         _fail("/evaluation_plan/case_id", "does not equal the canonical case directory name")
-    epr_path, epr_bytes, problem, epr_file_sha256 = _read_epr(case_dir, plan_data["problem_id"])
+    engineering, problems, persisted, problem, epr_file_sha256 = _read_epr(
+        case_dir,
+        plan_data["problem_id"],
+    )
     problem_data = problem.to_dict()
     if plan_data["case_id"] != problem_data["case_id"]:
         _fail("/evaluation_plan/case_id", "does not equal the persisted EPR case_id")
@@ -469,24 +667,26 @@ def bind_evaluation_plan(
     if problem_data["compilation"]["outcome"] == "FAIL":
         _fail("/epr/compilation/outcome", "FAIL EPRs cannot produce an executable plan or EER")
     _validate_bound_plan(plan, problem)
-    return BoundEvaluationPlan(
+    return _new_bound_evaluation_plan(
         plan,
         problem,
         case_dir,
-        epr_path,
-        epr_bytes,
+        engineering,
+        problems,
+        persisted,
         epr_file_sha256,
     )
 
 
 def _assert_epr_fresh(bound_plan: BoundEvaluationPlan) -> None:
-    epr_path, data, problem, digest = _read_epr(
-        bound_plan.case_path,
+    case = _safe_case_directory(bound_plan.case_path)
+    engineering, problems, persisted, problem, digest = _read_epr(
+        case,
         bound_plan.engineering_problem.problem_id,
     )
     plan_data = bound_plan.evaluation_plan.to_dict()
     problem_data = problem.to_dict()
-    if epr_path != bound_plan.epr_path:
+    if persisted.path != bound_plan.epr_path:
         _fail("/epr", "canonical EPR path changed after binding")
     if problem_data["case_id"] != plan_data["case_id"]:
         _fail("/epr/case_id", "case identity changed after binding")
@@ -494,8 +694,17 @@ def _assert_epr_fresh(bound_plan: BoundEvaluationPlan) -> None:
         _fail("/epr/problem_id", "problem identity changed after binding")
     if problem.content_sha256 != plan_data["epr_compiled_content_sha256"]:
         _fail("/epr/compiled_content_sha256", "compiled content identity changed after binding")
-    if digest != bound_plan.epr_file_sha256 or data != bound_plan.epr_bytes:
+    if digest != bound_plan.epr_file_sha256 or persisted.data != bound_plan.epr_bytes:
         _fail("/epr", "exact persisted EPR bytes changed after binding")
+    identities = (
+        (case.identity, bound_plan._case_identity, "case"),
+        (engineering.identity, bound_plan._engineering_identity, "engineering"),
+        (problems.identity, bound_plan._problems_identity, "problems"),
+        (persisted.identity, bound_plan._epr_identity, "EPR"),
+    )
+    for current, original, label in identities:
+        if current != original:
+            _fail("/epr", f"{label} filesystem object identity changed after binding")
 
 
 def _validate_writer_binding(
@@ -528,23 +737,132 @@ def _validate_writer_binding(
     return result
 
 
-def _existing_target(target: Path, parent: Path, data: bytes) -> bool:
-    if target.is_symlink():
-        _fail("/writer", "EER target is a symlink")
-    if not target.exists():
-        return False
+def _independently_rebind(bound_plan: BoundEvaluationPlan) -> BoundEvaluationPlan:
     try:
-        resolved = target.resolve(strict=True)
-        if resolved.parent != parent or resolved != target or not target.is_file():
-            raise OSError("target is not an exact case-local regular file")
-        existing = target.read_bytes()
-        if target.is_symlink() or target.resolve(strict=True) != resolved:
-            raise OSError("target changed during collision verification")
-    except (OSError, RuntimeError) as exc:
-        _fail("/writer", f"unsafe EER target: {exc}")
-    if existing != data:
+        rebound = bind_evaluation_plan(bound_plan.case_path, bound_plan.evaluation_plan)
+        comparisons = (
+            (rebound.case_path, bound_plan.case_path, "canonical case path"),
+            (rebound.epr_path, bound_plan.epr_path, "canonical EPR path"),
+            (rebound.epr_bytes, bound_plan.epr_bytes, "exact EPR bytes"),
+            (rebound.epr_file_sha256, bound_plan.epr_file_sha256, "exact EPR file SHA-256"),
+            (
+                rebound.engineering_problem.canonical_bytes(),
+                bound_plan.engineering_problem.canonical_bytes(),
+                "EngineeringProblem canonical content",
+            ),
+            (
+                rebound.evaluation_plan.canonical_bytes(),
+                bound_plan.evaluation_plan.canonical_bytes(),
+                "EvaluationPlan canonical content",
+            ),
+        )
+    except EngineeringEvaluationBindingError:
+        raise
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        _fail("/bound_plan", f"cannot independently reconstruct supplied binding: {exc}")
+    for actual, supplied, label in comparisons:
+        if actual != supplied:
+            _fail("/bound_plan", f"supplied wrapper differs from independently verified {label}")
+    return rebound
+
+
+def _existing_target(
+    evaluations: _VerifiedDirectory,
+    filename: str,
+    data: bytes,
+) -> _DescriptorRead | None:
+    target = evaluations.path / filename
+    try:
+        os.lstat(target)
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        _fail("/writer", f"cannot inspect EER target: {exc}")
+    persisted = _safe_regular_file(evaluations, filename)
+    if persisted.data != data:
         _fail("/writer", "different bytes already exist for this immutable EER ID")
-    return True
+    return persisted
+
+
+def _open_directory_descriptor(directory: _VerifiedDirectory) -> int | None:
+    if os.name == "nt" or not hasattr(os, "O_DIRECTORY"):
+        return None
+    flags = os.O_RDONLY | os.O_DIRECTORY
+    flags |= getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(directory.path, flags)
+        metadata = os.fstat(descriptor)
+        _require_safe_metadata(metadata, directory=True, label=str(directory.path))
+        if _filesystem_identity(metadata) != directory.identity:
+            raise OSError("opened publication directory has a different identity")
+    except OSError as exc:
+        if descriptor is not None:
+            os.close(descriptor)
+        _fail("/writer", f"cannot bind publication directory descriptor: {exc}")
+    return descriptor
+
+
+def _assert_temporary_identity(path: Path, identity: _FilesystemIdentity) -> None:
+    try:
+        metadata = os.lstat(path)
+        _require_safe_metadata(metadata, directory=False, label="temporary EER file")
+        if _filesystem_identity(metadata) != identity:
+            raise OSError("temporary file pathname identity changed")
+        if path.resolve(strict=True) != path:
+            raise OSError("temporary file path is not exact and canonical")
+    except (OSError, RuntimeError) as exc:
+        _fail("/writer", f"temporary file became unsafe: {exc}")
+
+
+def _link_temporary(
+    temporary: Path,
+    target: Path,
+    directory_descriptor: int | None,
+) -> None:
+    if directory_descriptor is not None and os.link in os.supports_dir_fd:
+        os.link(
+            temporary.name,
+            target.name,
+            src_dir_fd=directory_descriptor,
+            dst_dir_fd=directory_descriptor,
+            follow_symlinks=False,
+        )
+    else:
+        os.link(temporary, target)
+
+
+def _cleanup_temporary(
+    temporary: Path,
+    identity: _FilesystemIdentity,
+    directory_descriptor: int | None,
+) -> None:
+    try:
+        if directory_descriptor is not None and os.stat in os.supports_dir_fd:
+            try:
+                metadata = os.stat(
+                    temporary.name,
+                    dir_fd=directory_descriptor,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                pass
+            else:
+                _require_safe_metadata(metadata, directory=False, label="temporary EER file")
+                if _filesystem_identity(metadata) != identity:
+                    raise OSError("temporary cleanup path identifies a different object")
+                os.unlink(temporary.name, dir_fd=directory_descriptor)
+                return
+        try:
+            metadata = os.lstat(temporary)
+        except FileNotFoundError:
+            return
+        _require_safe_metadata(metadata, directory=False, label="temporary EER file")
+        if _filesystem_identity(metadata) != identity:
+            raise OSError("temporary cleanup path identifies a different object")
+        os.unlink(temporary)
+    except OSError as exc:
+        raise EngineeringEvaluationBindingError(f"/writer: temporary cleanup failed: {exc}") from exc
 
 
 def write_engineering_evaluation_result(
@@ -557,7 +875,8 @@ def write_engineering_evaluation_result(
         raise TypeError("bound_plan must be a BoundEvaluationPlan")
     if not isinstance(evaluation_result, EngineeringEvaluationResult):
         raise TypeError("evaluation_result must be an EngineeringEvaluationResult")
-    result = _validate_writer_binding(bound_plan, evaluation_result)
+    rebound = _independently_rebind(bound_plan)
+    result = _validate_writer_binding(rebound, evaluation_result)
     data = canonical_json_bytes(result.to_dict())
     try:
         if EngineeringEvaluationResult.from_dict(json.loads(data.decode("utf-8"))).canonical_bytes() != data:
@@ -565,43 +884,127 @@ def write_engineering_evaluation_result(
     except (json.JSONDecodeError, UnicodeDecodeError, KeyError, TypeError, ValueError) as exc:
         _fail("/writer", f"bytes being written fail final EER reconstruction: {exc}")
 
-    _assert_epr_fresh(bound_plan)
-    engineering = _safe_directory(bound_plan.case_path, "engineering")
+    _assert_epr_fresh(rebound)
+    case = _safe_case_directory(rebound.case_path)
+    engineering = _safe_directory(case, "engineering")
     evaluations = _safe_directory(engineering, "evaluations", create=True)
     evaluation_id = result.evaluation_id
     if _EVALUATION_ID.fullmatch(evaluation_id) is None:
         _fail("/engineering_evaluation_result/evaluation_id", "must use exact EER-### syntax")
-    target = evaluations / f"{evaluation_id}.json"
-    if _existing_target(target, evaluations, data):
+    target_name = f"{evaluation_id}.json"
+    target = evaluations.path / target_name
+    if _existing_target(evaluations, target_name, data) is not None:
         return target
 
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{evaluation_id}.",
-        suffix=".tmp",
-        dir=evaluations,
-    )
-    temporary = Path(temporary_name)
+    directory_descriptor = _open_directory_descriptor(evaluations)
+    descriptor: int | None = None
+    stream: Any = None
+    temporary: Path | None = None
+    temporary_identity: _FilesystemIdentity | None = None
+    operation_error: Exception | None = None
+    close_error: Exception | None = None
+    cleanup_error: Exception | None = None
+    valid_target_present = False
     try:
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        _assert_epr_fresh(bound_plan)
-        current_engineering = _safe_directory(bound_plan.case_path, "engineering")
-        current_evaluations = _safe_directory(current_engineering, "evaluations")
-        if current_evaluations != evaluations or temporary.parent != current_evaluations:
-            _fail("/writer", "evaluations directory changed before publication")
+        _assert_directory_identity(case)
+        _assert_directory_identity(engineering)
+        _assert_directory_identity(evaluations)
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{evaluation_id}.",
+            suffix=".tmp",
+            dir=evaluations.path,
+        )
+        temporary = _absolute_path(temporary_name)
+        descriptor_metadata = os.fstat(descriptor)
+        _require_safe_metadata(
+            descriptor_metadata,
+            directory=False,
+            label="temporary EER descriptor",
+        )
+        temporary_identity = _filesystem_identity(descriptor_metadata)
+        _assert_temporary_identity(temporary, temporary_identity)
+        _assert_directory_identity(case)
+        _assert_directory_identity(engineering)
+        _assert_directory_identity(evaluations)
+        if temporary.parent != evaluations.path:
+            _fail("/writer", "temporary file is outside the verified evaluations directory")
+
+        stream = os.fdopen(descriptor, "w+b")
+        descriptor = None
+        stream.write(data)
+        stream.flush()
+        os.fsync(stream.fileno())
+        final_temporary = os.fstat(stream.fileno())
+        _require_safe_metadata(
+            final_temporary,
+            directory=False,
+            label="temporary EER descriptor",
+        )
+        if _filesystem_identity(final_temporary) != temporary_identity:
+            _fail("/writer", "temporary descriptor identity changed during write")
+
+        _assert_directory_identity(case)
+        _assert_directory_identity(engineering)
+        _assert_directory_identity(evaluations)
+        _assert_temporary_identity(temporary, temporary_identity)
+        _assert_epr_fresh(rebound)
         try:
-            os.link(temporary, target)
+            _link_temporary(temporary, target, directory_descriptor)
         except FileExistsError:
-            if not _existing_target(target, evaluations, data):
-                _fail("/writer", "EER target appeared during publication")
-        return target
+            if _existing_target(evaluations, target_name, data) is None:
+                _fail("/writer", "EER target disappeared during collision verification")
+            valid_target_present = True
+        else:
+            published = _safe_regular_file(evaluations, target_name)
+            if published.data != data:
+                _fail("/writer", "published EER bytes differ from the intended canonical bytes")
+            if published.identity != temporary_identity:
+                _fail("/writer", "published EER is not the verified temporary file object")
+            valid_target_present = True
+        _assert_directory_identity(case)
+        _assert_directory_identity(engineering)
+        _assert_directory_identity(evaluations)
+    except Exception as exc:
+        operation_error = exc
     finally:
         try:
-            temporary.unlink()
-        except FileNotFoundError:
-            pass
+            if stream is not None:
+                stream.close()
+            elif descriptor is not None:
+                os.close(descriptor)
+        except Exception as exc:
+            close_error = exc
+        if temporary is not None and temporary_identity is not None:
+            try:
+                _cleanup_temporary(temporary, temporary_identity, directory_descriptor)
+            except Exception as exc:
+                cleanup_error = exc
+        if directory_descriptor is not None:
+            try:
+                os.close(directory_descriptor)
+            except Exception as exc:
+                if close_error is None:
+                    close_error = exc
+    if cleanup_error is not None:
+        state = "a valid immutable EER is present" if valid_target_present else "publication did not complete"
+        prior = operation_error or close_error
+        detail = f"; prior operation error: {prior}" if prior is not None else ""
+        raise EngineeringEvaluationBindingError(
+            f"/writer: {state}, but deterministic temporary cleanup failed: {cleanup_error}{detail}"
+        ) from cleanup_error
+    if close_error is not None:
+        state = "a valid immutable EER is present" if valid_target_present else "publication did not complete"
+        raise EngineeringEvaluationBindingError(
+            f"/writer: {state}, but closing the verified temporary descriptor failed: {close_error}"
+        ) from close_error
+    if operation_error is not None:
+        if valid_target_present:
+            raise EngineeringEvaluationBindingError(
+                "/writer: a valid immutable EER was verified, but publication safety did not "
+                f"complete: {operation_error}"
+            ) from operation_error
+        raise operation_error
+    return target
 
 
 def load_engineering_evaluation_result(
@@ -615,22 +1018,26 @@ def load_engineering_evaluation_result(
     case_dir = _safe_case_directory(case_path)
     engineering = _safe_directory(case_dir, "engineering")
     evaluations = _safe_directory(engineering, "evaluations")
-    eer_path, data = _safe_regular_file(evaluations, f"{evaluation_id}.json")
+    persisted = _safe_regular_file(evaluations, f"{evaluation_id}.json")
+    data = persisted.data
+    _assert_directory_identity(case_dir)
+    _assert_directory_identity(engineering)
+    _assert_directory_identity(evaluations)
     value = _structured_json(data, "/engineering_evaluation_result")
     try:
         result = EngineeringEvaluationResult.from_dict(value)
     except (KeyError, TypeError, ValueError) as exc:
         _fail("/engineering_evaluation_result", f"reconstruction failed: {exc}")
-    if result.evaluation_id != evaluation_id or eer_path.stem != result.evaluation_id:
+    if result.evaluation_id != evaluation_id or persisted.path.stem != result.evaluation_id:
         _fail("/engineering_evaluation_result/evaluation_id", "does not match requested filename identity")
-    if result.to_dict()["case_id"] != case_dir.name:
+    if result.to_dict()["case_id"] != case_dir.path.name:
         _fail("/engineering_evaluation_result/case_id", "does not equal canonical case directory name")
     if canonical_json_bytes(result.to_dict()) != data:
         _fail("/engineering_evaluation_result", "persisted EER bytes are not the exact canonical representation")
-    return PersistedEngineeringEvaluationResult(
+    return _new_persisted_evaluation_result(
         result,
         case_dir,
-        eer_path,
-        data,
-        hashlib.sha256(data).hexdigest(),
+        engineering,
+        evaluations,
+        persisted,
     )
