@@ -57,6 +57,14 @@ from .evaluation import (
     model_manifest_sha256,
     result_payload_content_sha256,
 )
+from .evaluation_binding import (
+    BoundEvaluationPlan,
+    EngineeringEvaluationBindingError,
+    PersistedEngineeringEvaluationResult,
+    bind_evaluation_plan,
+    load_engineering_evaluation_result,
+    write_engineering_evaluation_result,
+)
 
 __all__ = [
     "CANONICAL_JSON_VERSION",
@@ -76,16 +84,19 @@ __all__ = [
     "CanonicalSerializationError",
     "CompilationFailure",
     "CompiledEngineeringProblem",
+    "BoundEvaluationPlan",
     "ConversionRecord",
     "DecimalParseError",
     "EngineeringProblem",
     "EngineeringProblemValidationError",
     "EngineeringEvaluationResult",
+    "EngineeringEvaluationBindingError",
     "EngineeringEvaluationValidationError",
     "EvaluationPlan",
     "MODEL_MANIFEST_FORMAT_VERSION",
     "MODEL_MANIFEST_IDENTITY_VERSION",
     "ModelManifest",
+    "PersistedEngineeringEvaluationResult",
     "QuantityKind",
     "QuantityKindMismatchError",
     "QuantifiedValue",
@@ -96,6 +107,7 @@ __all__ = [
     "canonical_json_bytes",
     "canonical_sha256",
     "candidate_content_sha256",
+    "bind_evaluation_plan",
     "compile_engineering_problem",
     "convert_quantity",
     "engineering_problem_content_sha256",
@@ -103,7 +115,9 @@ __all__ = [
     "evaluation_input_sha256",
     "evaluation_plan_sha256",
     "model_manifest_sha256",
+    "load_engineering_evaluation_result",
     "parse_decimal",
     "write_engineering_problem",
+    "write_engineering_evaluation_result",
     "result_payload_content_sha256",
 ]
