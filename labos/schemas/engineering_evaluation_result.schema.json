@@ -1,0 +1,500 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "labos/engineering_evaluation_result.schema.json",
+  "title": "M16A Engineering Evaluation Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "engineering_evaluation_result_format_version",
+    "evaluation_id",
+    "case_id",
+    "problem_id",
+    "epr_reference",
+    "epr_compiled_content_sha256",
+    "epr_file_sha256",
+    "evaluation_plan",
+    "evaluation_plan_sha256",
+    "model_manifest",
+    "model_manifest_sha256",
+    "unit_registry_version",
+    "deterministic_runtime_policy_version",
+    "evaluation_input_sha256",
+    "execution_outcome",
+    "candidate_execution",
+    "assumptions_used",
+    "result_payload",
+    "prediction_outputs",
+    "findings",
+    "warnings",
+    "confidentiality_level",
+    "calculation_not_approval_notice",
+    "eer_content_sha256"
+  ],
+  "properties": {
+    "engineering_evaluation_result_format_version": {"const": "m16a-engineering-evaluation-result-1.0"},
+    "evaluation_id": {"$ref": "#/$defs/evaluation_id"},
+    "case_id": {"$ref": "#/$defs/case_id"},
+    "problem_id": {"$ref": "#/$defs/problem_id"},
+    "epr_reference": {"type": "string", "pattern": "^engineering/problems/EPR-[0-9]{3}\\.json$"},
+    "epr_compiled_content_sha256": {"$ref": "#/$defs/sha256"},
+    "epr_file_sha256": {"$ref": "#/$defs/sha256"},
+    "evaluation_plan": {"$ref": "#/$defs/evaluation_plan"},
+    "evaluation_plan_sha256": {"$ref": "#/$defs/sha256"},
+    "model_manifest": {"$ref": "#/$defs/model_manifest"},
+    "model_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "unit_registry_version": {"const": "m16a-unit-registry-1.0"},
+    "deterministic_runtime_policy_version": {"const": "m16a-evaluation-runtime-1.0"},
+    "evaluation_input_sha256": {"$ref": "#/$defs/sha256"},
+    "execution_outcome": {"enum": ["completed", "partial", "not_evaluated"]},
+    "candidate_execution": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/candidate_execution_record"}
+    },
+    "assumptions_used": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/acknowledgement"}
+    },
+    "result_payload": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/result_payload"}
+      ]
+    },
+    "prediction_outputs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/prediction_output"}
+    },
+    "findings": {"$ref": "#/$defs/diagnostics"},
+    "warnings": {"$ref": "#/$defs/diagnostics"},
+    "confidentiality_level": {"enum": ["public", "internal", "customer-confidential", "restricted"]},
+    "calculation_not_approval_notice": {
+      "const": "This is a model result, not validation, approval, or a canonical engineering decision."
+    },
+    "eer_content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "non_empty_string": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "case_id": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
+    "problem_id": {"type": "string", "pattern": "^EPR-[0-9]{3}$"},
+    "candidate_id": {"type": "string", "pattern": "^CND-[0-9]{3}$"},
+    "requirement_id": {"type": "string", "pattern": "^REQ-[0-9]{3}$"},
+    "sweep_id": {"type": "string", "pattern": "^SWP-[0-9]{3}$"},
+    "evaluation_id": {"type": "string", "pattern": "^EER-[0-9]{3}$"},
+    "output_id": {"type": "string", "pattern": "^EER-[0-9]{3}-OUT-[0-9]{3}$"},
+    "json_pointer": {"type": "string", "pattern": "^(/([^~/]|~[01])*)+$"},
+    "decimal_string": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "quantity_kind": {
+      "enum": [
+        "power",
+        "heat_flux",
+        "length",
+        "area",
+        "thermal_conductivity",
+        "area_thermal_resistance",
+        "absolute_thermal_resistance",
+        "area_thermal_conductance",
+        "absolute_temperature",
+        "temperature_difference",
+        "physical_dimensionless"
+      ]
+    },
+    "canonical_unit": {
+      "enum": ["W", "W/m^2", "m", "m^2", "W/(m*K)", "m^2*K/W", "K/W", "W/(m^2*K)", "K", "1"]
+    },
+    "i1_conversion_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "original_value",
+        "original_unit",
+        "canonical_value",
+        "canonical_unit",
+        "conversion_rule_id",
+        "unit_registry_version"
+      ],
+      "properties": {
+        "original_value": {"$ref": "#/$defs/decimal_string"},
+        "original_unit": {"$ref": "#/$defs/non_empty_string"},
+        "canonical_value": {"$ref": "#/$defs/decimal_string"},
+        "canonical_unit": {"$ref": "#/$defs/canonical_unit"},
+        "conversion_rule_id": {"type": "string", "pattern": "^M16A-UNIT-[A-Z0-9-]+$"},
+        "unit_registry_version": {"const": "m16a-unit-registry-1.0"}
+      }
+    },
+    "typed_quantity_helper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "quantity_kind", "conversion"],
+      "properties": {
+        "value": {"$ref": "#/$defs/decimal_string"},
+        "unit": {"$ref": "#/$defs/canonical_unit"},
+        "quantity_kind": {"$ref": "#/$defs/quantity_kind"},
+        "conversion": {"$ref": "#/$defs/i1_conversion_record"}
+      }
+    },
+    "model_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "model_version"],
+      "properties": {
+        "model_id": {"$ref": "#/$defs/non_empty_string"},
+        "model_version": {"$ref": "#/$defs/non_empty_string"}
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "direction", "reference_requirement_id"],
+      "properties": {
+        "metric": {"enum": ["source_temperature", "total_thermal_resistance", "temperature_margin"]},
+        "direction": {"enum": ["minimize", "maximize"]},
+        "reference_requirement_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/requirement_id"}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"metric": {"const": "temperature_margin"}}, "required": ["metric"]},
+          "then": {
+            "properties": {
+              "direction": {"const": "maximize"},
+              "reference_requirement_id": {"$ref": "#/$defs/requirement_id"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"metric": {"enum": ["source_temperature", "total_thermal_resistance"]}}, "required": ["metric"]},
+          "then": {"properties": {"direction": {"const": "minimize"}}}
+        }
+      ]
+    },
+    "acknowledgement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scope", "candidate_id", "field_path"],
+          "properties": {
+            "scope": {"const": "candidate"},
+            "candidate_id": {"$ref": "#/$defs/candidate_id"},
+            "field_path": {"$ref": "#/$defs/json_pointer"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scope", "candidate_id", "field_path"],
+          "properties": {
+            "scope": {"const": "global"},
+            "candidate_id": {"type": "null"},
+            "field_path": {"$ref": "#/$defs/json_pointer"}
+          }
+        }
+      ]
+    },
+    "grid_value_specification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "values"],
+      "properties": {
+        "kind": {"const": "grid"},
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/typed_quantity_helper"}
+        }
+      }
+    },
+    "range_value_specification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "start", "stop", "step", "endpoint_policy"],
+      "properties": {
+        "kind": {"const": "range"},
+        "start": {"$ref": "#/$defs/typed_quantity_helper"},
+        "stop": {"$ref": "#/$defs/typed_quantity_helper"},
+        "step": {"$ref": "#/$defs/typed_quantity_helper"},
+        "endpoint_policy": {"enum": ["include_stop", "exclude_stop"]}
+      }
+    },
+    "sweep_value_specification": {
+      "oneOf": [
+        {"$ref": "#/$defs/grid_value_specification"},
+        {"$ref": "#/$defs/range_value_specification"}
+      ]
+    },
+    "sweep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sweep_id", "candidate_id", "field_path", "value_specification"],
+      "properties": {
+        "sweep_id": {"$ref": "#/$defs/sweep_id"},
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "field_path": {"$ref": "#/$defs/json_pointer"},
+        "value_specification": {"$ref": "#/$defs/sweep_value_specification"}
+      }
+    },
+    "oat_sensitivity_parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "field_path", "minus_value", "plus_value"],
+      "properties": {
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "field_path": {"$ref": "#/$defs/json_pointer"},
+        "minus_value": {"$ref": "#/$defs/typed_quantity_helper"},
+        "plus_value": {"$ref": "#/$defs/typed_quantity_helper"}
+      }
+    },
+    "oat_sensitivity_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "baseline_candidate_id", "output_metric", "parameters"],
+      "properties": {
+        "method": {"const": "oat"},
+        "baseline_candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "output_metric": {"enum": ["source_temperature", "total_thermal_resistance", "temperature_margin"]},
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/oat_sensitivity_parameter"}
+        }
+      }
+    },
+    "canonical_json_extension_value": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "integer"},
+        {"type": "string"},
+        {
+          "type": "array",
+          "items": {"$ref": "#/$defs/canonical_json_extension_value"}
+        },
+        {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/canonical_json_extension_value"}
+        }
+      ]
+    },
+    "evaluation_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_plan_format_version",
+        "case_id",
+        "problem_id",
+        "epr_compiled_content_sha256",
+        "model_request",
+        "selected_candidate_ids",
+        "objective",
+        "constraint_handling",
+        "parameter_sweeps",
+        "sensitivity_request",
+        "assumption_acknowledgements",
+        "model_options",
+        "maximum_requested_combination_count"
+      ],
+      "properties": {
+        "evaluation_plan_format_version": {"const": "m16a-evaluation-plan-1.0"},
+        "case_id": {"$ref": "#/$defs/case_id"},
+        "problem_id": {"$ref": "#/$defs/problem_id"},
+        "epr_compiled_content_sha256": {"$ref": "#/$defs/sha256"},
+        "model_request": {"$ref": "#/$defs/model_request"},
+        "selected_candidate_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/candidate_id"}
+        },
+        "objective": {"$ref": "#/$defs/objective"},
+        "constraint_handling": {"enum": ["exclude_violating_from_rank", "report_only"]},
+        "parameter_sweeps": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sweep"}
+        },
+        "sensitivity_request": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/oat_sensitivity_request"}
+          ]
+        },
+        "assumption_acknowledgements": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/acknowledgement"}
+        },
+        "model_options": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/canonical_json_extension_value"}
+        },
+        "maximum_requested_combination_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "model_manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_manifest_format_version",
+        "model_id",
+        "model_version",
+        "equation_set_version",
+        "implementation_version",
+        "applicability_policy_version",
+        "applicability_rule_ids",
+        "numerical_policy_version",
+        "input_binding_policy_version",
+        "serialization_policy_version",
+        "result_payload_schema_id",
+        "result_payload_schema_version",
+        "required_input_features",
+        "prohibited_input_features",
+        "accepted_quantity_kinds",
+        "canonical_units",
+        "known_limitations",
+        "source_references",
+        "implementation_git_commit"
+      ],
+      "properties": {
+        "model_manifest_format_version": {"const": "m16a-model-manifest-1.0"},
+        "model_id": {"$ref": "#/$defs/non_empty_string"},
+        "model_version": {"$ref": "#/$defs/non_empty_string"},
+        "equation_set_version": {"$ref": "#/$defs/non_empty_string"},
+        "implementation_version": {"$ref": "#/$defs/non_empty_string"},
+        "applicability_policy_version": {"$ref": "#/$defs/non_empty_string"},
+        "applicability_rule_ids": {"$ref": "#/$defs/ordered_unique_strings"},
+        "numerical_policy_version": {"$ref": "#/$defs/non_empty_string"},
+        "input_binding_policy_version": {"$ref": "#/$defs/non_empty_string"},
+        "serialization_policy_version": {"const": "m16a-canonical-json-1.0"},
+        "result_payload_schema_id": {"$ref": "#/$defs/non_empty_string"},
+        "result_payload_schema_version": {"$ref": "#/$defs/non_empty_string"},
+        "required_input_features": {"$ref": "#/$defs/ordered_unique_strings"},
+        "prohibited_input_features": {"$ref": "#/$defs/ordered_unique_strings"},
+        "accepted_quantity_kinds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/quantity_kind"}
+        },
+        "canonical_units": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/canonical_unit"}
+        },
+        "known_limitations": {"$ref": "#/$defs/ordered_unique_strings"},
+        "source_references": {"$ref": "#/$defs/ordered_unique_strings"},
+        "implementation_git_commit": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/git_commit"}
+          ]
+        }
+      }
+    },
+    "ordered_unique_strings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/non_empty_string"}
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "classification", "field_paths", "message", "required_action"],
+      "properties": {
+        "rule_id": {"$ref": "#/$defs/non_empty_string"},
+        "classification": {"$ref": "#/$defs/non_empty_string"},
+        "field_paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/json_pointer"}
+        },
+        "message": {"$ref": "#/$defs/non_empty_string"},
+        "required_action": {"$ref": "#/$defs/non_empty_string"}
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/diagnostic"}
+    },
+    "candidate_execution_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "execution_status",
+        "applicability_status",
+        "applicability_findings",
+        "assumption_acknowledgements_used",
+        "result_presence"
+      ],
+      "properties": {
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "execution_status": {"enum": ["evaluated", "blocked", "not_applicable"]},
+        "applicability_status": {"enum": ["applicable", "applicable_with_warnings", "not_applicable", "not_evaluated"]},
+        "applicability_findings": {"$ref": "#/$defs/diagnostics"},
+        "assumption_acknowledgements_used": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/acknowledgement"}
+        },
+        "result_presence": {"type": "boolean"}
+      }
+    },
+    "result_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_id", "schema_version", "content", "content_sha256"],
+      "properties": {
+        "schema_id": {"$ref": "#/$defs/non_empty_string"},
+        "schema_version": {"$ref": "#/$defs/non_empty_string"},
+        "content": {"$ref": "#/$defs/canonical_json_extension_value"},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "prediction_output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "output_id",
+        "candidate_id",
+        "quantity_label",
+        "quantity_kind",
+        "value",
+        "unit",
+        "lower_bound",
+        "upper_bound",
+        "result_pointer"
+      ],
+      "properties": {
+        "output_id": {"$ref": "#/$defs/output_id"},
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "quantity_label": {"$ref": "#/$defs/non_empty_string"},
+        "quantity_kind": {"$ref": "#/$defs/quantity_kind"},
+        "value": {"$ref": "#/$defs/decimal_string"},
+        "unit": {"$ref": "#/$defs/canonical_unit"},
+        "lower_bound": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/decimal_string"}]
+        },
+        "upper_bound": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/decimal_string"}]
+        },
+        "result_pointer": {"$ref": "#/$defs/json_pointer"}
+      }
+    }
+  }
+}
