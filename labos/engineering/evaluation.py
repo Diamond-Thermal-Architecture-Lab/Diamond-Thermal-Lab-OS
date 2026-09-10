@@ -157,6 +157,16 @@ def _non_empty(value: Any, path: str) -> str:
     return value
 
 
+def _safe_reference(value: Any, path: str) -> str:
+    """Validate an opaque or repository-relative POSIX source reference."""
+    reference = _non_empty(value, path)
+    if "\\" in reference or reference.startswith("/") or re.match(r"^[A-Za-z]:", reference):
+        _fail(path, "must be an opaque reference or repository-relative POSIX reference")
+    if any(component in {".", ".."} for component in reference.split("/")):
+        _fail(path, "must not contain dot or traversal components")
+    return reference
+
+
 def _matches(value: Any, pattern: re.Pattern[str], label: str, path: str) -> str:
     if type(value) is not str or pattern.fullmatch(value) is None:
         _fail(path, f"has invalid {label} syntax")
@@ -434,9 +444,12 @@ def _validate_manifest(value: Mapping[str, Any]) -> None:
         _fail("/serialization_policy_version", f"must equal {CANONICAL_JSON_VERSION!r}")
     for field in (
         "applicability_rule_ids", "required_input_features", "prohibited_input_features",
-        "known_limitations", "source_references",
+        "known_limitations",
     ):
         _ordered_unique_strings(item[field], f"/{field}")
+    source_references = _ordered_unique_strings(item["source_references"], "/source_references")
+    for index, reference in enumerate(source_references):
+        _safe_reference(reference, f"/source_references/{index}")
     required = set(item["required_input_features"])
     prohibited = set(item["prohibited_input_features"])
     if required & prohibited:
@@ -465,7 +478,7 @@ def _validate_manifest(value: Mapping[str, Any]) -> None:
 
 def _validate_diagnostics(value: Any, path: str) -> None:
     items = _array(value, path)
-    keys: list[tuple[str, tuple[str, ...], str]] = []
+    keys: list[tuple[str, tuple[str, ...], str, bytes]] = []
     encoded: set[bytes] = set()
     for index, raw in enumerate(items):
         item_path = f"{path}/{index}"
@@ -485,7 +498,7 @@ def _validate_diagnostics(value: Any, path: str) -> None:
         if representation in encoded:
             _fail(path, "contains duplicate diagnostics")
         encoded.add(representation)
-        keys.append((rule_id, tuple(field_paths), message))
+        keys.append((rule_id, tuple(field_paths), message, representation))
     if keys != sorted(keys):
         _fail(path, "must use rule/path/message canonical order")
 

@@ -228,6 +228,15 @@ class M16AEvaluationSchemaParityTests(unittest.TestCase):
         self.assertIn("model_manifest", schema["$defs"])
         self.assertIn("result_payload", schema["$defs"])
         self.assertIn("canonical_json_extension_value", schema["$defs"])
+        self.assertIn("safe_reference", schema["$defs"])
+        self.assertEqual(
+            schema["$defs"]["model_manifest"]["properties"]["source_references"],
+            {"$ref": "#/$defs/ordered_unique_references"},
+        )
+        self.assertEqual(
+            schema["$defs"]["ordered_unique_references"]["items"],
+            {"$ref": "#/$defs/safe_reference"},
+        )
         self.assertEqual(
             schema["properties"]["engineering_evaluation_result_format_version"]["const"],
             ENGINEERING_EVALUATION_RESULT_FORMAT_VERSION,
@@ -539,6 +548,33 @@ class M16AModelManifestAndIdentityTests(unittest.TestCase):
             with self.subTest(mutate=mutate), self.assertRaises(EngineeringEvaluationValidationError):
                 ModelManifest.from_dict(value)
 
+    def test_source_reference_safe_syntax_order_and_uniqueness(self) -> None:
+        valid = base_manifest()
+        valid["source_references"] = ["docs/public/reference.md", "public-synthetic-reference"]
+        ModelManifest.from_dict(valid)
+
+        invalid_references = (
+            r"C:\Users\WD\secret.txt",
+            "C:/Users/WD/secret.txt",
+            "/tmp/secret.txt",
+            "../secret.txt",
+            "docs/../secret.txt",
+            "./secret.txt",
+        )
+        for reference in invalid_references:
+            value = base_manifest()
+            value["source_references"] = [reference]
+            with self.subTest(reference=reference), self.assertRaises(EngineeringEvaluationValidationError):
+                ModelManifest.from_dict(value)
+
+        duplicate = base_manifest()
+        duplicate["source_references"] = ["public-synthetic-reference", "public-synthetic-reference"]
+        noncanonical = base_manifest()
+        noncanonical["source_references"] = ["public-synthetic-reference", "docs/public/reference.md"]
+        for value in (duplicate, noncanonical):
+            with self.assertRaises(EngineeringEvaluationValidationError):
+                ModelManifest.from_dict(value)
+
     def test_rid_01_through_rid_04_exact_allowlist(self) -> None:
         plan_hash = evaluation_plan_sha256(base_plan())
         manifest_hash = model_manifest_sha256(base_manifest())
@@ -711,6 +747,51 @@ class M16AEngineeringEvaluationResultTests(unittest.TestCase):
         for broken in (status, bad_diagnostic, bad_confidentiality):
             with self.assertRaises(EngineeringEvaluationValidationError):
                 EngineeringEvaluationResult.from_dict(broken)
+
+    def test_diagnostic_total_order_tie_break_and_shared_candidate_validator(self) -> None:
+        first = diagnostic("SYNTHETIC-DIAG-001")
+        first.update(classification="CLASS-A", required_action="Action A.")
+        second = copy.deepcopy(first)
+        second.update(classification="CLASS-B", required_action="Action B.")
+        canonical_tie = sorted([first, second], key=canonical_json_bytes)
+
+        top_level = not_evaluated_eer()
+        top_level["warnings"] = copy.deepcopy(canonical_tie)
+        stamp_eer(top_level)
+        reconstructed = EngineeringEvaluationResult.from_dict(top_level)
+
+        equivalent = copy.deepcopy(top_level)
+        equivalent["warnings"] = [
+            {key: item[key] for key in reversed(item)} for item in equivalent["warnings"]
+        ]
+        stamp_eer(equivalent)
+        equivalent_reconstructed = EngineeringEvaluationResult.from_dict(equivalent)
+        self.assertEqual(reconstructed.canonical_bytes(), equivalent_reconstructed.canonical_bytes())
+        self.assertEqual(reconstructed.content_sha256, equivalent_reconstructed.content_sha256)
+
+        reversed_top_level = copy.deepcopy(top_level)
+        reversed_top_level["warnings"].reverse()
+        stamp_eer(reversed_top_level)
+        with self.assertRaises(EngineeringEvaluationValidationError):
+            EngineeringEvaluationResult.from_dict(reversed_top_level)
+
+        candidate_level = not_evaluated_eer()
+        candidate_level["candidate_execution"][0]["applicability_findings"] = copy.deepcopy(canonical_tie)
+        stamp_eer(candidate_level)
+        EngineeringEvaluationResult.from_dict(candidate_level)
+        candidate_level["candidate_execution"][0]["applicability_findings"].reverse()
+        stamp_eer(candidate_level)
+        with self.assertRaises(EngineeringEvaluationValidationError):
+            EngineeringEvaluationResult.from_dict(candidate_level)
+
+        primary_order = not_evaluated_eer()
+        primary_order["findings"] = [diagnostic("SYNTHETIC-DIAG-001"), diagnostic("SYNTHETIC-DIAG-002")]
+        stamp_eer(primary_order)
+        EngineeringEvaluationResult.from_dict(primary_order)
+        primary_order["findings"].reverse()
+        stamp_eer(primary_order)
+        with self.assertRaises(EngineeringEvaluationValidationError):
+            EngineeringEvaluationResult.from_dict(primary_order)
 
     def test_sep_02_sep_03_no_review_or_model_execution_authority(self) -> None:
         eer = not_evaluated_eer()

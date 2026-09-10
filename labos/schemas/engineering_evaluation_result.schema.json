@@ -78,6 +78,16 @@
   },
   "$defs": {
     "non_empty_string": {"type": "string", "minLength": 1},
+    "safe_reference": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {"not": {"pattern": "\\\\"}},
+        {"not": {"pattern": "^/"}},
+        {"not": {"pattern": "^[A-Za-z]:"}},
+        {"not": {"pattern": "(^|/)\\.{1,2}(/|$)"}}
+      ]
+    },
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "case_id": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
@@ -396,7 +406,7 @@
           "additionalProperties": {"$ref": "#/$defs/canonical_unit"}
         },
         "known_limitations": {"$ref": "#/$defs/ordered_unique_strings"},
-        "source_references": {"$ref": "#/$defs/ordered_unique_strings"},
+        "source_references": {"$ref": "#/$defs/ordered_unique_references"},
         "implementation_git_commit": {
           "oneOf": [
             {"type": "null"},
@@ -409,6 +419,11 @@
       "type": "array",
       "uniqueItems": true,
       "items": {"$ref": "#/$defs/non_empty_string"}
+    },
+    "ordered_unique_references": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/safe_reference"}
     },
     "diagnostic": {
       "type": "object",
