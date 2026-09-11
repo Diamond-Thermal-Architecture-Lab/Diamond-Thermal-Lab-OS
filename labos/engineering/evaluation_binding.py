@@ -755,6 +755,18 @@ def _independently_rebind(bound_plan: BoundEvaluationPlan) -> BoundEvaluationPla
                 bound_plan.evaluation_plan.canonical_bytes(),
                 "EvaluationPlan canonical content",
             ),
+            (rebound._case_identity, bound_plan._case_identity, "case directory object identity"),
+            (
+                rebound._engineering_identity,
+                bound_plan._engineering_identity,
+                "engineering directory object identity",
+            ),
+            (
+                rebound._problems_identity,
+                bound_plan._problems_identity,
+                "problems directory object identity",
+            ),
+            (rebound._epr_identity, bound_plan._epr_identity, "EPR file object identity"),
         )
     except EngineeringEvaluationBindingError:
         raise
@@ -865,6 +877,65 @@ def _cleanup_temporary(
         raise EngineeringEvaluationBindingError(f"/writer: temporary cleanup failed: {exc}") from exc
 
 
+def _rollback_created_target(
+    evaluations: _VerifiedDirectory,
+    target_name: str,
+    expected_identity: _FilesystemIdentity,
+    directory_descriptor: int | None,
+) -> None:
+    """Remove only a target link proven to have the writer's temporary identity."""
+
+    try:
+        descriptor_relative = (
+            directory_descriptor is not None
+            and os.stat in os.supports_dir_fd
+            and os.unlink in os.supports_dir_fd
+        )
+        if descriptor_relative:
+            try:
+                metadata = os.stat(
+                    target_name,
+                    dir_fd=directory_descriptor,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                return
+            _require_safe_metadata(metadata, directory=False, label="writer-created EER target")
+            if _filesystem_identity(metadata) != expected_identity:
+                raise OSError("target identity no longer matches the writer-created link")
+            os.unlink(target_name, dir_fd=directory_descriptor)
+            try:
+                os.stat(
+                    target_name,
+                    dir_fd=directory_descriptor,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                return
+            raise OSError("target name still exists after descriptor-relative rollback")
+
+        _assert_directory_identity(evaluations)
+        target = evaluations.path / target_name
+        try:
+            metadata = os.lstat(target)
+        except FileNotFoundError:
+            return
+        _require_safe_metadata(metadata, directory=False, label="writer-created EER target")
+        if _filesystem_identity(metadata) != expected_identity:
+            raise OSError("target identity no longer matches the writer-created link")
+        os.unlink(target)
+        try:
+            os.lstat(target)
+        except FileNotFoundError:
+            return
+        raise OSError("target name still exists after rollback")
+    except (OSError, RuntimeError, EngineeringEvaluationBindingError) as exc:
+        raise EngineeringEvaluationBindingError(
+            "/writer: safe rollback of the writer-created target could not be proven; "
+            f"residual-artifact state requires inspection: {exc}"
+        ) from exc
+
+
 def write_engineering_evaluation_result(
     bound_plan: BoundEvaluationPlan,
     evaluation_result: EngineeringEvaluationResult,
@@ -902,8 +973,10 @@ def write_engineering_evaluation_result(
     temporary: Path | None = None
     temporary_identity: _FilesystemIdentity | None = None
     operation_error: Exception | None = None
+    rollback_error: Exception | None = None
     close_error: Exception | None = None
     cleanup_error: Exception | None = None
+    created_target_link = False
     valid_target_present = False
     try:
         _assert_directory_identity(case)
@@ -953,19 +1026,37 @@ def write_engineering_evaluation_result(
         except FileExistsError:
             if _existing_target(evaluations, target_name, data) is None:
                 _fail("/writer", "EER target disappeared during collision verification")
-            valid_target_present = True
         else:
+            created_target_link = True
             published = _safe_regular_file(evaluations, target_name)
             if published.data != data:
                 _fail("/writer", "published EER bytes differ from the intended canonical bytes")
             if published.identity != temporary_identity:
                 _fail("/writer", "published EER is not the verified temporary file object")
-            valid_target_present = True
         _assert_directory_identity(case)
         _assert_directory_identity(engineering)
         _assert_directory_identity(evaluations)
+        valid_target_present = True
     except Exception as exc:
         operation_error = exc
+        if created_target_link and not valid_target_present:
+            if temporary_identity is None:
+                rollback_error = EngineeringEvaluationBindingError(
+                    "/writer: writer-created target cannot be rolled back without its "
+                    "temporary object identity; residual-artifact state requires inspection"
+                )
+            else:
+                try:
+                    _rollback_created_target(
+                        evaluations,
+                        target_name,
+                        temporary_identity,
+                        directory_descriptor,
+                    )
+                except Exception as rollback_exc:
+                    rollback_error = rollback_exc
+                else:
+                    created_target_link = False
     finally:
         try:
             if stream is not None:
@@ -985,6 +1076,16 @@ def write_engineering_evaluation_result(
             except Exception as exc:
                 if close_error is None:
                     close_error = exc
+    if rollback_error is not None:
+        detail = f"; original publication error: {operation_error}"
+        if cleanup_error is not None:
+            detail += f"; temporary cleanup error: {cleanup_error}"
+        if close_error is not None:
+            detail += f"; descriptor close error: {close_error}"
+        raise EngineeringEvaluationBindingError(
+            f"/writer: writer-created target rollback failed; residual-artifact state "
+            f"requires inspection: {rollback_error}{detail}"
+        ) from rollback_error
     if cleanup_error is not None:
         state = "a valid immutable EER is present" if valid_target_present else "publication did not complete"
         prior = operation_error or close_error

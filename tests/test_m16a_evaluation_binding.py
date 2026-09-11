@@ -671,6 +671,89 @@ class FilesystemIdentityCorrectionTests(EvaluationBindingCase):
         self.assertEqual(target.read_bytes(), b"competing object\n")
         self.assertEqual(list(target.parent.glob("*.tmp")), [])
 
+    @unittest.skipUnless(
+        os.name != "nt"
+        and hasattr(os, "O_DIRECTORY")
+        and os.link in os.supports_dir_fd
+        and os.stat in os.supports_dir_fd
+        and os.unlink in os.supports_dir_fd,
+        "descriptor-relative POSIX publication and rollback are unavailable",
+    )
+    def test_fs_race_06_post_link_directory_replacement_rolls_back(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        evaluations = self.case / "engineering" / "evaluations"
+        relocated = self.case / "relocated-during-link"
+        real_link = binding_module._link_temporary
+
+        def replace_parent_then_link(
+            temporary: Path,
+            target: Path,
+            directory_descriptor: int | None,
+        ) -> None:
+            evaluations.rename(relocated)
+            evaluations.mkdir()
+            real_link(temporary, target, directory_descriptor)
+
+        with patch.object(
+            binding_module,
+            "_link_temporary",
+            side_effect=replace_parent_then_link,
+        ):
+            with self.assertRaises(EngineeringEvaluationBindingError):
+                write_engineering_evaluation_result(bound, eer)
+        for directory in (evaluations, relocated):
+            self.assertFalse((directory / "EER-001.json").exists())
+            self.assertEqual(list(directory.glob("*.tmp")), [])
+
+    def test_fs_rollback_01_identity_mismatch_refuses_unlink(self) -> None:
+        case = binding_module._safe_case_directory(self.case)
+        engineering = binding_module._safe_directory(case, "engineering")
+        evaluations = binding_module._safe_directory(engineering, "evaluations", create=True)
+        expected_object = evaluations.path / "expected-object"
+        target = evaluations.path / "EER-001.json"
+        expected_object.write_bytes(b"writer object\n")
+        target.write_bytes(b"competing object\n")
+        expected_identity = binding_module._filesystem_identity(os.lstat(expected_object))
+        directory_descriptor = binding_module._open_directory_descriptor(evaluations)
+        try:
+            with self.assertRaisesRegex(
+                EngineeringEvaluationBindingError,
+                "residual-artifact state requires inspection",
+            ):
+                binding_module._rollback_created_target(
+                    evaluations,
+                    target.name,
+                    expected_identity,
+                    directory_descriptor,
+                )
+        finally:
+            if directory_descriptor is not None:
+                os.close(directory_descriptor)
+        self.assertEqual(target.read_bytes(), b"competing object\n")
+
+    def test_fs_rollback_02_idempotent_target_is_never_rolled_back(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        target = write_engineering_evaluation_result(bound, eer)
+        with patch.object(binding_module, "_rollback_created_target") as rollback:
+            repeated = write_engineering_evaluation_result(bound, eer)
+        self.assertEqual(repeated, target)
+        rollback.assert_not_called()
+        self.assertEqual(target.read_bytes(), eer.canonical_bytes())
+
+    def test_fs_rollback_03_success_leaves_one_target_and_no_temporary(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        target = write_engineering_evaluation_result(bound, eer)
+        evaluations = target.parent
+        self.assertEqual([path.name for path in evaluations.iterdir()], ["EER-001.json"])
+        self.assertEqual(list(evaluations.glob("*.tmp")), [])
+        self.assertEqual(
+            load_engineering_evaluation_result(self.case, "EER-001").eer_bytes,
+            eer.canonical_bytes(),
+        )
+
     def test_fs_id_01_unchanged_real_identities_pass(self) -> None:
         bound = self.bind()
         target = write_engineering_evaluation_result(bound, self.make_eer(bound))
@@ -758,6 +841,17 @@ class BoundTrustCorrectionTests(EvaluationBindingCase):
         bound = self.bind()
         target = write_engineering_evaluation_result(bound, self.make_eer(bound))
         self.assertEqual(target.read_bytes(), self.make_eer(bound).canonical_bytes())
+
+    def test_bound_trust_06_same_bytes_new_epr_object_is_stale(self) -> None:
+        bound = self.bind()
+        eer = self.make_eer(bound)
+        exact = self.epr_path.read_bytes()
+        displaced = self.epr_path.with_name("displaced-EPR-001.json")
+        self.epr_path.rename(displaced)
+        self.epr_path.write_bytes(exact)
+        with self.assertRaisesRegex(EngineeringEvaluationBindingError, "object identity"):
+            write_engineering_evaluation_result(bound, eer)
+        self.assertFalse((self.case / "engineering" / "evaluations").exists())
 
 
 class SeparationBoundaryTests(EvaluationBindingCase):
