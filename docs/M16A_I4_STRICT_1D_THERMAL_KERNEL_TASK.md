@@ -968,11 +968,14 @@ This split keeps the equation/input boundary independently reviewable before orc
 The later implementation PRs SHALL run their focused tests and the full existing suite. Expected command families are:
 
 ```text
-python -m pytest -q tests/test_m16a_strict_1d_kernel.py
-python -m pytest -q tests/test_m16a_strict_1d_orchestration.py
-python -m pytest -q tests/test_m16a_strict_1d_sensitivity.py
-python -m pytest -q tests/test_m16a_evaluation_schema.py tests/test_m16a_evaluation_binding.py tests/test_m16a_prediction_reality_adapter.py
-python -m pytest -q
+python -m unittest tests.test_m16a_strict_1d_kernel
+python -m unittest tests.test_m16a_strict_1d_orchestration
+python -m unittest tests.test_m16a_strict_1d_sensitivity
+python -m unittest \
+  tests.test_m16a_evaluation_schema \
+  tests.test_m16a_evaluation_binding \
+  tests.test_m16a_prediction_reality_adapter
+python -m unittest discover -s tests
 git diff --check
 ```
 
