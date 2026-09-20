@@ -14,6 +14,7 @@ from labos.engineering.quantities import (
     QuantityValidationError,
     UnknownUnitError,
     canonical_decimal_text,
+    convert_canonical_to_unit,
     convert_quantity,
     parse_decimal,
 )
@@ -156,6 +157,94 @@ class M16ATemperatureAndInvariantTests(unittest.TestCase):
         side = convert_quantity(QuantityKind.LENGTH, "2", "mm").canonical_value
         derived_area = side * side
         self.assertEqual(derived_area, Decimal("4e-6"))
+
+
+class M16AReverseProjectionTests(unittest.TestCase):
+    def test_unit_prj_01a_absolute_temperature_projects_to_degc(self) -> None:
+        projected = convert_canonical_to_unit(
+            QuantityKind.ABSOLUTE_TEMPERATURE, Decimal("323.15"), "degC"
+        )
+        self.assertEqual(projected.conversion.original_value, "50")
+        self.assertEqual(projected.conversion.original_unit, "degC")
+        self.assertEqual(projected.canonical_value, Decimal("323.15"))
+
+    def test_unit_prj_01b_absolute_temperature_projects_to_degree_c(self) -> None:
+        projected = convert_canonical_to_unit(
+            "absolute_temperature", Decimal("273.15"), "°C"
+        )
+        self.assertEqual(projected.conversion.original_value, "0")
+        self.assertEqual(projected.conversion.original_unit, "°C")
+
+    def test_unit_prj_01c_temperature_difference_projects_without_offset(self) -> None:
+        projected = convert_canonical_to_unit(
+            QuantityKind.TEMPERATURE_DIFFERENCE, Decimal("25"), "degC"
+        )
+        self.assertEqual(projected.conversion.original_value, "25")
+        self.assertEqual(projected.canonical_value, Decimal("25"))
+
+    def test_unit_prj_01d_absolute_and_difference_kinds_cannot_cross(self) -> None:
+        absolute = convert_canonical_to_unit(
+            QuantityKind.ABSOLUTE_TEMPERATURE, Decimal("25"), "degC"
+        )
+        difference = convert_canonical_to_unit(
+            QuantityKind.TEMPERATURE_DIFFERENCE, Decimal("25"), "degC"
+        )
+        self.assertEqual(absolute.conversion.original_value, "-248.15")
+        self.assertEqual(difference.conversion.original_value, "25")
+        self.assertFalse(absolute.same_numeric_identity(difference))
+        with self.assertRaises(QuantityKindMismatchError):
+            absolute.compare_numeric(difference)
+
+    def test_unit_prj_01e_watts_project_to_milliwatts(self) -> None:
+        projected = convert_canonical_to_unit(QuantityKind.POWER, Decimal("1"), "mW")
+        self.assertEqual(projected.conversion.original_value, "1000")
+
+    def test_unit_prj_01f_square_metres_project_to_square_millimetres(self) -> None:
+        projected = convert_canonical_to_unit(QuantityKind.AREA, Decimal("1"), "mm^2")
+        self.assertEqual(projected.conversion.original_value, "1000000")
+
+    def test_unit_prj_01g_unknown_target_unit_rejects(self) -> None:
+        with self.assertRaises(UnknownUnitError):
+            convert_canonical_to_unit(QuantityKind.POWER, Decimal("1"), "kW")
+
+    def test_unit_prj_01h_other_kind_target_unit_rejects(self) -> None:
+        with self.assertRaises(UnknownUnitError):
+            convert_canonical_to_unit(
+                QuantityKind.ABSOLUTE_TEMPERATURE, Decimal("323.15"), "mW"
+            )
+
+    def test_unit_prj_01i_non_decimal_and_noncanonical_inputs_reject(self) -> None:
+        for value in (323.15, "323.15", Decimal("323.150")):
+            with self.subTest(value=value), self.assertRaises(QuantityValidationError):
+                convert_canonical_to_unit(
+                    QuantityKind.ABSOLUTE_TEMPERATURE, value, "degC"  # type: ignore[arg-type]
+                )
+
+    def test_unit_prj_01j_non_finite_decimal_rejects(self) -> None:
+        for value in (Decimal("NaN"), Decimal("Infinity"), Decimal("-Infinity")):
+            with self.subTest(value=value), self.assertRaises(QuantityValidationError):
+                convert_canonical_to_unit(QuantityKind.POWER, value, "mW")
+
+    def test_unit_prj_01k_public_forward_round_trip_preserves_identity(self) -> None:
+        canonical = Decimal("0.000004")
+        projected = convert_canonical_to_unit(QuantityKind.AREA, canonical, "mm^2")
+        round_trip = convert_quantity(
+            QuantityKind.AREA,
+            projected.conversion.original_value,
+            projected.conversion.original_unit,
+        )
+        self.assertEqual(round_trip.numeric_identity, (QuantityKind.AREA, canonical))
+        self.assertEqual(projected.to_dict(), round_trip.to_dict())
+
+    def test_unit_prj_01l_ambient_decimal_context_does_not_change_result(self) -> None:
+        expected = convert_canonical_to_unit(
+            QuantityKind.ABSOLUTE_TEMPERATURE, Decimal("323.15"), "degC"
+        ).to_dict()
+        with localcontext(Context(prec=2, Emin=-2, Emax=2)):
+            actual = convert_canonical_to_unit(
+                QuantityKind.ABSOLUTE_TEMPERATURE, Decimal("323.15"), "degC"
+            ).to_dict()
+        self.assertEqual(actual, expected)
 
 
 class M16ASafetyAndScopeTests(unittest.TestCase):

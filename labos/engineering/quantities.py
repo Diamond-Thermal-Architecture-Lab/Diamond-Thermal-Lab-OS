@@ -378,3 +378,40 @@ def convert_quantity(
         canonical_unit=definition.canonical_unit,
         conversion=record,
     )
+
+
+def convert_canonical_to_unit(
+    quantity_kind: QuantityKind | str,
+    canonical_value: Decimal,
+    target_unit: str,
+) -> QuantifiedValue:
+    """Project one canonical Decimal to an exact registered target unit."""
+    kind = _coerce_kind(quantity_kind)
+    if type(canonical_value) is not Decimal:
+        raise QuantityValidationError("Canonical value must be a Decimal.")
+    if not canonical_value.is_finite():
+        raise QuantityValidationError("Canonical value must be finite.")
+    if canonical_value.as_tuple() != _canonical_decimal(canonical_value).as_tuple():
+        raise QuantityValidationError("Canonical value must use canonical Decimal representation.")
+    definition = _lookup_unit(kind, target_unit)
+    try:
+        with localcontext(_DECIMAL_CONTEXT) as context:
+            shifted = context.subtract(canonical_value, definition.offset)
+            target = context.divide(shifted, definition.scale)
+    except (
+        Clamped,
+        DivisionByZero,
+        FloatOperation,
+        Inexact,
+        InvalidOperation,
+        Overflow,
+        Rounded,
+        Underflow,
+    ) as exc:
+        raise QuantityValidationError("Reverse quantity conversion cannot be represented exactly.") from exc
+
+    target_text = canonical_decimal_text(_canonical_decimal(target))
+    projected = convert_quantity(kind, target_text, target_unit)
+    if projected.numeric_identity != (kind, canonical_value):
+        raise QuantityValidationError("Reverse quantity conversion did not preserve numeric identity.")
+    return projected

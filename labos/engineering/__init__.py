@@ -11,6 +11,7 @@ from .quantities import (
     UnitDefinition,
     UnknownUnitError,
     canonical_decimal_text,
+    convert_canonical_to_unit,
     convert_quantity,
     parse_decimal,
 )
@@ -65,6 +66,12 @@ from .evaluation_binding import (
     load_engineering_evaluation_result,
     write_engineering_evaluation_result,
 )
+from .prediction_reality_adapter import (
+    PREDICTION_REALITY_ADAPTER_VERSION,
+    PredictionRealityProjection,
+    PredictionRealityProjectionError,
+    project_eer_prediction_to_measurement,
+)
 
 __all__ = [
     "CANONICAL_JSON_VERSION",
@@ -80,6 +87,7 @@ __all__ = [
     "EVALUATION_PLAN_IDENTITY_VERSION",
     "HEAT_SOURCE_CONSISTENCY_POLICY_VERSION",
     "PROBLEM_FORMAT_VERSION",
+    "PREDICTION_REALITY_ADAPTER_VERSION",
     "UNIT_REGISTRY_VERSION",
     "CanonicalSerializationError",
     "CompilationFailure",
@@ -97,6 +105,8 @@ __all__ = [
     "MODEL_MANIFEST_IDENTITY_VERSION",
     "ModelManifest",
     "PersistedEngineeringEvaluationResult",
+    "PredictionRealityProjection",
+    "PredictionRealityProjectionError",
     "QuantityKind",
     "QuantityKindMismatchError",
     "QuantifiedValue",
@@ -109,6 +119,7 @@ __all__ = [
     "candidate_content_sha256",
     "bind_evaluation_plan",
     "compile_engineering_problem",
+    "convert_canonical_to_unit",
     "convert_quantity",
     "engineering_problem_content_sha256",
     "engineering_evaluation_result_content_sha256",
@@ -117,6 +128,7 @@ __all__ = [
     "model_manifest_sha256",
     "load_engineering_evaluation_result",
     "parse_decimal",
+    "project_eer_prediction_to_measurement",
     "write_engineering_problem",
     "write_engineering_evaluation_result",
     "result_payload_content_sha256",
