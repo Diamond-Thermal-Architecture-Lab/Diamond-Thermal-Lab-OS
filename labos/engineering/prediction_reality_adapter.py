@@ -48,6 +48,32 @@ class PredictionRealityProjectionError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class _MeasurementFilesystemIdentity:
+    device: int
+    inode: int
+    object_type: int
+    file_attributes: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _MeasurementFilesystemVersion:
+    size: int
+    mtime_ns: int
+    ctime_ns: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _MeasurementSnapshot:
+    data: bytes
+    case_identity: _MeasurementFilesystemIdentity
+    case_version: _MeasurementFilesystemVersion
+    directory_identity: _MeasurementFilesystemIdentity
+    directory_version: _MeasurementFilesystemVersion
+    target_identity: _MeasurementFilesystemIdentity
+    target_version: _MeasurementFilesystemVersion
+
+
+@dataclass(frozen=True, slots=True)
 class PredictionRealityProjection:
     """Runtime-only traceable projection containing exact legacy prediction fields."""
 
@@ -126,53 +152,177 @@ def _is_reparse(metadata: os.stat_result) -> bool:
     return bool(getattr(metadata, "st_file_attributes", 0) & reparse_bit)
 
 
-def _measurement_path(case_path: Path, measurement_id: str) -> Path:
+def _filesystem_identity(metadata: os.stat_result) -> _MeasurementFilesystemIdentity:
+    attributes = getattr(metadata, "st_file_attributes", None)
+    return _MeasurementFilesystemIdentity(
+        device=int(metadata.st_dev),
+        inode=int(metadata.st_ino),
+        object_type=stat.S_IFMT(metadata.st_mode),
+        file_attributes=None if attributes is None else int(attributes),
+    )
+
+
+def _filesystem_version(metadata: os.stat_result) -> _MeasurementFilesystemVersion:
+    ctime_ns = getattr(metadata, "st_ctime_ns", None)
+    return _MeasurementFilesystemVersion(
+        size=int(metadata.st_size),
+        mtime_ns=int(metadata.st_mtime_ns),
+        ctime_ns=None if ctime_ns is None else int(ctime_ns),
+    )
+
+
+def _require_measurements_directory(metadata: os.stat_result) -> None:
+    if (
+        not stat.S_ISDIR(metadata.st_mode)
+        or stat.S_ISLNK(metadata.st_mode)
+        or _is_reparse(metadata)
+    ):
+        _fail("The case-local measurements path must be a normal directory.")
+
+
+def _require_measurement_target(metadata: os.stat_result) -> None:
+    if (
+        not stat.S_ISREG(metadata.st_mode)
+        or stat.S_ISLNK(metadata.st_mode)
+        or _is_reparse(metadata)
+    ):
+        _fail("The Measurement Reference must be a normal file, not a link or reparse path.")
+
+
+def _measurement_location(
+    case_path: Path,
+    measurement_id: str,
+) -> tuple[Path, Path, os.stat_result, os.stat_result]:
     measurements = case_path / "measurements"
     target = measurements / f"{measurement_id}.json"
     try:
         parent_metadata = os.lstat(measurements)
         target_metadata = os.lstat(target)
+    except OSError as exc:
+        _fail("The derived Measurement Reference does not exist or is unreadable.", exc)
+    _require_measurements_directory(parent_metadata)
+    _require_measurement_target(target_metadata)
+    try:
         resolved_parent = measurements.resolve(strict=True)
         resolved_target = target.resolve(strict=True)
     except OSError as exc:
         _fail("The derived Measurement Reference does not exist or is unreadable.", exc)
-    if (
-        not stat.S_ISDIR(parent_metadata.st_mode)
-        or stat.S_ISLNK(parent_metadata.st_mode)
-        or _is_reparse(parent_metadata)
-    ):
-        _fail("The case-local measurements path must be a normal directory.")
-    if (
-        not stat.S_ISREG(target_metadata.st_mode)
-        or stat.S_ISLNK(target_metadata.st_mode)
-        or _is_reparse(target_metadata)
-    ):
-        _fail("The Measurement Reference must be a normal file, not a link or reparse path.")
     if resolved_parent != measurements or resolved_target.parent != resolved_parent:
         _fail("The Measurement Reference must resolve directly under the case measurements directory.")
     if resolved_target != resolved_parent / f"{measurement_id}.json":
         _fail("The Measurement Reference path does not match the requested measurement ID.")
-    return target
+    return measurements, target, parent_metadata, target_metadata
+
+
+def _read_descriptor_bytes(descriptor: int) -> bytes:
+    chunks: list[bytes] = []
+    while True:
+        chunk = os.read(descriptor, 64 * 1024)
+        if not chunk:
+            return b"".join(chunks)
+        chunks.append(chunk)
+
+
+def _measurement_snapshot(case_path: Path, measurement_id: str) -> _MeasurementSnapshot:
+    try:
+        case_before = os.lstat(case_path)
+    except OSError as exc:
+        _fail("The authoritative case directory is unreadable.", exc)
+    _require_measurements_directory(case_before)
+    measurements, target, directory_before, target_before = _measurement_location(
+        case_path, measurement_id
+    )
+    case_identity = _filesystem_identity(case_before)
+    case_version = _filesystem_version(case_before)
+    directory_identity = _filesystem_identity(directory_before)
+    directory_version = _filesystem_version(directory_before)
+    target_identity = _filesystem_identity(target_before)
+    target_version = _filesystem_version(target_before)
+
+    flags = os.O_RDONLY
+    flags |= getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(target, flags)
+    except OSError as exc:
+        _fail("The Measurement Reference could not be opened without following links.", exc)
+    try:
+        opened = os.fstat(descriptor)
+        _require_measurement_target(opened)
+        if _filesystem_identity(opened) != target_identity:
+            _fail("The Measurement Reference changed between lstat and descriptor open.")
+        opened_version = _filesystem_version(opened)
+        data = _read_descriptor_bytes(descriptor)
+        after_read = os.fstat(descriptor)
+        if (
+            _filesystem_identity(after_read) != target_identity
+            or _filesystem_version(after_read) != opened_version
+        ):
+            _fail("The opened Measurement Reference changed during descriptor read.")
+    except OSError as exc:
+        _fail("The Measurement Reference descriptor read failed.", exc)
+    finally:
+        os.close(descriptor)
+
+    _, _, directory_after, target_after = _measurement_location(case_path, measurement_id)
+    try:
+        case_after = os.lstat(case_path)
+    except OSError as exc:
+        _fail("The authoritative case directory became unreadable.", exc)
+    _require_measurements_directory(case_after)
+    if (
+        _filesystem_identity(case_after) != case_identity
+        or _filesystem_version(case_after) != case_version
+    ):
+        _fail("The authoritative case directory changed during descriptor read.")
+    if (
+        _filesystem_identity(directory_after) != directory_identity
+        or _filesystem_version(directory_after) != directory_version
+    ):
+        _fail("The measurements directory changed during descriptor read.")
+    if (
+        _filesystem_identity(target_after) != target_identity
+        or _filesystem_version(target_after) != target_version
+    ):
+        _fail("The Measurement Reference pathname changed during descriptor read.")
+    return _MeasurementSnapshot(
+        data=data,
+        case_identity=case_identity,
+        case_version=case_version,
+        directory_identity=directory_identity,
+        directory_version=directory_version,
+        target_identity=target_identity,
+        target_version=target_version,
+    )
 
 
 def _validated_measurement(case_path: Path, measurement_id: str) -> dict[str, Any]:
-    target = _measurement_path(case_path, measurement_id)
+    target = case_path / "measurements" / f"{measurement_id}.json"
     try:
-        before = target.read_bytes()
+        before = _measurement_snapshot(case_path, measurement_id)
         validation = validate_measurement_reference(case_path, target)
-        target = _measurement_path(case_path, measurement_id)
-        after = target.read_bytes()
+        after = _measurement_snapshot(case_path, measurement_id)
     except (OSError, TypeError, ValueError) as exc:
         _fail("Measurement Reference validation could not complete.", exc)
-    _measurement_path(case_path, measurement_id)
-    if before != after:
+    if before.data != after.data:
         _fail("Measurement Reference bytes changed during validation.")
+    if before.case_identity != after.case_identity or before.case_version != after.case_version:
+        _fail("Case-directory identity or version changed during measurement validation.")
+    if before.directory_identity != after.directory_identity:
+        _fail("Measurements-directory identity changed during validation.")
+    if before.directory_version != after.directory_version:
+        _fail("Measurements-directory version changed during validation.")
+    if before.target_identity != after.target_identity:
+        _fail("Measurement Reference filesystem identity changed during validation.")
+    if before.target_version != after.target_version:
+        _fail("Measurement Reference filesystem version changed during validation.")
     if validation.status == "FAIL":
         _fail("Measurement Reference repository validation returned FAIL.")
     if validation.status not in {"PASS", "WARN"}:
         _fail("Measurement Reference validation returned an unknown status.")
     try:
-        measurement = json.loads(after)
+        measurement = json.loads(after.data)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         _fail("Measurement Reference bytes are not valid standard JSON.", exc)
     if type(measurement) is not dict:

@@ -332,6 +332,134 @@ class ProjectionRejectionTests(PredictionRealityAdapterCase):
                 self.project()
 
 
+class MeasurementFilesystemStabilityTests(PredictionRealityAdapterCase):
+    def test_adp_race_19_transient_invalid_to_valid_swap_and_restore_rejects(self) -> None:
+        valid_bytes = self.measurement_path.read_bytes()
+        invalid = json.loads(valid_bytes)
+        invalid["evidence_id"] = "EVD-999"
+        self.measurement_path.write_text(
+            json.dumps(invalid, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        invalid_bytes = self.measurement_path.read_bytes()
+        self.assertEqual(
+            validate_measurement_reference(self.case, self.measurement_path).status, "FAIL"
+        )
+
+        def validate_transient_valid(_case: Path, path: Path):
+            displaced = path.with_name("MSR-001-invalid-original.json")
+            path.rename(displaced)
+            try:
+                path.write_bytes(valid_bytes)
+                result = validate_measurement_reference(self.case, path)
+                self.assertEqual(result.status, "PASS")
+                return result
+            finally:
+                if path.exists():
+                    path.unlink()
+                displaced.rename(path)
+
+        with patch.object(
+            adapter_module,
+            "validate_measurement_reference",
+            side_effect=validate_transient_valid,
+        ):
+            with self.assertRaisesRegex(PredictionRealityProjectionError, "identity|version"):
+                self.project()
+        self.assertEqual(self.measurement_path.read_bytes(), invalid_bytes)
+
+    def test_adp_race_20_byte_identical_object_swap_and_restore_rejects(self) -> None:
+        original_bytes = self.measurement_path.read_bytes()
+
+        def validate_identical_replacement(_case: Path, path: Path):
+            displaced = path.with_name("MSR-001-original-object.json")
+            path.rename(displaced)
+            try:
+                path.write_bytes(original_bytes)
+                result = validate_measurement_reference(self.case, path)
+                self.assertEqual(result.status, "PASS")
+                return result
+            finally:
+                if path.exists():
+                    path.unlink()
+                displaced.rename(path)
+
+        with patch.object(
+            adapter_module,
+            "validate_measurement_reference",
+            side_effect=validate_identical_replacement,
+        ):
+            with self.assertRaisesRegex(PredictionRealityProjectionError, "identity|version"):
+                self.project()
+        self.assertEqual(self.measurement_path.read_bytes(), original_bytes)
+
+    def test_adp_race_21_measurements_directory_replace_and_restore_rejects(self) -> None:
+        measurements = self.measurement_path.parent
+        displaced = self.case / "measurements-original-object"
+        original_bytes = self.measurement_path.read_bytes()
+
+        def validate_replacement_directory(_case: Path, path: Path):
+            measurements.rename(displaced)
+            try:
+                measurements.mkdir()
+                path.write_bytes(original_bytes)
+                result = validate_measurement_reference(self.case, path)
+                self.assertEqual(result.status, "PASS")
+                return result
+            finally:
+                if path.exists():
+                    path.unlink()
+                if measurements.exists():
+                    measurements.rmdir()
+                displaced.rename(measurements)
+
+        with patch.object(
+            adapter_module,
+            "validate_measurement_reference",
+            side_effect=validate_replacement_directory,
+        ):
+            with self.assertRaisesRegex(PredictionRealityProjectionError, "identity|version"):
+                self.project()
+        self.assertEqual(self.measurement_path.read_bytes(), original_bytes)
+
+    def test_adp_fs_22_unchanged_descriptor_bound_measurement_passes(self) -> None:
+        projection = self.project()
+        self.assertEqual(projection.prediction["value"], 50)
+        self.assertEqual(projection.prediction["unit"], "degC")
+
+    def test_adp_fs_23_static_target_symlink_or_reparse_rejects(self) -> None:
+        real_target = self.measurement_path.with_name("real-measurement.json")
+        self.measurement_path.rename(real_target)
+        try:
+            try:
+                self.measurement_path.symlink_to(real_target.name)
+            except OSError:
+                self.skipTest("target symlink creation is unavailable on this platform")
+            with self.assertRaises(PredictionRealityProjectionError):
+                self.project()
+        finally:
+            if self.measurement_path.is_symlink():
+                self.measurement_path.unlink()
+            if real_target.exists():
+                real_target.rename(self.measurement_path)
+
+    def test_adp_fs_24_static_measurements_parent_symlink_or_reparse_rejects(self) -> None:
+        measurements = self.measurement_path.parent
+        real_measurements = self.case / "real-measurements"
+        measurements.rename(real_measurements)
+        try:
+            try:
+                measurements.symlink_to(real_measurements.name, target_is_directory=True)
+            except OSError:
+                self.skipTest("directory symlink creation is unavailable on this platform")
+            with self.assertRaises(PredictionRealityProjectionError):
+                self.project()
+        finally:
+            if measurements.is_symlink():
+                measurements.unlink()
+            if real_measurements.exists():
+                real_measurements.rename(measurements)
+
+
 class HistoricalSeparationTests(PredictionRealityAdapterCase):
     def test_prj_06_historical_prediction_reality_sources_remain_untouched(self) -> None:
         historical = (
