@@ -76,13 +76,15 @@ The first implementation SHALL use these exact values:
 | `serialization_policy_version` | `m16a-canonical-json-1.0` |
 | `result_payload_schema_id` | `m16a-strict-1d-result` |
 | `result_payload_schema_version` | `1.0` |
-| result-content identity | `m16a-strict-1d-result-content-identity-1.0` |
+| payload-content identity authority | The exact pair `result_payload_schema_id = m16a-strict-1d-result` and `result_payload_schema_version = 1.0` inside the unchanged I3 result-payload hash projection. |
 | scenario/aggregation policy | `m16a-strict-1d-scenario-aggregation-1.0` |
 | constraint policy | `m16a-strict-1d-constraints-1.0` |
 | comparison/ranking policy | `m16a-strict-1d-ranking-1.0` |
 | OAT policy | `m16a-strict-1d-oat-1.0` |
 
 An incompatible change to equations, operation order, working precision, applicability, input binding, scenario enumeration, aggregation, constraint evaluation, ranking, OAT arithmetic, prediction-output selection, or payload meaning MUST change the owning version. A code-only change that can change authoritative output MUST change `implementation_version`. `implementation_git_commit` SHALL be the later implementation commit when known and otherwise null, exactly as I3 permits.
+
+The strict-1D model-specific payload contract is versioned by the exact result-payload schema ID/version declared in the Model Manifest. No additional wrapper hash field is introduced.
 
 ## 5. Model Manifest Contract
 
@@ -516,16 +518,19 @@ Bounds are null because I4 v1 performs no uncertainty propagation. Output IDs fo
 
 ## 16. Closed Model-Specific Result Payload
 
-The I3 wrapper remains unchanged. Its `schema_id` and `schema_version` equal the manifest values. Its `content_sha256` SHALL be canonical SHA-256 over exactly:
+The I3 result-payload wrapper remains unchanged. For strict-1D v1, `schema_id` SHALL equal `m16a-strict-1d-result`, `schema_version` SHALL equal `1.0`, and both values SHALL equal the corresponding Model Manifest values. `content_sha256` SHALL equal the existing frozen I3 `result_payload_content_sha256` projection:
 
 ```text
-result_payload_content_identity_version
-schema_id
-schema_version
-content
+canonical_sha256({
+    "schema_id": "m16a-strict-1d-result",
+    "schema_version": "1.0",
+    "content": <exact strict-1D content object>
+})
 ```
 
-where the identity version is `m16a-strict-1d-result-content-identity-1.0`.
+The hash projection MUST NOT include `result_payload_content_identity_version` as a fourth hash-domain field. I4 SHALL reuse the existing I3 wrapper hash semantics unchanged and MUST NOT special-case or modify the I3 validator. The strict-1D model-specific semantic identity/version is carried through the Model Manifest model/version fields, `result_payload_schema_id`, `result_payload_schema_version`, the exact closed `content`, `model_manifest_sha256`, `evaluation_input_sha256`, and EER content identity. This correction does not weaken result reproducibility.
+
+Compatibility invariant: a strict-1D result payload produced by I4 MUST pass the existing frozen I3 `EngineeringEvaluationResult` result-payload hash validation without any modification to I3 runtime. The same payload wrapper passed to the existing public `result_payload_content_sha256(...)` MUST produce exactly the persisted `content_sha256`. No duplicate I4-specific wrapper hash is permitted.
 
 The closed `content` object SHALL contain exactly:
 
@@ -934,6 +939,7 @@ Test names MAY add descriptive suffixes but SHALL preserve these stable IDs.
 | DET-01 | Repeat identical inputs. | Byte-identical payload/EER authoritative content and hashes. |
 | DET-02 | Vary insertion/filesystem/locale order. | No authoritative order or value changes. |
 | DET-03 | Exercise a non-terminating division. | Fixed context output and `context_rounded` are reproducible. |
+| DET-04 | Construct a strict-1D result-payload wrapper with `schema_id = m16a-strict-1d-result`, `schema_version = 1.0`, and closed strict-1D `content`; compute `content_sha256` with the existing I3 public `result_payload_content_sha256` helper. | The exact hash validates through the frozen I3 EER contract; no I3 runtime/schema modification is required; adding an extra `result_payload_content_identity_version` hash component would not be accepted. |
 | FIX-01 | Run all Section 18 analytic values. | Exact values match; approximate fractions use declared tolerance only. |
 | FIX-02 | Run Section 19 negative fixtures. | Each fixed disposition/status is obtained. |
 | SEP-01 | Inspect code and payload. | No spreading, fin, fluid, radiation, transient, or hidden lookup logic. |
@@ -947,6 +953,7 @@ The implementation SHOULD use three reviewable PRs:
 ### I4A — manifest, applicability, binding, kernel, and payload foundation
 
 - add the strict-1D manifest and closed result-payload schema/runtime;
+- reuse the existing I3 `result_payload_content_sha256` wrapper authority unchanged; the I4-specific schema/runtime validates the `content` semantics and does not redefine the outer I3 wrapper hash;
 - implement model options, applicability preflight, consumed paths, exact acknowledgement closure, Decimal policy, one-scenario kernel, nodes, and resistance budget;
 - test KERN, APP, BIND, initial DET, and separation cases.
 
