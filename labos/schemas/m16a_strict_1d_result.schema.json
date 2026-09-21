@@ -1,0 +1,717 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "labos/m16a_strict_1d_result.schema.json",
+  "title": "M16A Strict 1D Thermal Result Content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "scenario_policy_version",
+    "constraint_policy_version",
+    "ranking_policy_version",
+    "oat_policy_version",
+    "candidate_results",
+    "candidate_comparison",
+    "findings",
+    "warnings"
+  ],
+  "properties": {
+    "scenario_policy_version": {"const": "m16a-strict-1d-scenario-aggregation-1.0"},
+    "constraint_policy_version": {"const": "m16a-strict-1d-constraints-1.0"},
+    "ranking_policy_version": {"const": "m16a-strict-1d-ranking-1.0"},
+    "oat_policy_version": {"const": "m16a-strict-1d-oat-1.0"},
+    "candidate_results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/candidate_result"}
+    },
+    "candidate_comparison": {"$ref": "#/$defs/candidate_comparison"},
+    "findings": {"$ref": "#/$defs/diagnostics"},
+    "warnings": {"$ref": "#/$defs/diagnostics"}
+  },
+  "$defs": {
+    "decimal_string": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "json_pointer": {
+      "type": "string",
+      "pattern": "^(/([^~/]|~[01])*)+$"
+    },
+    "candidate_id": {"type": "string", "pattern": "^CND-[0-9]{3}$"},
+    "layer_id": {"type": "string", "pattern": "^LYR-[0-9]{3}$"},
+    "material_id": {"type": "string", "pattern": "^MAT-[0-9]{3}$"},
+    "property_id": {"type": "string", "pattern": "^PRP-[0-9]{3}$"},
+    "interface_id": {"type": "string", "pattern": "^IFC-[0-9]{3}$"},
+    "constraint_id": {"type": "string", "pattern": "^CON-[0-9]{3}$"},
+    "sweep_id": {"type": "string", "pattern": "^SWP-[0-9]{3}$"},
+    "scenario_id": {
+      "type": "string",
+      "pattern": "^SCN-C[0-9]{3}-(K[0-9]{6}|O000-REF|O[0-9]{3}-(MINUS|PLUS))$"
+    },
+    "quantity_kind": {
+      "enum": [
+        "power",
+        "heat_flux",
+        "length",
+        "area",
+        "thermal_conductivity",
+        "area_thermal_resistance",
+        "absolute_thermal_resistance",
+        "area_thermal_conductance",
+        "absolute_temperature",
+        "temperature_difference",
+        "physical_dimensionless"
+      ]
+    },
+    "canonical_unit": {
+      "enum": [
+        "W",
+        "W/m^2",
+        "m",
+        "m^2",
+        "W/(m*K)",
+        "m^2*K/W",
+        "K/W",
+        "W/(m^2*K)",
+        "K",
+        "1"
+      ]
+    },
+    "result_quantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "quantity_kind"],
+      "properties": {
+        "value": {"$ref": "#/$defs/decimal_string"},
+        "unit": {"$ref": "#/$defs/canonical_unit"},
+        "quantity_kind": {"$ref": "#/$defs/quantity_kind"}
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "classification", "field_paths", "message", "required_action"],
+      "properties": {
+        "rule_id": {"type": "string", "minLength": 1},
+        "classification": {"type": "string", "minLength": 1},
+        "field_paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/json_pointer"}
+        },
+        "message": {"type": "string", "minLength": 1},
+        "required_action": {"type": "string", "minLength": 1}
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/diagnostic"}
+    },
+    "scoped_path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "candidate_id", "field_path"],
+      "properties": {
+        "scope": {"enum": ["global", "candidate"]},
+        "candidate_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/candidate_id"}
+          ]
+        },
+        "field_path": {"$ref": "#/$defs/json_pointer"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"scope": {"const": "global"}}},
+          "then": {"properties": {"candidate_id": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"scope": {"const": "candidate"}}},
+          "then": {"properties": {"candidate_id": {"$ref": "#/$defs/candidate_id"}}}
+        }
+      ]
+    },
+    "sweep_coordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sweep_id", "field_path", "point_ordinal", "value"],
+      "properties": {
+        "sweep_id": {"$ref": "#/$defs/sweep_id"},
+        "field_path": {"$ref": "#/$defs/json_pointer"},
+        "point_ordinal": {"type": "integer", "minimum": 1},
+        "value": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "input_override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_kind", "source_id", "field_path", "point_ordinal", "side", "value"],
+      "properties": {
+        "source_kind": {"enum": ["sweep", "oat"]},
+        "source_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/sweep_id"}
+          ]
+        },
+        "field_path": {"$ref": "#/$defs/json_pointer"},
+        "point_ordinal": {"type": "integer", "minimum": 1},
+        "side": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": ["minus", "plus"]}
+          ]
+        },
+        "value": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "oat_coordinate": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parameter_ordinal", "field_path", "side"],
+          "properties": {
+            "parameter_ordinal": {"type": "integer", "minimum": 0},
+            "field_path": {
+              "oneOf": [
+                {"type": "null"},
+                {"$ref": "#/$defs/json_pointer"}
+              ]
+            },
+            "side": {"enum": ["reference", "minus", "plus"]}
+          }
+        }
+      ]
+    },
+    "constraint_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constraint_id",
+        "scenario_id",
+        "status",
+        "evaluated_quantity",
+        "limit",
+        "margin",
+        "operator",
+        "finding_ids"
+      ],
+      "properties": {
+        "constraint_id": {"$ref": "#/$defs/constraint_id"},
+        "scenario_id": {"$ref": "#/$defs/scenario_id"},
+        "status": {"enum": ["pass", "fail", "not_evaluable"]},
+        "evaluated_quantity": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/result_quantity"}
+          ]
+        },
+        "limit": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/result_quantity"}
+          ]
+        },
+        "margin": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/result_quantity"}
+          ]
+        },
+        "operator": {"enum": ["lt", "le", "eq", "ge", "gt", "in", "not_in", "review_only"]},
+        "finding_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "layer_resistance_contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "layer_id",
+        "material_id",
+        "property_id",
+        "thickness",
+        "normal_conductivity",
+        "area",
+        "resistance",
+        "fraction_of_total"
+      ],
+      "properties": {
+        "layer_id": {"$ref": "#/$defs/layer_id"},
+        "material_id": {"$ref": "#/$defs/material_id"},
+        "property_id": {"$ref": "#/$defs/property_id"},
+        "thickness": {"$ref": "#/$defs/result_quantity"},
+        "normal_conductivity": {"$ref": "#/$defs/result_quantity"},
+        "area": {"$ref": "#/$defs/result_quantity"},
+        "resistance": {"$ref": "#/$defs/result_quantity"},
+        "fraction_of_total": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "interface_resistance_contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interface_id",
+        "upstream_layer_id",
+        "downstream_layer_id",
+        "tbr",
+        "area",
+        "resistance",
+        "fraction_of_total"
+      ],
+      "properties": {
+        "interface_id": {"$ref": "#/$defs/interface_id"},
+        "upstream_layer_id": {"$ref": "#/$defs/layer_id"},
+        "downstream_layer_id": {"$ref": "#/$defs/layer_id"},
+        "tbr": {"$ref": "#/$defs/result_quantity"},
+        "area": {"$ref": "#/$defs/result_quantity"},
+        "resistance": {"$ref": "#/$defs/result_quantity"},
+        "fraction_of_total": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "boundary_resistance_contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "boundary_id",
+        "representation_type",
+        "supplied_resistance",
+        "heat_transfer_coefficient",
+        "boundary_area",
+        "resistance",
+        "fraction_of_total"
+      ],
+      "properties": {
+        "boundary_id": {"const": "BND-DOWNSTREAM"},
+        "representation_type": {"enum": ["fixed_temperature", "absolute_resistance", "direct_convection"]},
+        "supplied_resistance": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/result_quantity"}
+          ]
+        },
+        "heat_transfer_coefficient": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/result_quantity"}
+          ]
+        },
+        "boundary_area": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/result_quantity"}
+          ]
+        },
+        "resistance": {"$ref": "#/$defs/result_quantity"},
+        "fraction_of_total": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "node_temperature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node_id",
+        "node_role",
+        "upstream_element_id",
+        "downstream_element_id",
+        "temperature"
+      ],
+      "properties": {
+        "node_id": {"type": "string", "pattern": "^NODE-[0-9]{3}$"},
+        "node_role": {"enum": ["source", "internal", "reference"]},
+        "upstream_element_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "minLength": 1}
+          ]
+        },
+        "downstream_element_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "minLength": 1}
+          ]
+        },
+        "temperature": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "numerical_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "common_area",
+        "source_power",
+        "reference_temperature",
+        "layer_resistance_contributions",
+        "interface_resistance_contributions",
+        "boundary_resistance_contribution",
+        "total_thermal_resistance",
+        "temperature_rise",
+        "source_temperature",
+        "node_temperatures",
+        "numerical_exactness"
+      ],
+      "properties": {
+        "common_area": {"$ref": "#/$defs/result_quantity"},
+        "source_power": {"$ref": "#/$defs/result_quantity"},
+        "reference_temperature": {"$ref": "#/$defs/result_quantity"},
+        "layer_resistance_contributions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/layer_resistance_contribution"}
+        },
+        "interface_resistance_contributions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/interface_resistance_contribution"}
+        },
+        "boundary_resistance_contribution": {"$ref": "#/$defs/boundary_resistance_contribution"},
+        "total_thermal_resistance": {"$ref": "#/$defs/result_quantity"},
+        "temperature_rise": {"$ref": "#/$defs/result_quantity"},
+        "source_temperature": {"$ref": "#/$defs/result_quantity"},
+        "node_temperatures": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/node_temperature"}
+        },
+        "numerical_exactness": {"enum": ["exact", "context_rounded"]}
+      }
+    },
+    "scenario_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_id",
+        "scenario_kind",
+        "candidate_id",
+        "sweep_coordinates",
+        "oat_coordinate",
+        "input_overrides",
+        "disposition",
+        "applicability_status",
+        "reused_core_scenario_id",
+        "consumed_input_paths",
+        "assumption_acknowledgements_used",
+        "applicability_findings",
+        "execution_findings",
+        "constraint_results",
+        "numerical_result"
+      ],
+      "properties": {
+        "scenario_id": {"$ref": "#/$defs/scenario_id"},
+        "scenario_kind": {"enum": ["core", "oat_reference", "oat_minus", "oat_plus"]},
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "sweep_coordinates": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/sweep_coordinate"}
+        },
+        "oat_coordinate": {"$ref": "#/$defs/oat_coordinate"},
+        "input_overrides": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/input_override"}
+        },
+        "disposition": {"enum": ["evaluated", "blocked", "not_applicable", "invalid"]},
+        "applicability_status": {"enum": ["applicable", "applicable_with_warnings", "not_applicable", "not_evaluated"]},
+        "reused_core_scenario_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/scenario_id"}
+          ]
+        },
+        "consumed_input_paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/scoped_path"}
+        },
+        "assumption_acknowledgements_used": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/scoped_path"}
+        },
+        "applicability_findings": {"$ref": "#/$defs/diagnostics"},
+        "execution_findings": {"$ref": "#/$defs/diagnostics"},
+        "constraint_results": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/constraint_result"}
+        },
+        "numerical_result": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/numerical_result"}
+          ]
+        }
+      }
+    },
+    "coverage_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested_core_scenarios",
+        "evaluated_core_scenarios",
+        "blocked_core_scenarios",
+        "invalid_core_scenarios",
+        "not_applicable_core_scenarios",
+        "oat_coverage"
+      ],
+      "properties": {
+        "requested_core_scenarios": {"type": "integer", "minimum": 1},
+        "evaluated_core_scenarios": {"type": "integer", "minimum": 0},
+        "blocked_core_scenarios": {"type": "integer", "minimum": 0},
+        "invalid_core_scenarios": {"type": "integer", "minimum": 0},
+        "not_applicable_core_scenarios": {"type": "integer", "minimum": 0},
+        "oat_coverage": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/oat_coverage"}
+          ]
+        }
+      }
+    },
+    "oat_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested_oat_points",
+        "evaluated_oat_points",
+        "blocked_oat_points",
+        "invalid_oat_points",
+        "not_applicable_oat_points"
+      ],
+      "properties": {
+        "requested_oat_points": {"type": "integer", "minimum": 1},
+        "evaluated_oat_points": {"type": "integer", "minimum": 0},
+        "blocked_oat_points": {"type": "integer", "minimum": 0},
+        "invalid_oat_points": {"type": "integer", "minimum": 0},
+        "not_applicable_oat_points": {"type": "integer", "minimum": 0}
+      }
+    },
+    "sweep_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sweep_ids", "field_paths", "enumeration_rule", "scenario_ids"],
+      "properties": {
+        "sweep_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sweep_id"}
+        },
+        "field_paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/json_pointer"}
+        },
+        "enumeration_rule": {"const": "first_sweep_outermost_last_sweep_innermost"},
+        "scenario_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/scenario_id"}
+        }
+      }
+    },
+    "dimensional_derivative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "output_quantity_kind", "output_unit", "input_quantity_kind", "input_unit"],
+      "properties": {
+        "value": {"$ref": "#/$defs/decimal_string"},
+        "output_quantity_kind": {"$ref": "#/$defs/quantity_kind"},
+        "output_unit": {"$ref": "#/$defs/canonical_unit"},
+        "input_quantity_kind": {"$ref": "#/$defs/quantity_kind"},
+        "input_unit": {"$ref": "#/$defs/canonical_unit"}
+      }
+    },
+    "oat_parameter_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter_ordinal",
+        "field_path",
+        "x_reference",
+        "minus_scenario",
+        "plus_scenario",
+        "disposition",
+        "dimensional_derivative",
+        "normalized_sensitivity",
+        "normalized_sensitivity_disposition",
+        "finding_ids"
+      ],
+      "properties": {
+        "parameter_ordinal": {"type": "integer", "minimum": 1},
+        "field_path": {"$ref": "#/$defs/json_pointer"},
+        "x_reference": {"$ref": "#/$defs/result_quantity"},
+        "minus_scenario": {"$ref": "#/$defs/scenario_record"},
+        "plus_scenario": {"$ref": "#/$defs/scenario_record"},
+        "disposition": {"enum": ["complete", "incomplete"]},
+        "dimensional_derivative": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/dimensional_derivative"}
+          ]
+        },
+        "normalized_sensitivity": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/result_quantity"}
+          ]
+        },
+        "normalized_sensitivity_disposition": {
+          "enum": [
+            "evaluated",
+            "incomplete",
+            "zero_x_reference",
+            "zero_y_reference",
+            "absolute_temperature_not_normalized"
+          ]
+        },
+        "finding_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "oat_ranking_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rank", "field_path", "normalized_sensitivity"],
+      "properties": {
+        "rank": {"type": "integer", "minimum": 1},
+        "field_path": {"$ref": "#/$defs/json_pointer"},
+        "normalized_sensitivity": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "oat_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "output_metric", "reference_scenario", "parameters", "ranking_status", "sensitivity_ranking"],
+      "properties": {
+        "method": {"const": "oat"},
+        "output_metric": {"enum": ["source_temperature", "total_thermal_resistance", "temperature_margin"]},
+        "reference_scenario": {"$ref": "#/$defs/scenario_record"},
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/oat_parameter_result"}
+        },
+        "ranking_status": {"enum": ["performed", "not_performed"]},
+        "sensitivity_ranking": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/oat_ranking_entry"}
+        }
+      }
+    },
+    "candidate_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "coverage_summary", "core_scenarios", "sweep_result", "oat_result", "findings", "warnings"],
+      "properties": {
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "coverage_summary": {"$ref": "#/$defs/coverage_summary"},
+        "core_scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/scenario_record"}
+        },
+        "sweep_result": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/sweep_result"}
+          ]
+        },
+        "oat_result": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/oat_result"}
+          ]
+        },
+        "findings": {"$ref": "#/$defs/diagnostics"},
+        "warnings": {"$ref": "#/$defs/diagnostics"}
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "direction", "reference_requirement_id"],
+      "properties": {
+        "metric": {"enum": ["source_temperature", "total_thermal_resistance", "temperature_margin"]},
+        "direction": {"enum": ["minimize", "maximize"]},
+        "reference_requirement_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^REQ-[0-9]{3}$"}
+          ]
+        }
+      }
+    },
+    "candidate_eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "eligible", "basis_scenario_id", "reason_ids"],
+      "properties": {
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "eligible": {"type": "boolean"},
+        "basis_scenario_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/scenario_id"}
+          ]
+        },
+        "reason_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "ranked_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rank", "candidate_id", "scenario_id", "objective_metric", "objective_value"],
+      "properties": {
+        "rank": {"type": "integer", "minimum": 1},
+        "candidate_id": {"$ref": "#/$defs/candidate_id"},
+        "scenario_id": {"$ref": "#/$defs/scenario_id"},
+        "objective_metric": {"enum": ["source_temperature", "total_thermal_resistance", "temperature_margin"]},
+        "objective_value": {"$ref": "#/$defs/result_quantity"}
+      }
+    },
+    "candidate_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objective",
+        "comparison_basis_rule",
+        "constraint_handling",
+        "ranking_status",
+        "candidate_eligibility",
+        "ranked_entries",
+        "tie_rule",
+        "calculation_notice"
+      ],
+      "properties": {
+        "objective": {"$ref": "#/$defs/objective"},
+        "comparison_basis_rule": {"const": "sole_unswept_baseline_only"},
+        "constraint_handling": {"enum": ["exclude_violating_from_rank", "report_only"]},
+        "ranking_status": {"enum": ["performed", "not_performed"]},
+        "candidate_eligibility": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/candidate_eligibility"}
+        },
+        "ranked_entries": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/ranked_entry"}
+        },
+        "tie_rule": {"const": "objective_value_then_candidate_id"},
+        "calculation_notice": {"const": "Ranking is a conditional calculation, not a recommendation or approval."}
+      }
+    }
+  }
+}
