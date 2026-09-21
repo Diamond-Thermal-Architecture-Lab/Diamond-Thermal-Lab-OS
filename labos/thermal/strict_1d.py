@@ -144,6 +144,14 @@ class Strict1DValidationError(ValueError):
     """Raised for structural misuse of the strict-1D public API."""
 
 
+class _ScenarioEnvelope(dict[str, Any]):
+    """Detached envelope whose effective number is scenario-local only."""
+
+    def __init__(self, source: Mapping[str, Any], quantity: QuantifiedValue) -> None:
+        super().__init__(copy.deepcopy(dict(source)))
+        self.scenario_quantity = quantity
+
+
 def _fail(path: str, message: str) -> None:
     raise Strict1DValidationError(f"{path}: {message}")
 
@@ -237,6 +245,8 @@ def _deduplicate_diagnostics(items: Sequence[Mapping[str, Any]]) -> list[dict[st
 
 
 def _quantity_from_envelope(envelope: Mapping[str, Any], path: str) -> QuantifiedValue | None:
+    if isinstance(envelope, _ScenarioEnvelope):
+        return envelope.scenario_quantity
     if envelope.get("value") is None or envelope.get("conversion") is None:
         return None
     try:
@@ -263,6 +273,38 @@ def _result_quantity(value: Decimal, kind: QuantityKind, unit: str) -> dict[str,
         "unit": unit,
         "quantity_kind": kind.value,
     }
+
+
+def _scenario_envelope(
+    envelope: Mapping[str, Any], quantity: QuantifiedValue
+) -> Mapping[str, Any]:
+    """Return a detached numeric view while preserving every source-envelope field."""
+    return _ScenarioEnvelope(envelope, quantity)
+
+
+def _scenario_envelope_value(envelope: Mapping[str, Any]) -> Any:
+    """Keep source status while exposing a scenario-local numeric value to binding."""
+    if isinstance(envelope, _ScenarioEnvelope):
+        return canonical_decimal_text(envelope.scenario_quantity.canonical_value)
+    return envelope.get("value")
+
+
+def _machine_constraint_threshold(constraint: Mapping[str, Any]) -> bool:
+    """Determine whether the exact source-temperature threshold is numerically usable."""
+    threshold = constraint.get("threshold")
+    if not (
+        constraint["evaluation_disposition"] == "machine_evaluable"
+        and constraint["target_path"] == "/heat_sources/0/source_location"
+        and constraint["operator"] in {"lt", "le", "eq", "ge", "gt"}
+        and isinstance(threshold, Mapping)
+        and threshold.get("quantity_kind") == QuantityKind.ABSOLUTE_TEMPERATURE.value
+        and threshold.get("status") in {"provided", "assumed", "evidence_required"}
+        and threshold.get("value") is not None
+        and threshold.get("conversion") is not None
+    ):
+        return False
+    quantity = _quantity_from_envelope(threshold, "/constraints/threshold")
+    return quantity is not None and quantity.canonical_value >= 0
 
 
 def build_strict_1d_model_manifest(
@@ -374,7 +416,11 @@ def _selected_properties(
 
 
 def _candidate_consumed_paths(
-    problem: Mapping[str, Any], candidate: Mapping[str, Any], plan: Mapping[str, Any]
+    problem: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+    plan: Mapping[str, Any],
+    *,
+    include_machine_constraint_thresholds: bool = False,
 ) -> tuple[list[dict[str, Any]], set[str], set[str]]:
     candidate_id = candidate["candidate_id"]
     paths: list[dict[str, Any]] = []
@@ -418,6 +464,8 @@ def _candidate_consumed_paths(
     for index, constraint in enumerate(problem["constraints"]):
         if constraint["constraint_id"] in applicable_constraints:
             global_path(f"/constraints/{index}")
+            if include_machine_constraint_thresholds and _machine_constraint_threshold(constraint):
+                global_path(f"/constraints/{index}/threshold", numeric=True)
 
     candidate_path("/geometry/layers")
     candidate_path("/materials")
@@ -562,11 +610,14 @@ class Strict1DBoundEvaluation:
         return [_thaw(item) for item in binding.consumed_input_paths]
 
 
-def bind_strict_1d_inputs(
+def _bind_strict_1d_inputs(
     engineering_problem: EngineeringProblem,
     evaluation_plan: EvaluationPlan,
+    *,
+    allow_parameter_sweeps: bool,
+    include_machine_constraint_thresholds: bool,
 ) -> Strict1DBoundEvaluation:
-    """Bind exact strict-1D inputs and acknowledgement closure without arithmetic."""
+    """Internal binding mode shared by I4A baseline and I4B orchestration."""
     if not isinstance(engineering_problem, EngineeringProblem):
         raise TypeError("engineering_problem must be an EngineeringProblem")
     if not isinstance(evaluation_plan, EvaluationPlan):
@@ -582,7 +633,7 @@ def bind_strict_1d_inputs(
     ):
         _fail("/evaluation_plan", "does not bind the supplied immutable EPR")
     _validate_model_request(plan)
-    if plan["parameter_sweeps"]:
+    if plan["parameter_sweeps"] and not allow_parameter_sweeps:
         _fail("/parameter_sweeps", "I4A accepts only an unswept baseline plan")
     if plan["sensitivity_request"] is not None:
         _fail("/sensitivity_request", "I4A does not execute OAT sensitivity")
@@ -628,7 +679,12 @@ def bind_strict_1d_inputs(
 
     for candidate_id in plan["selected_candidate_ids"]:
         candidate = candidates[candidate_id]
-        consumed_paths, numeric_candidate, numeric_global = _candidate_consumed_paths(problem, candidate, plan)
+        consumed_paths, numeric_candidate, numeric_global = _candidate_consumed_paths(
+            problem,
+            candidate,
+            plan,
+            include_machine_constraint_thresholds=include_machine_constraint_thresholds,
+        )
         required: list[dict[str, Any]] = []
         evidence_warnings: list[dict[str, Any]] = []
         missing_paths: list[str] = []
@@ -645,12 +701,12 @@ def bind_strict_1d_inputs(
             if not isinstance(envelope, Mapping):
                 _fail(pointer, "numeric consumed path does not resolve to a quantity envelope")
             status = envelope.get("status")
-            if status == "assumed" and envelope.get("value") is not None:
+            if status == "assumed" and _scenario_envelope_value(envelope) is not None:
                 acknowledgement = _consumed(scope, None if scope == "global" else candidate_id, pointer)
                 required.append(acknowledgement)
                 if scope == "global":
                     required_global_union[canonical_json_bytes(acknowledgement)] = acknowledgement
-            elif status == "evidence_required" and envelope.get("value") is not None:
+            elif status == "evidence_required" and _scenario_envelope_value(envelope) is not None:
                 evidence_warnings.append(
                     _diagnostic(
                         "I4-BIND-EVIDENCE-REQUIRED",
@@ -660,7 +716,7 @@ def bind_strict_1d_inputs(
                         "Obtain applicable evidence before relying on the calculation beyond screening use.",
                     )
                 )
-            elif status in {"missing", "conflicting"} or envelope.get("value") is None:
+            elif status in {"missing", "conflicting"} or _scenario_envelope_value(envelope) is None:
                 missing_paths.append(pointer)
         required.sort(key=_ack_key)
         pending[candidate_id] = (
@@ -755,6 +811,19 @@ def bind_strict_1d_inputs(
         _global_binding_findings=tuple(
             _freeze(item) for item in _deduplicate_diagnostics(global_findings)
         ),
+    )
+
+
+def bind_strict_1d_inputs(
+    engineering_problem: EngineeringProblem,
+    evaluation_plan: EvaluationPlan,
+) -> Strict1DBoundEvaluation:
+    """Bind exact I4A baseline inputs and acknowledgement closure without arithmetic."""
+    return _bind_strict_1d_inputs(
+        engineering_problem,
+        evaluation_plan,
+        allow_parameter_sweeps=False,
+        include_machine_constraint_thresholds=False,
     )
 
 
@@ -1289,27 +1358,55 @@ class Strict1DScenarioResult:
         return canonical_json_bytes(self._content)
 
 
-def evaluate_strict_1d_baseline(
+def _evaluate_strict_1d_scenario(
     bound_evaluation: Strict1DBoundEvaluation,
     candidate_id: str,
+    *,
+    scenario_id: str,
+    problem: Mapping[str, Any] | None = None,
+    candidate: Mapping[str, Any] | None = None,
+    sweep_coordinates: Sequence[Mapping[str, Any]] = (),
+    input_overrides: Sequence[Mapping[str, Any]] = (),
+    invalid_override_paths: Sequence[str] = (),
 ) -> Strict1DScenarioResult:
-    """Evaluate one selected candidate's sole unswept strict-1D baseline."""
+    """Execute one detached scenario through the single I4A physics primitive."""
     if not isinstance(bound_evaluation, Strict1DBoundEvaluation):
         raise TypeError("bound_evaluation must be a Strict1DBoundEvaluation")
     if type(candidate_id) is not str or candidate_id not in bound_evaluation._candidate_bindings:
         _fail("candidate_id", "must reference one selected bound candidate")
-    problem = bound_evaluation.engineering_problem.to_dict()
+    problem_view = (
+        bound_evaluation.engineering_problem.to_dict()
+        if problem is None
+        else copy.deepcopy(dict(problem))
+    )
     binding = bound_evaluation._candidate_bindings[candidate_id]
-    candidate = _thaw(binding.candidate)
-    applicability_findings = _applicability_findings(problem, candidate)
+    candidate_view = _thaw(binding.candidate) if candidate is None else copy.deepcopy(dict(candidate))
+    applicability_findings = _applicability_findings(problem_view, candidate_view)
     binding_findings = [
         _thaw(item)
         for item in (*bound_evaluation._global_binding_findings, *binding.binding_findings)
     ]
-    numerical_findings = _numeric_precondition_findings(problem, candidate)
+    numerical_findings = _numeric_precondition_findings(problem_view, candidate_view)
     warnings = [_thaw(item) for item in binding.evidence_warnings]
 
-    if applicability_findings:
+    if invalid_override_paths:
+        disposition = "invalid"
+        applicability_status = "not_evaluated"
+        execution_findings = _deduplicate_diagnostics(
+            binding_findings
+            + [
+                _diagnostic(
+                    "I4-SCENARIO-INVALID-OVERRIDE",
+                    "MODEL_EXECUTION",
+                    invalid_override_paths,
+                    "An explicit scenario override violates a strict-1D numerical precondition.",
+                    "Correct the explicit requested override value.",
+                )
+            ]
+        )
+        numerical_result = None
+        acknowledgements_used = []
+    elif applicability_findings:
         disposition = "not_applicable"
         applicability_status = "not_applicable"
         execution_findings = _deduplicate_diagnostics(binding_findings + numerical_findings)
@@ -1323,7 +1420,7 @@ def evaluate_strict_1d_baseline(
         acknowledgements_used = []
     else:
         try:
-            numerical_result = _compute_numerical_result(problem, candidate)
+            numerical_result = _compute_numerical_result(problem_view, candidate_view)
         except (DivisionByZero, InvalidOperation, Overflow):
             numerical_result = None
             disposition = "blocked"
@@ -1346,14 +1443,13 @@ def evaluate_strict_1d_baseline(
                 [_thaw(item) for item in binding.required_acknowledgements], key=_ack_key
             )
 
-    candidate_position = bound_evaluation.selected_candidate_ids.index(candidate_id) + 1
     content = {
-        "scenario_id": f"SCN-C{candidate_position:03d}-K000001",
+        "scenario_id": scenario_id,
         "scenario_kind": "core",
         "candidate_id": candidate_id,
-        "sweep_coordinates": [],
+        "sweep_coordinates": [copy.deepcopy(dict(item)) for item in sweep_coordinates],
         "oat_coordinate": None,
-        "input_overrides": [],
+        "input_overrides": [copy.deepcopy(dict(item)) for item in input_overrides],
         "disposition": disposition,
         "applicability_status": applicability_status,
         "reused_core_scenario_id": None,
@@ -1367,6 +1463,23 @@ def evaluate_strict_1d_baseline(
         "numerical_result": numerical_result,
     }
     return Strict1DScenarioResult(_freeze(content))
+
+
+def evaluate_strict_1d_baseline(
+    bound_evaluation: Strict1DBoundEvaluation,
+    candidate_id: str,
+) -> Strict1DScenarioResult:
+    """Evaluate one selected candidate's sole unswept strict-1D baseline."""
+    if not isinstance(bound_evaluation, Strict1DBoundEvaluation):
+        raise TypeError("bound_evaluation must be a Strict1DBoundEvaluation")
+    if type(candidate_id) is not str or candidate_id not in bound_evaluation._candidate_bindings:
+        _fail("candidate_id", "must reference one selected bound candidate")
+    candidate_position = bound_evaluation.selected_candidate_ids.index(candidate_id) + 1
+    return _evaluate_strict_1d_scenario(
+        bound_evaluation,
+        candidate_id,
+        scenario_id=f"SCN-C{candidate_position:03d}-K000001",
+    )
 
 
 __all__ = [
