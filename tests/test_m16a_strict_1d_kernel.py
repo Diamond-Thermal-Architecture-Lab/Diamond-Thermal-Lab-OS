@@ -491,15 +491,18 @@ class ApplicabilityAcceptanceTests(unittest.TestCase):
         distributed["heat_sources"][0]["spatial_profile"] = "volumetric"
         self.assert_not_applicable(distributed, "I4-APP-NO-DISTRIBUTED-GENERATION")
 
-    def test_app_04_rotated_and_temperature_law(self) -> None:
+    def test_app_04_rotated_and_descriptive_temperature_prose(self) -> None:
         rotated = baseline_problem()
         rotated["candidates"][0]["materials"][0]["anisotropy_representation"] = "rotated_tensor"
         self.assert_not_applicable(rotated, "I4-APP-NORMAL-CONDUCTIVITY")
-        law = baseline_problem()
-        law["candidates"][0]["materials"][0]["thermal_properties"][0][
+        prose = baseline_problem()
+        prose["candidates"][0]["materials"][0]["thermal_properties"][0][
             "temperature_basis"
-        ] = "A temperature-dependent law is required."
-        self.assert_not_applicable(law, "I4-APP-NO-TEMPERATURE-LAW")
+        ] = "No temperature-dependent material law is required; synthetic constant value."
+        _restamp(prose)
+        result = baseline_result(prose)
+        self.assertEqual(result["disposition"], "evaluated")
+        self.assertEqual(result["applicability_status"], "applicable")
 
     def test_app_05_unsupported_interface_and_boundary(self) -> None:
         interface = baseline_problem()
@@ -654,40 +657,51 @@ class BindingAcceptanceTests(unittest.TestCase):
         self.assertEqual(missing_result["disposition"], "blocked")
         self.assertIsNone(missing_result["numerical_result"])
 
-    def test_global_acknowledgement_required_by_one_candidate_is_not_extra_for_another(self) -> None:
-        problem = baseline_problem()
-        problem["constraints"] = [{
-            "constraint_id": "CON-001",
-            "target_path": "/heat_sources/0/source_location",
-            "operator": "le",
-            "threshold": envelope(
+    def test_constraint_parent_is_consumed_without_threshold_semantics(self) -> None:
+        thresholds = {
+            "assumed": envelope(
                 QuantityKind.ABSOLUTE_TEMPERATURE, "75", "degC", status="assumed"
             ),
-            "severity": "blocking",
-            "provenance": copy.deepcopy(problem["requirements"][0]["provenance"]),
-            "evaluation_disposition": "machine_evaluable",
-        }]
-        problem["candidates"][0]["applicable_constraint_ids"] = ["CON-001"]
-        problem["candidates"][1]["applicable_constraint_ids"] = []
-        problem["compilation"]["outcome"] = "READY_WITH_ASSUMPTIONS"
-        _restamp(problem)
-        acknowledgement = {
-            "scope": "global",
-            "candidate_id": None,
-            "field_path": "/constraints/0/threshold",
+            "missing": missing_envelope(QuantityKind.ABSOLUTE_TEMPERATURE, "K"),
+            "conflicting": envelope(
+                QuantityKind.ABSOLUTE_TEMPERATURE, "75", "degC", status="conflicting"
+            ),
+            "evidence_required": envelope(
+                QuantityKind.ABSOLUTE_TEMPERATURE,
+                "75",
+                "degC",
+                status="evidence_required",
+            ),
         }
-        plan = plan_for(
-            problem,
-            candidate_ids=["CND-001", "CND-002"],
-            acknowledgements=[acknowledgement],
-        )
-        bound = build_bound(problem, plan)
-        first = evaluate_strict_1d_baseline(bound, "CND-001").to_dict()
-        second = evaluate_strict_1d_baseline(bound, "CND-002").to_dict()
-        self.assertEqual(first["disposition"], "evaluated")
-        self.assertEqual(second["disposition"], "evaluated")
-        self.assertEqual(first["assumption_acknowledgements_used"], [acknowledgement])
-        self.assertEqual(second["assumption_acknowledgements_used"], [])
+        for status, threshold in thresholds.items():
+            with self.subTest(status=status):
+                problem = baseline_problem()
+                problem["constraints"] = [{
+                    "constraint_id": "CON-001",
+                    "target_path": "/heat_sources/0/source_location",
+                    "operator": "le",
+                    "threshold": threshold,
+                    "severity": "blocking",
+                    "provenance": copy.deepcopy(problem["requirements"][0]["provenance"]),
+                    "evaluation_disposition": "machine_evaluable",
+                }]
+                problem["candidates"][0]["applicable_constraint_ids"] = ["CON-001"]
+                problem["compilation"]["outcome"] = (
+                    "READY_WITH_ASSUMPTIONS" if status == "assumed" else "HOLD_FOR_INPUT"
+                )
+                _restamp(problem)
+                bound = build_bound(problem)
+                consumed_paths = {
+                    (item["scope"], item["field_path"])
+                    for item in bound.consumed_input_paths("CND-001")
+                }
+                self.assertIn(("global", "/constraints/0"), consumed_paths)
+                self.assertNotIn(("global", "/constraints/0/threshold"), consumed_paths)
+                result = evaluate_strict_1d_baseline(bound, "CND-001").to_dict()
+                self.assertEqual(result["disposition"], "evaluated")
+                self.assertEqual(result["assumption_acknowledgements_used"], [])
+                self.assertEqual(result["execution_findings"], [])
+                self.assertEqual(result["constraint_results"], [])
 
     def test_model_options_missing_false_non_boolean_and_extra_block(self) -> None:
         variants = []
@@ -697,6 +711,11 @@ class BindingAcceptanceTests(unittest.TestCase):
         false_value = model_options()
         false_value["strict_1d_validity_assertions"]["no_coupled_physics"] = False
         variants.append(false_value)
+        false_temperature_law = model_options()
+        false_temperature_law["strict_1d_validity_assertions"][
+            "no_temperature_dependent_material_law"
+        ] = False
+        variants.append(false_temperature_law)
         non_boolean = model_options()
         non_boolean["strict_1d_validity_assertions"]["no_coupled_physics"] = 1
         variants.append(non_boolean)
@@ -710,6 +729,7 @@ class BindingAcceptanceTests(unittest.TestCase):
                 plan["model_options"] = options
                 result = baseline_result(problem, plan)
                 self.assertEqual(result["disposition"], "blocked")
+                self.assertEqual(result["applicability_status"], "not_evaluated")
                 self.assertIsNone(result["numerical_result"])
 
 

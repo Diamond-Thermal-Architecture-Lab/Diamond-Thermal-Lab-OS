@@ -418,8 +418,6 @@ def _candidate_consumed_paths(
     for index, constraint in enumerate(problem["constraints"]):
         if constraint["constraint_id"] in applicable_constraints:
             global_path(f"/constraints/{index}")
-            if constraint["threshold"] is not None:
-                global_path(f"/constraints/{index}/threshold", numeric=True)
 
     candidate_path("/geometry/layers")
     candidate_path("/materials")
@@ -760,18 +758,6 @@ def bind_strict_1d_inputs(
     )
 
 
-def _temperature_law_declared(text: str) -> bool:
-    lowered = text.casefold()
-    markers = (
-        "temperature-dependent",
-        "temperature dependent",
-        "function of temperature",
-        "temperature law",
-        "property iteration",
-    )
-    return any(marker in lowered for marker in markers)
-
-
 def _applicability_findings(
     problem: Mapping[str, Any], candidate: Mapping[str, Any]
 ) -> list[dict[str, Any]]:
@@ -919,15 +905,6 @@ def _applicability_findings(
                 "The normal conductivity is rotated, off-axis, ambiguous, or unsupported.",
                 "Supply one explicit constant conductivity aligned with the stack normal.",
             )
-        for _, prop in selected:
-            if _temperature_law_declared(prop["temperature_basis"]):
-                add(
-                    "I4-APP-NO-TEMPERATURE-LAW",
-                    [f"/materials/{material_index}/thermal_properties/{prop['index']}/temperature_basis"],
-                    "The selected property requires a temperature-dependent law or iteration.",
-                    "Use a nonlinear property model or a reviewed constant-property reduction.",
-                )
-
     for index, interface in enumerate(candidate["interfaces"]):
         if interface["representation_type"] not in {"area_normalized_resistance", "ideal_zero"}:
             add(
