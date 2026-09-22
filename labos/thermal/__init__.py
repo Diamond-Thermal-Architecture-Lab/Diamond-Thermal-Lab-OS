@@ -33,6 +33,11 @@ from .strict_1d_result import (
     build_strict_1d_result_payload,
     validate_strict_1d_result_content,
 )
+from .strict_1d_orchestration import (
+    Strict1DOrchestrationResult,
+    build_strict_1d_engineering_evaluation_result,
+    orchestrate_strict_1d,
+)
 
 
 __all__ = [
@@ -58,11 +63,14 @@ __all__ = [
     "SOURCE_REFERENCES",
     "Strict1DBoundEvaluation",
     "Strict1DResultValidationError",
+    "Strict1DOrchestrationResult",
     "Strict1DScenarioResult",
     "Strict1DValidationError",
     "bind_strict_1d_inputs",
     "build_strict_1d_model_manifest",
+    "build_strict_1d_engineering_evaluation_result",
     "build_strict_1d_result_payload",
     "evaluate_strict_1d_baseline",
+    "orchestrate_strict_1d",
     "validate_strict_1d_result_content",
 ]
