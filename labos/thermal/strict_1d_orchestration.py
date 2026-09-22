@@ -54,6 +54,12 @@ from .strict_1d_result import (
     build_strict_1d_result_payload,
     validate_strict_1d_result_content,
 )
+from .strict_1d_sensitivity import (
+    _metric_result,
+    _parameter_arithmetic,
+    _prediction_outputs,
+    _sensitivity_ranking,
+)
 
 
 def _freeze(value: Any) -> Any:
@@ -309,6 +315,160 @@ def _aggregate_candidate(
     return "blocked", "not_evaluated", False
 
 
+def _execute_oat(
+    problem: Mapping[str, Any],
+    bound: Any,
+    candidate: Mapping[str, Any],
+    candidate_id: str,
+    candidate_position: int,
+    parameters: Sequence[tuple[Mapping[str, Any], QuantifiedValue, QuantifiedValue, QuantifiedValue]],
+    metric: str,
+    margin_target: Decimal | None,
+    core_scenarios: Sequence[Mapping[str, Any]],
+    has_sweeps: bool,
+) -> tuple[dict[str, Any], dict[str, int], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Execute one auxiliary reference and each explicitly authored OAT side."""
+    prefix = f"SCN-C{candidate_position:03d}"
+    constraint_findings: list[dict[str, Any]] = []
+
+    def scenario(
+        scenario_id: str,
+        kind: str,
+        ordinal: int,
+        field_path: str | None,
+        side: str,
+        point: QuantifiedValue | None = None,
+    ) -> dict[str, Any]:
+        if kind == "oat_reference" and not has_sweeps and core_scenarios[0]["disposition"] == "evaluated":
+            record = copy.deepcopy(dict(core_scenarios[0]))
+            record["scenario_id"] = scenario_id
+            record["reused_core_scenario_id"] = core_scenarios[0]["scenario_id"]
+            record["constraint_results"] = [
+                {**copy.deepcopy(item), "scenario_id": scenario_id}
+                for item in core_scenarios[0]["constraint_results"]
+            ]
+        else:
+            detached = copy.deepcopy(dict(candidate))
+            overrides: list[dict[str, Any]] = []
+            invalid_paths: list[str] = []
+            if field_path is not None and point is not None:
+                original = _resolve_pointer(detached, field_path)
+                _replace_pointer(detached, field_path, _scenario_envelope(original, point))
+                overrides.append(
+                    {
+                        "source_kind": "oat",
+                        "source_id": None,
+                        "field_path": field_path,
+                        "point_ordinal": ordinal,
+                        "side": side,
+                        "value": _quantity_result(point),
+                    }
+                )
+                if any(
+                    field_path in finding["field_paths"]
+                    for finding in _numeric_precondition_findings(problem, detached)
+                ):
+                    invalid_paths.append(field_path)
+            record = _evaluate_strict_1d_scenario(
+                bound,
+                candidate_id,
+                scenario_id=scenario_id,
+                candidate=detached,
+                input_overrides=overrides,
+                invalid_override_paths=invalid_paths,
+            ).to_dict()
+            constraints, diagnostics = _constraint_results(problem, detached, record)
+            record["constraint_results"] = constraints
+            constraint_findings.extend(diagnostics)
+        record["scenario_kind"] = kind
+        record["oat_coordinate"] = {
+            "parameter_ordinal": ordinal,
+            "field_path": field_path,
+            "side": side,
+        }
+        return record
+
+    reference = scenario(f"{prefix}-O000-REF", "oat_reference", 0, None, "reference")
+    results: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    oat_scenarios = [reference]
+    for ordinal, (parameter, x_reference, minus, plus) in enumerate(parameters, start=1):
+        path = parameter["field_path"]
+        minus_scenario = scenario(
+            f"{prefix}-O{ordinal:03d}-MINUS", "oat_minus", ordinal, path, "minus", minus
+        )
+        plus_scenario = scenario(
+            f"{prefix}-O{ordinal:03d}-PLUS", "oat_plus", ordinal, path, "plus", plus
+        )
+        oat_scenarios.extend((minus_scenario, plus_scenario))
+        disposition, derivative, normalized, normalized_disposition, finding_ids = _parameter_arithmetic(
+            metric=metric,
+            x_reference=_quantity_result(x_reference),
+            x_minus=_quantity_result(minus),
+            x_plus=_quantity_result(plus),
+            y_reference=_metric_result(reference, metric, margin_target),
+            y_minus=_metric_result(minus_scenario, metric, margin_target),
+            y_plus=_metric_result(plus_scenario, metric, margin_target),
+        )
+        results.append(
+            {
+                "parameter_ordinal": ordinal,
+                "field_path": path,
+                "x_reference": _quantity_result(x_reference),
+                "minus_scenario": minus_scenario,
+                "plus_scenario": plus_scenario,
+                "disposition": disposition,
+                "dimensional_derivative": derivative,
+                "normalized_sensitivity": normalized,
+                "normalized_sensitivity_disposition": normalized_disposition,
+                "finding_ids": finding_ids,
+            }
+        )
+        if disposition == "incomplete":
+            unavailable = [
+                item["scenario_id"]
+                for item in (reference, minus_scenario, plus_scenario)
+                if item["disposition"] != "evaluated"
+            ]
+            diagnostics.append(
+                _diagnostic(
+                    "I4-OAT-INCOMPLETE",
+                    "MODEL_EXECUTION",
+                    [path],
+                    "Central sensitivity is unavailable for requested scenario(s): "
+                    + ", ".join(unavailable),
+                    "Review the exact unavailable OAT scenario findings; no one-sided derivative is used.",
+                )
+            )
+        elif normalized_disposition != "evaluated":
+            diagnostics.append(
+                _diagnostic(
+                    "I4-OAT-NORMALIZED-NOT-DEFINED",
+                    "MODEL_SENSITIVITY",
+                    [path],
+                    f"Normalized sensitivity is undefined: {normalized_disposition}.",
+                    "Use the complete dimensional derivative without a normalized rank.",
+                )
+            )
+    ranking_status, ranking = _sensitivity_ranking(results)
+    oat_result = {
+        "method": "oat",
+        "output_metric": metric,
+        "reference_scenario": reference,
+        "parameters": results,
+        "ranking_status": ranking_status,
+        "sensitivity_ranking": ranking,
+    }
+    coverage = {
+        "requested_oat_points": len(oat_scenarios),
+        "evaluated_oat_points": sum(item["disposition"] == "evaluated" for item in oat_scenarios),
+        "blocked_oat_points": sum(item["disposition"] == "blocked" for item in oat_scenarios),
+        "invalid_oat_points": sum(item["disposition"] == "invalid" for item in oat_scenarios),
+        "not_applicable_oat_points": sum(item["disposition"] == "not_applicable" for item in oat_scenarios),
+    }
+    return oat_result, coverage, diagnostics, constraint_findings
+
+
 @dataclass(frozen=True, slots=True)
 class Strict1DOrchestrationResult:
     """Immutable pure I4B orchestration authority."""
@@ -351,16 +511,20 @@ def orchestrate_strict_1d(
     evaluation_plan: EvaluationPlan,
     implementation_git_commit: str | None = None,
 ) -> Strict1DOrchestrationResult:
-    """Execute deterministic I4B core scenarios without persistence or OAT."""
+    """Execute deterministic core and auxiliary OAT scenarios without persistence."""
     if not isinstance(engineering_problem, EngineeringProblem):
         raise TypeError("engineering_problem must be an EngineeringProblem")
     if not isinstance(evaluation_plan, EvaluationPlan):
         raise TypeError("evaluation_plan must be an EvaluationPlan")
     problem = engineering_problem.to_dict()
     plan = evaluation_plan.to_dict()
-    if plan["sensitivity_request"] is not None:
+    sensitivity = plan["sensitivity_request"]
+    if sensitivity is not None and sensitivity["output_metric"] == "temperature_margin" and (
+        plan["objective"]["metric"] != "temperature_margin"
+        or plan["objective"]["reference_requirement_id"] is None
+    ):
         raise Strict1DValidationError(
-            "/sensitivity_request: I4B defers non-null OAT sensitivity execution to I4C"
+            "/sensitivity_request/output_metric: temperature_margin requires the exact Plan temperature-margin objective reference"
         )
     if plan["objective"]["metric"] == "temperature_margin":
         requirement = next(
@@ -397,13 +561,49 @@ def orchestrate_strict_1d(
             )
 
     build_strict_1d_model_manifest(implementation_git_commit)
+    # I4A's frozen binder intentionally rejects OAT requests. Bind the identical
+    # core request through its existing authority; retain the original Plan for
+    # OAT execution and all EER identities.
+    binding_plan = copy.deepcopy(plan)
+    binding_plan["sensitivity_request"] = None
     bound = _bind_strict_1d_inputs(
         engineering_problem,
-        evaluation_plan,
+        EvaluationPlan.from_dict(binding_plan),
         allow_parameter_sweeps=True,
         include_machine_constraint_thresholds=True,
     )
     candidates = {item["candidate_id"]: item for item in problem["candidates"]}
+    oat_parameters: list[tuple[Mapping[str, Any], QuantifiedValue, QuantifiedValue, QuantifiedValue]] = []
+    margin_target: Decimal | None = None
+    if sensitivity is not None:
+        baseline = candidates[sensitivity["baseline_candidate_id"]]
+        for index, parameter in enumerate(sensitivity["parameters"]):
+            path = parameter["field_path"]
+            target = _resolve_pointer(baseline, path)
+            if not isinstance(target, Mapping):
+                raise Strict1DValidationError(
+                    f"/sensitivity_request/parameters/{index}/field_path: must resolve to a quantified-value envelope"
+                )
+            x_reference = _quantity_from_envelope(target, path)
+            if x_reference is None:
+                raise Strict1DValidationError(
+                    f"/sensitivity_request/parameters/{index}/field_path: requires a resolved numeric baseline value"
+                )
+            minus = _quantity(parameter["minus_value"], f"/sensitivity_request/parameters/{index}/minus_value")
+            plus = _quantity(parameter["plus_value"], f"/sensitivity_request/parameters/{index}/plus_value")
+            if minus.quantity_kind is not x_reference.quantity_kind or plus.quantity_kind is not x_reference.quantity_kind:
+                raise Strict1DValidationError(
+                    f"/sensitivity_request/parameters/{index}: point QuantityKind does not match target"
+                )
+            oat_parameters.append((parameter, x_reference, minus, plus))
+        if sensitivity["output_metric"] == "temperature_margin":
+            requirement = next(
+                item for item in problem["requirements"]
+                if item["requirement_id"] == plan["objective"]["reference_requirement_id"]
+            )
+            margin_target = _quantity_from_envelope(
+                requirement["target"], "/requirements/target"
+            ).canonical_value
     expanded: list[tuple[Mapping[str, Any], list[QuantifiedValue]]] = []
     seen_targets: set[tuple[str, str]] = set()
     for index, sweep in enumerate(plan["parameter_sweeps"]):
@@ -504,16 +704,48 @@ def orchestrate_strict_1d(
 
         coverage = _coverage(scenarios)
         status, applicability, result_presence = _aggregate_candidate(scenarios, coverage)
+        oat_result = None
+        oat_diagnostics: list[dict[str, Any]] = []
+        oat_scenarios: list[dict[str, Any]] = []
+        if sensitivity is not None and sensitivity["baseline_candidate_id"] == candidate_id:
+            oat_result, oat_coverage, oat_diagnostics, oat_constraint_diagnostics = _execute_oat(
+                problem,
+                bound,
+                candidate,
+                candidate_id,
+                candidate_position,
+                oat_parameters,
+                sensitivity["output_metric"],
+                margin_target,
+                scenarios,
+                bool(candidate_sweeps),
+            )
+            coverage["oat_coverage"] = oat_coverage
+            oat_scenarios = [oat_result["reference_scenario"]] + [
+                scenario
+                for parameter in oat_result["parameters"]
+                for scenario in (parameter["minus_scenario"], parameter["plus_scenario"])
+            ]
+            constraint_diagnostics.extend(oat_constraint_diagnostics)
+            if status == "evaluated" and (
+                oat_coverage["evaluated_oat_points"] != oat_coverage["requested_oat_points"]
+                or any(item["applicability_status"] == "applicable_with_warnings" for item in oat_scenarios)
+                or any(item["disposition"] == "incomplete" for item in oat_result["parameters"])
+            ):
+                applicability = "applicable_with_warnings"
         findings = _diagnostic_union(
-            [item for scenario in scenarios for item in scenario["applicability_findings"]]
+            [item for scenario in scenarios + oat_scenarios for item in scenario["applicability_findings"]]
             + constraint_diagnostics
+            + [item for item in oat_diagnostics if item["rule_id"] == "I4-OAT-NORMALIZED-NOT-DEFINED"]
         )
         warnings = _diagnostic_union(
-            [item for scenario in scenarios for item in scenario["execution_findings"]]
+            [item for scenario in scenarios + oat_scenarios for item in scenario["execution_findings"]]
+            + [item for item in oat_diagnostics if item["rule_id"] == "I4-OAT-INCOMPLETE"]
         )
         partial = status == "evaluated" and (
             coverage["evaluated_core_scenarios"] != coverage["requested_core_scenarios"]
             or any(item["applicability_status"] == "applicable_with_warnings" for item in scenarios)
+            or (oat_result is not None and applicability == "applicable_with_warnings")
         )
         if partial:
             warnings = _diagnostic_union(
@@ -523,15 +755,15 @@ def orchestrate_strict_1d(
                         "I4-SCENARIO-PARTIAL-COVERAGE",
                         "MODEL_EXECUTION",
                         [f"/candidate_results/{candidate_position - 1}/coverage_summary"],
-                        "An evaluated candidate has incomplete or warning-bearing requested core coverage.",
-                        "Review every explicit core scenario before relying on the candidate result.",
+                        "An evaluated candidate has incomplete or warning-bearing requested scenario coverage.",
+                        "Review every explicit core and OAT scenario before relying on the candidate result.",
                     )
                 ]
             )
         applicability_findings = _diagnostic_union(
             [
                 item
-                for scenario in scenarios
+                for scenario in scenarios + oat_scenarios
                 for item in scenario["applicability_findings"]
             ]
             + [
@@ -542,7 +774,7 @@ def orchestrate_strict_1d(
         )
         used = {
             canonical_json_bytes(item): item
-            for scenario in scenarios
+            for scenario in scenarios + oat_scenarios
             if scenario["disposition"] == "evaluated"
             for item in scenario["assumption_acknowledgements_used"]
         }
@@ -560,7 +792,7 @@ def orchestrate_strict_1d(
             "coverage_summary": coverage,
             "core_scenarios": scenarios,
             "sweep_result": sweep_result,
-            "oat_result": None,
+            "oat_result": oat_result,
             "findings": findings,
             "warnings": warnings,
         }
@@ -724,7 +956,7 @@ def build_strict_1d_engineering_evaluation_result(
     evaluation_id: str,
     implementation_git_commit: str | None = None,
 ) -> EngineeringEvaluationResult:
-    """Construct, but do not persist, the frozen I3 EER around one I4B run."""
+    """Construct, but do not persist, the frozen I3 EER around one I4 run."""
     if not isinstance(bound_plan, BoundEvaluationPlan):
         raise TypeError("bound_plan must be a BoundEvaluationPlan")
     orchestration = orchestrate_strict_1d(
@@ -763,7 +995,11 @@ def build_strict_1d_engineering_evaluation_result(
         "candidate_execution": orchestration["candidate_execution"],
         "assumptions_used": orchestration["assumptions_used"],
         "result_payload": orchestration["result_payload"],
-        "prediction_outputs": [],
+        "prediction_outputs": _prediction_outputs(
+            orchestration["result_payload"]["content"],
+            orchestration["candidate_execution"],
+            evaluation_id,
+        ),
         "findings": orchestration["findings"],
         "warnings": orchestration["warnings"],
         "confidentiality_level": problem.to_dict()["confidentiality_level"],

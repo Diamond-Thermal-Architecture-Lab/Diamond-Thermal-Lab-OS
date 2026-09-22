@@ -15,7 +15,6 @@ from labos.engineering import (
     convert_quantity,
 )
 from labos.thermal import (
-    Strict1DValidationError,
     build_strict_1d_engineering_evaluation_result,
     orchestrate_strict_1d,
 )
@@ -186,7 +185,7 @@ class ScenarioAcceptanceTests(unittest.TestCase):
         )
         self.assertTrue(all(len(item["sweep_coordinates"]) == 2 for item in scenarios))
 
-    def test_scn_03_candidate_and_core_order_without_oat(self) -> None:
+    def test_scn_03_candidate_core_and_oat_order(self) -> None:
         problem = baseline_problem()
         plan = make_plan(problem, candidates=["CND-001", "CND-002"])
         result = run(problem, plan)
@@ -230,8 +229,13 @@ class ScenarioAcceptanceTests(unittest.TestCase):
                 }
             ],
         }
-        with self.assertRaisesRegex(Strict1DValidationError, "I4B defers"):
-            run(problem, rejected)
+        oat_result = candidate_result(run(problem, rejected))["oat_result"]
+        self.assertEqual(oat_result["reference_scenario"]["scenario_id"], "SCN-C001-O000-REF")
+        self.assertEqual(
+            [oat_result["parameters"][0][side]["scenario_id"]
+             for side in ("minus_scenario", "plus_scenario")],
+            ["SCN-C001-O001-MINUS", "SCN-C001-O001-PLUS"],
+        )
 
     def test_scn_04_nonphysical_override_is_retained_invalid(self) -> None:
         problem = baseline_problem()
@@ -802,7 +806,10 @@ class EERIntegrationTests(unittest.TestCase):
             self.assertEqual(value["epr_file_sha256"], bound.epr_file_sha256)
             self.assertEqual(value["epr_reference"], bound.epr_reference)
             self.assertEqual(value["execution_outcome"], "completed")
-            self.assertEqual(value["prediction_outputs"], [])
+            self.assertEqual(
+                [item["output_id"] for item in value["prediction_outputs"]],
+                [f"EER-001-OUT-{index:03d}" for index in range(1, 7)],
+            )
             self.assertEqual(value["findings"], value["result_payload"]["content"]["findings"])
             self.assertEqual(value["warnings"], value["result_payload"]["content"]["warnings"])
 
