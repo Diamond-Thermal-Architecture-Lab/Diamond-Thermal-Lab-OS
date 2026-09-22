@@ -196,7 +196,18 @@ def _constraint_results(
         limit = None
         margin = None
         status = "not_evaluable"
-        if scenario["disposition"] == "evaluated" and supported:
+        if not supported:
+            finding_ids = ["I4-CNS-NOT-EVALUABLE"]
+            diagnostics.append(
+                _diagnostic(
+                    "I4-CNS-NOT-EVALUABLE",
+                    "MODEL_CONSTRAINT",
+                    [constraint["target_path"]],
+                    "The applicable constraint is outside strict-1D machine-evaluation semantics.",
+                    "Review the constraint without treating it as a computed pass or fail.",
+                )
+            )
+        elif scenario["disposition"] == "evaluated":
             threshold = _quantity_from_envelope(
                 constraint["threshold"],
                 f"/constraints/{constraint['constraint_id']}/threshold",
@@ -231,17 +242,6 @@ def _constraint_results(
                 margin = _result_quantity(
                     signed_margin, QuantityKind.TEMPERATURE_DIFFERENCE, "K"
                 )
-        elif scenario["disposition"] == "evaluated":
-            finding_ids = ["I4-CNS-NOT-EVALUABLE"]
-            diagnostics.append(
-                _diagnostic(
-                    "I4-CNS-NOT-EVALUABLE",
-                    "MODEL_CONSTRAINT",
-                    [constraint["target_path"]],
-                    "The applicable constraint is outside strict-1D machine-evaluation semantics.",
-                    "Review the constraint without treating it as a computed pass or fail.",
-                )
-            )
         results.append(
             {
                 "constraint_id": constraint["constraint_id"],

@@ -26,6 +26,7 @@ from tests.test_m16a_strict_1d_kernel import (
     envelope,
     plan_for,
 )
+from tests.test_m16a_epr_schema import missing_envelope
 
 
 def quantity(kind: QuantityKind, value: str, unit: str) -> dict:
@@ -604,6 +605,45 @@ class ConstraintAcceptanceTests(unittest.TestCase):
             "/constraints/0/threshold",
             [item["field_path"] for item in scenario["consumed_input_paths"]],
         )
+
+    def test_cns_02_intrinsic_finding_is_independent_of_scenario_disposition(self) -> None:
+        sweep = grid(
+            "SWP-001", "CND-001", "/geometry/layers/1/footprint_area",
+            QuantityKind.AREA, ["9"], "mm^2",
+        )
+        for fixture in ("review_only", "missing_threshold", "machine_evaluable"):
+            with self.subTest(fixture=fixture):
+                problem = baseline_problem()
+                if fixture == "review_only":
+                    add_constraint(problem, operator="review_only", disposition="review_required")
+                    problem["constraints"][0]["threshold"] = None
+                    _restamp(problem)
+                else:
+                    add_constraint(problem)
+                    if fixture == "missing_threshold":
+                        problem["constraints"][0]["threshold"] = missing_envelope(
+                            QuantityKind.ABSOLUTE_TEMPERATURE, "K"
+                        )
+                        problem["compilation"]["outcome"] = "HOLD_FOR_INPUT"
+                        _restamp(problem)
+                result = run(problem, make_plan(problem, sweeps=[sweep]))
+                candidate = candidate_result(result)
+                scenario = candidate["core_scenarios"][0]
+                constraint = scenario["constraint_results"][0]
+                self.assertEqual(scenario["disposition"], "not_applicable")
+                self.assertEqual(constraint["status"], "not_evaluable")
+                self.assertIsNone(constraint["evaluated_quantity"])
+                self.assertIsNone(constraint["limit"])
+                self.assertIsNone(constraint["margin"])
+                expected_ids = (
+                    [] if fixture == "machine_evaluable" else ["I4-CNS-NOT-EVALUABLE"]
+                )
+                self.assertEqual(constraint["finding_ids"], expected_ids)
+                for findings in (candidate["findings"], result["result_payload"]["content"]["findings"]):
+                    self.assertEqual(
+                        "I4-CNS-NOT-EVALUABLE" in {item["rule_id"] for item in findings},
+                        bool(expected_ids),
+                    )
 
     def test_cns_03_temperature_margin_and_assumed_threshold_ack_boundary(self) -> None:
         problem = baseline_problem()
