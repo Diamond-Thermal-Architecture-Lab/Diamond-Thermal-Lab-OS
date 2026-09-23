@@ -366,7 +366,11 @@ def _execute_oat(
                 )
                 if any(
                     field_path in finding["field_paths"]
-                    for finding in _numeric_precondition_findings(problem, detached)
+                    for finding in _numeric_precondition_findings(
+                        problem,
+                        detached,
+                        additional_candidate_paths=(field_path,),
+                    )
                 ):
                     invalid_paths.append(field_path)
             record = _evaluate_strict_1d_scenario(
@@ -690,7 +694,11 @@ def orchestrate_strict_1d(
                     }
                 )
                 override_paths.append(path)
-            numerical_findings = _numeric_precondition_findings(problem, detached)
+            numerical_findings = _numeric_precondition_findings(
+                problem,
+                detached,
+                additional_candidate_paths=override_paths,
+            )
             invalid_paths = sorted(
                 {
                     path

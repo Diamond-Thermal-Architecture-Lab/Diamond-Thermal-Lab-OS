@@ -550,6 +550,64 @@ class OATAcceptanceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "non-null numeric physical value"):
                 bind_evaluation_plan(case, EvaluationPlan.from_dict(missing_plan))
 
+    def test_oat_only_nonphysical_conductivity_points_are_invalid(self) -> None:
+        for minus_value in ("0", "-100"):
+            with self.subTest(minus_value=minus_value):
+                problem = add_unused_oat_property(baseline_problem(), "provided")
+                plan = oat_plan(problem, "total_thermal_resistance", [
+                    oat_parameter(
+                        OAT_ONLY_PROPERTY,
+                        QuantityKind.THERMAL_CONDUCTIVITY,
+                        minus_value,
+                        "1400",
+                        "W/(m*K)",
+                    ),
+                ])
+                result = run(problem, plan)
+                candidate = first_candidate(result)
+                parameter = candidate["oat_result"]["parameters"][0]
+                minus = parameter["minus_scenario"]
+                plus = parameter["plus_scenario"]
+
+                self.assertEqual(candidate["core_scenarios"][0]["disposition"], "evaluated")
+                self.assertEqual(minus["disposition"], "invalid")
+                self.assertIsNone(minus["numerical_result"])
+                self.assertEqual(plus["disposition"], "evaluated")
+                self.assertEqual(parameter["disposition"], "incomplete")
+                self.assertIsNone(parameter["dimensional_derivative"])
+                self.assertIsNone(parameter["normalized_sensitivity"])
+                self.assertEqual(parameter["finding_ids"], ["I4-OAT-INCOMPLETE"])
+                self.assertIn(
+                    "I4-SCENARIO-INVALID-OVERRIDE", ids(minus["execution_findings"])
+                )
+                self.assertEqual(minus["input_overrides"][0]["field_path"], OAT_ONLY_PROPERTY)
+                self.assertEqual(minus["input_overrides"][0]["value"]["value"], minus_value)
+                self.assertIn(
+                    OAT_ONLY_PROPERTY,
+                    [item["field_path"] for item in minus["consumed_input_paths"]],
+                )
+                execution = result["candidate_execution"][0]
+                self.assertEqual(
+                    (
+                        execution["execution_status"],
+                        execution["result_presence"],
+                        execution["applicability_status"],
+                    ),
+                    ("evaluated", True, "applicable_with_warnings"),
+                )
+                self.assertIn("I4-OAT-INCOMPLETE", ids(result["warnings"]))
+                self.assertIn("I4-SCENARIO-PARTIAL-COVERAGE", ids(result["warnings"]))
+                with tempfile.TemporaryDirectory() as temporary:
+                    case = Path(temporary) / problem["case_id"]
+                    epr_dir = case / "engineering" / "problems"
+                    epr_dir.mkdir(parents=True)
+                    (epr_dir / "EPR-001.json").write_bytes(canonical_json_bytes(problem))
+                    bound = bind_evaluation_plan(case, EvaluationPlan.from_dict(plan))
+                    eer = build_strict_1d_engineering_evaluation_result(
+                        bound, "EER-001"
+                    ).to_dict()
+                    self.assertEqual(len(eer["prediction_outputs"]), 3)
+
 
 class OutputIdentityTests(unittest.TestCase):
     def test_output_order_pointers_and_determinism(self) -> None:

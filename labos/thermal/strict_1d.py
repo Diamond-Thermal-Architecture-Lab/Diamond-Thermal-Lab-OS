@@ -1036,8 +1036,78 @@ def _applicability_findings(
     return _deduplicate_diagnostics(findings)
 
 
+def _candidate_numeric_preconditions(
+    candidate: Mapping[str, Any],
+) -> dict[str, tuple[Mapping[str, Any], str]]:
+    """Return exact candidate-field numerical domains without kind inference."""
+    conditions: dict[str, tuple[Mapping[str, Any], str]] = {}
+
+    def add(path: str, envelope: Mapping[str, Any], domain: str) -> None:
+        conditions[path] = (envelope, domain)
+
+    for index, layer in enumerate(candidate["geometry"]["layers"]):
+        add(f"/geometry/layers/{index}/thickness", layer["thickness"], "positive")
+        add(f"/geometry/layers/{index}/footprint_area", layer["footprint_area"], "positive")
+        for dimension_index, dimension in enumerate(layer["footprint_dimensions"]):
+            add(
+                f"/geometry/layers/{index}/footprint_dimensions/{dimension_index}",
+                dimension,
+                "positive",
+            )
+    for material_index, material in enumerate(candidate["materials"]):
+        for property_index, prop in enumerate(material["thermal_properties"]):
+            add(
+                f"/materials/{material_index}/thermal_properties/{property_index}/thermal_conductivity",
+                prop["thermal_conductivity"],
+                "positive",
+            )
+    for index, interface in enumerate(candidate["interfaces"]):
+        add(f"/interfaces/{index}/effective_area", interface["effective_area"], "positive")
+        if interface["representation_type"] in {"area_normalized_resistance", "ideal_zero"}:
+            add(f"/interfaces/{index}/value", interface["value"], "nonnegative")
+    downstream = candidate["boundary_conditions"]["downstream"]
+    representation = downstream["representation_type"]
+    if representation == "fixed_temperature":
+        add(
+            "/boundary_conditions/downstream/reference_temperature",
+            downstream["reference_temperature"],
+            "nonnegative",
+        )
+    elif representation == "absolute_resistance":
+        add(
+            "/boundary_conditions/downstream/resistance",
+            downstream["resistance"],
+            "nonnegative",
+        )
+        add(
+            "/boundary_conditions/downstream/reference_temperature",
+            downstream["reference_temperature"],
+            "nonnegative",
+        )
+    elif representation == "direct_convection":
+        add(
+            "/boundary_conditions/downstream/heat_transfer_coefficient",
+            downstream["heat_transfer_coefficient"],
+            "positive",
+        )
+        add(
+            "/boundary_conditions/downstream/boundary_area",
+            downstream["boundary_area"],
+            "positive",
+        )
+        add(
+            "/boundary_conditions/downstream/ambient_temperature",
+            downstream["ambient_temperature"],
+            "nonnegative",
+        )
+    return conditions
+
+
 def _numeric_precondition_findings(
-    problem: Mapping[str, Any], candidate: Mapping[str, Any]
+    problem: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+    *,
+    additional_candidate_paths: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     failures: list[str] = []
 
@@ -1057,20 +1127,26 @@ def _numeric_precondition_findings(
         positive(source["heated_area"], "/heat_sources/0/heated_area")
         for index, dimension in enumerate(source["footprint"]["dimensions"]):
             positive(dimension, f"/heat_sources/0/footprint/dimensions/{index}")
+    candidate_paths: list[str] = []
     for index, layer in enumerate(candidate["geometry"]["layers"]):
-        positive(layer["thickness"], f"/geometry/layers/{index}/thickness")
-        positive(layer["footprint_area"], f"/geometry/layers/{index}/footprint_area")
-        for dimension_index, dimension in enumerate(layer["footprint_dimensions"]):
-            positive(dimension, f"/geometry/layers/{index}/footprint_dimensions/{dimension_index}")
+        candidate_paths.extend(
+            (
+                f"/geometry/layers/{index}/thickness",
+                f"/geometry/layers/{index}/footprint_area",
+            )
+        )
+        candidate_paths.extend(
+            f"/geometry/layers/{index}/footprint_dimensions/{dimension_index}"
+            for dimension_index, _dimension in enumerate(layer["footprint_dimensions"])
+        )
         for material_index, prop in _selected_properties(candidate, layer):
-            positive(
-                prop["thermal_conductivity"],
+            candidate_paths.append(
                 f"/materials/{material_index}/thermal_properties/{prop['index']}/thermal_conductivity",
             )
     for index, interface in enumerate(candidate["interfaces"]):
-        positive(interface["effective_area"], f"/interfaces/{index}/effective_area")
+        candidate_paths.append(f"/interfaces/{index}/effective_area")
         if interface["representation_type"] in {"area_normalized_resistance", "ideal_zero"}:
-            nonnegative(interface["value"], f"/interfaces/{index}/value")
+            candidate_paths.append(f"/interfaces/{index}/value")
     fraction = candidate["boundary_conditions"]["source_side"]["heat_flow_fraction"]
     fraction_value = _decimal_from_envelope(
         fraction, "/boundary_conditions/source_side/heat_flow_fraction"
@@ -1081,26 +1157,32 @@ def _numeric_precondition_findings(
     downstream = candidate["boundary_conditions"]["downstream"]
     representation = downstream["representation_type"]
     if representation == "fixed_temperature":
-        nonnegative(
-            downstream["reference_temperature"],
-            "/boundary_conditions/downstream/reference_temperature",
-        )
+        candidate_paths.append("/boundary_conditions/downstream/reference_temperature")
     elif representation == "absolute_resistance":
-        nonnegative(downstream["resistance"], "/boundary_conditions/downstream/resistance")
-        nonnegative(
-            downstream["reference_temperature"],
-            "/boundary_conditions/downstream/reference_temperature",
+        candidate_paths.extend(
+            (
+                "/boundary_conditions/downstream/resistance",
+                "/boundary_conditions/downstream/reference_temperature",
+            )
         )
     elif representation == "direct_convection":
-        positive(
-            downstream["heat_transfer_coefficient"],
-            "/boundary_conditions/downstream/heat_transfer_coefficient",
+        candidate_paths.extend(
+            (
+                "/boundary_conditions/downstream/heat_transfer_coefficient",
+                "/boundary_conditions/downstream/boundary_area",
+                "/boundary_conditions/downstream/ambient_temperature",
+            )
         )
-        positive(downstream["boundary_area"], "/boundary_conditions/downstream/boundary_area")
-        nonnegative(
-            downstream["ambient_temperature"],
-            "/boundary_conditions/downstream/ambient_temperature",
-        )
+    conditions = _candidate_numeric_preconditions(candidate)
+    for path in sorted(set(candidate_paths) | set(additional_candidate_paths)):
+        condition = conditions.get(path)
+        if condition is None:
+            continue
+        envelope, domain = condition
+        if domain == "positive":
+            positive(envelope, path)
+        else:
+            nonnegative(envelope, path)
     if not failures:
         return []
     return [
@@ -1426,7 +1508,20 @@ def _evaluate_strict_1d_scenario(
         _thaw(item)
         for item in (*bound_evaluation._global_binding_findings, *binding.binding_findings)
     ]
-    numerical_findings = _numeric_precondition_findings(problem_view, candidate_view)
+    numerical_findings = _numeric_precondition_findings(
+        problem_view,
+        candidate_view,
+        additional_candidate_paths=additional_paths,
+    )
+    scenario_invalid_override_paths = sorted(
+        set(invalid_override_paths)
+        | {
+            path
+            for finding in numerical_findings
+            for path in finding["field_paths"]
+            if path in set(additional_paths)
+        }
+    )
     warnings = [_thaw(item) for item in binding.evidence_warnings]
     scenario_required_acknowledgements: list[dict[str, Any]] = []
     scenario_consumed_paths: list[dict[str, Any]] = []
@@ -1477,7 +1572,7 @@ def _evaluate_strict_1d_scenario(
                 )
             )
 
-    if invalid_override_paths:
+    if scenario_invalid_override_paths:
         disposition = "invalid"
         applicability_status = "not_evaluated"
         execution_findings = _deduplicate_diagnostics(
@@ -1486,7 +1581,7 @@ def _evaluate_strict_1d_scenario(
                 _diagnostic(
                     "I4-SCENARIO-INVALID-OVERRIDE",
                     "MODEL_EXECUTION",
-                    invalid_override_paths,
+                    scenario_invalid_override_paths,
                     "An explicit scenario override violates a strict-1D numerical precondition.",
                     "Correct the explicit requested override value.",
                 )
