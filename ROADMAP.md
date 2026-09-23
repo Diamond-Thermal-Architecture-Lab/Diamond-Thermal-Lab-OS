@@ -71,13 +71,22 @@ The subsequent M14 process-history correction in [PR #35](https://github.com/Dia
 The governing pre-registration protocol is
 [`docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md`](docs/benchmarks/M15B_PRE_REGISTRATION_PROTOCOL.md)
 
-## Proposed M16A: Engineering Problem Compiler And Quantitative Thermal Core
+## M16A: Engineering Problem Compiler And Quantitative Thermal Core
 
-M16A is the next proposed quantitative engineering capability milestone. It will define a provenance-bearing Engineering Problem Representation and a deterministic, auditable first thermal core for unit normalization, steady-state 1D multilayer/TBR evaluation, candidate comparison, parameter sweeps, sensitivity, evidence gaps, and model-applicability checks. The initial vertical is a public-safe GaN/high-power device to diamond heat-spreader layer to downstream cooling path. Calculation remains separate from human review and canonical approval. See [`docs/M16A_ENGINEERING_PROBLEM_COMPILER.md`](docs/M16A_ENGINEERING_PROBLEM_COMPILER.md).
+M16A implementation is merged through [PR #53](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/53): provenance-bearing EPR, embedded Evaluation Plan/EER contracts, strict constant-area 1D evaluation, sweeps, OAT sensitivity, candidate comparison, and prediction-reality projection. Calculation remains separate from engineering validation and human approval. The verified base and remaining formal freeze/governance closeout are recorded in the [M16B task brief](docs/M16B_LECF_TASK_BRIEF.md); this roadmap update does not establish a new M16A freeze or modify its contracts. See the [M16A architecture](docs/M16A_ENGINEERING_PROBLEM_COMPILER.md).
+
+## Proposed M16B: Literature-derived Engineering Case Framework
+
+Status: proposed. LECF introduces a manual, evidence-traceable preparation path from publications to reconstructed Engineering Cases and potential Gold Candidates. It spans L1–L3 under existing L0 governance and preserves the 12-file canonical case structure, M16A contracts, and M15B frozen history. Publication credibility, engineering reconstruction, model applicability, independent validation and customer release remain separate.
+
+The proposed sequence is architecture/schema review -> separately authorized manual pilot -> review of pilot evidence and user value -> possible schema-first implementation. Target 8–12 screened studies and 2–3 deeper reconstructions across diamond and non-diamond routes, including conflicting, incomplete and excluded sources; these are workload targets, not evidence of statistical coverage. Independent quantitative validation remains a subsequent gate toward any Gold certification under a separately approved policy. No automatic promotion or certification is introduced.
+
+See the [architecture, workflow, governance and pilot proposal](docs/M16B_LITERATURE_CASE_FRAMEWORK.md) and [schema/interface proposal](docs/M16B_LECF_SCHEMA_PROPOSAL.md). Automated PDF extraction, an evidence graph and research-gap discovery remain future proposals requiring manual-pilot evidence, explicit scope and separate authorization.
 
 ## H1 Priorities
 
 - Real Gold Cases with reviewed public-safe evidence.
+- Review the proposed LECF preparation path while retaining independent quantitative validation as the Gold qualification gate.
 - Evidence and measurement objects linked to real controlled data sources.
 - Prediction-Reality learning loops with human review.
 - Explicit PR-based canonical application after human review.
@@ -88,4 +97,4 @@ M16A is the next proposed quantitative engineering capability milestone. It will
 
 ## Later Stages
 
-Future work beyond M16A may include extensions to the Engineering Problem Compiler, higher-fidelity solver and experiment adapters, Agent support, and engineering benchmarks. These remain future capabilities and must not be represented as implemented.
+Future work beyond M16A and the proposed M16B may include extensions to the Engineering Problem Compiler, higher-fidelity solver and experiment adapters, evidence-query infrastructure, Agent support, and engineering benchmarks. These remain future capabilities and must not be represented as implemented.
