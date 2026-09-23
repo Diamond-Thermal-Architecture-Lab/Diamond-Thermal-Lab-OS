@@ -376,6 +376,9 @@ def _execute_oat(
                 candidate=detached,
                 input_overrides=overrides,
                 invalid_override_paths=invalid_paths,
+                additional_consumed_numeric_paths=(
+                    () if field_path is None else (field_path,)
+                ),
             ).to_dict()
             constraints, diagnostics = _constraint_results(problem, detached, record)
             record["constraint_results"] = constraints
@@ -566,11 +569,21 @@ def orchestrate_strict_1d(
     # OAT execution and all EER identities.
     binding_plan = copy.deepcopy(plan)
     binding_plan["sensitivity_request"] = None
+    scenario_additional_numeric_paths = (
+        {}
+        if sensitivity is None
+        else {
+            sensitivity["baseline_candidate_id"]: [
+                parameter["field_path"] for parameter in sensitivity["parameters"]
+            ]
+        }
+    )
     bound = _bind_strict_1d_inputs(
         engineering_problem,
         EvaluationPlan.from_dict(binding_plan),
         allow_parameter_sweeps=True,
         include_machine_constraint_thresholds=True,
+        scenario_additional_numeric_paths=scenario_additional_numeric_paths,
     )
     candidates = {item["candidate_id"]: item for item in problem["candidates"]}
     oat_parameters: list[tuple[Mapping[str, Any], QuantifiedValue, QuantifiedValue, QuantifiedValue]] = []

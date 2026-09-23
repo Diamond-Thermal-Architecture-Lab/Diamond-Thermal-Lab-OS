@@ -40,6 +40,7 @@ from tests.test_m16a_epr_schema import missing_envelope
 
 BOUNDARY = "/boundary_conditions/downstream/resistance"
 THICKNESS = "/geometry/layers/1/thickness"
+OAT_ONLY_PROPERTY = "/materials/2/thermal_properties/0/thermal_conductivity"
 
 
 def oat_parameter(path: str, kind: QuantityKind, minus: str, plus: str, unit: str) -> dict:
@@ -74,6 +75,34 @@ def first_candidate(result: dict) -> dict:
 
 def ids(items: list[dict]) -> set[str]:
     return {item["rule_id"] for item in items}
+
+
+def add_unused_oat_property(problem: dict, status: str) -> dict:
+    """Add a public-safe numeric candidate envelope unused by every thermal layer."""
+    candidate = problem["candidates"][0]
+    candidate["materials"].append({
+        "material_id": "MAT-003",
+        "label": "Unused synthetic OAT material",
+        "material_class": "synthetic solid",
+        "anisotropy_representation": "isotropic",
+        "thermal_properties": [{
+            "property_id": "PRP-003",
+            "component": "isotropic",
+            "thermal_conductivity": envelope(
+                QuantityKind.THERMAL_CONDUCTIVITY, "1200", "W/(m*K)", status=status
+            ),
+            "temperature_basis": "Public-safe constant synthetic property.",
+            "condition_basis": "Synthetic OAT-only binding fixture.",
+        }],
+    })
+    if status == "assumed":
+        candidate["assumption_paths"] = [OAT_ONLY_PROPERTY]
+        problem["compilation"]["outcome"] = "READY_WITH_ASSUMPTIONS"
+    elif status == "evidence_required":
+        candidate["evidence_required_paths"] = [OAT_ONLY_PROPERTY]
+        problem["compilation"]["outcome"] = "HOLD_FOR_INPUT"
+    _restamp(problem)
+    return problem
 
 
 class OATAcceptanceTests(unittest.TestCase):
@@ -345,6 +374,181 @@ class OATAcceptanceTests(unittest.TestCase):
                             for parameter in oat["parameters"]
                             for item in (parameter["minus_scenario"], parameter["plus_scenario"])))
         self.assertEqual(problem["candidates"][0]["boundary_conditions"]["downstream"]["resistance"]["status"], "assumed")
+
+    def test_oat_only_assumed_path_without_ack_blocks_oat_not_core(self) -> None:
+        problem = add_unused_oat_property(baseline_problem(), "assumed")
+        plan = oat_plan(problem, "total_thermal_resistance", [
+            oat_parameter(
+                OAT_ONLY_PROPERTY,
+                QuantityKind.THERMAL_CONDUCTIVITY,
+                "1000",
+                "1400",
+                "W/(m*K)",
+            ),
+        ])
+        result = run(problem, plan)
+        candidate = first_candidate(result)
+        core = candidate["core_scenarios"][0]
+        parameter = candidate["oat_result"]["parameters"][0]
+        self.assertEqual(core["disposition"], "evaluated")
+        self.assertEqual(core["assumption_acknowledgements_used"], [])
+        self.assertNotIn(
+            OAT_ONLY_PROPERTY,
+            [item["field_path"] for item in core["consumed_input_paths"]],
+        )
+        self.assertEqual(parameter["disposition"], "incomplete")
+        for scenario in (parameter["minus_scenario"], parameter["plus_scenario"]):
+            self.assertEqual(scenario["disposition"], "blocked")
+            self.assertIsNone(scenario["numerical_result"])
+            self.assertIn("I4-BIND-ACKNOWLEDGEMENT-CLOSURE", ids(scenario["execution_findings"]))
+            self.assertIn(
+                OAT_ONLY_PROPERTY,
+                [item["field_path"] for item in scenario["consumed_input_paths"]],
+            )
+        execution = result["candidate_execution"][0]
+        self.assertEqual(
+            (execution["execution_status"], execution["applicability_status"], execution["result_presence"]),
+            ("evaluated", "applicable_with_warnings", True),
+        )
+        self.assertEqual(execution["assumption_acknowledgements_used"], [])
+        self.assertEqual(result["assumptions_used"], [])
+        self.assertIn("I4-OAT-INCOMPLETE", ids(result["warnings"]))
+        self.assertIn("I4-SCENARIO-PARTIAL-COVERAGE", ids(result["warnings"]))
+        with tempfile.TemporaryDirectory() as temporary:
+            case = Path(temporary) / problem["case_id"]
+            epr_dir = case / "engineering" / "problems"
+            epr_dir.mkdir(parents=True)
+            (epr_dir / "EPR-001.json").write_bytes(canonical_json_bytes(problem))
+            bound = bind_evaluation_plan(case, EvaluationPlan.from_dict(plan))
+            eer = build_strict_1d_engineering_evaluation_result(bound, "EER-001").to_dict()
+            self.assertEqual(len(eer["prediction_outputs"]), 3)
+            self.assertEqual(eer["assumptions_used"], [])
+
+    def test_oat_only_assumed_path_exact_ack_is_scenario_local_and_used_once(self) -> None:
+        problem = add_unused_oat_property(baseline_problem(), "assumed")
+        original_envelope = copy.deepcopy(
+            problem["candidates"][0]["materials"][2]["thermal_properties"][0]["thermal_conductivity"]
+        )
+        acknowledgement = {
+            "scope": "candidate",
+            "candidate_id": "CND-001",
+            "field_path": OAT_ONLY_PROPERTY,
+        }
+        plan = oat_plan(problem, "total_thermal_resistance", [
+            oat_parameter(
+                OAT_ONLY_PROPERTY,
+                QuantityKind.THERMAL_CONDUCTIVITY,
+                "1000",
+                "1400",
+                "W/(m*K)",
+            ),
+        ])
+        plan["assumption_acknowledgements"] = [acknowledgement]
+        result = run(problem, plan)
+        candidate = first_candidate(result)
+        core = candidate["core_scenarios"][0]
+        parameter = candidate["oat_result"]["parameters"][0]
+        self.assertEqual(core["disposition"], "evaluated")
+        self.assertEqual(core["assumption_acknowledgements_used"], [])
+        self.assertNotIn("I4-BIND-ACKNOWLEDGEMENT-CLOSURE", ids(core["execution_findings"]))
+        for scenario in (parameter["minus_scenario"], parameter["plus_scenario"]):
+            self.assertEqual(scenario["disposition"], "evaluated")
+            self.assertIn(
+                OAT_ONLY_PROPERTY,
+                [item["field_path"] for item in scenario["consumed_input_paths"]],
+            )
+            self.assertEqual(scenario["assumption_acknowledgements_used"], [acknowledgement])
+            self.assertNotIn("I4-BIND-ACKNOWLEDGEMENT-CLOSURE", ids(scenario["execution_findings"]))
+        self.assertEqual(parameter["disposition"], "complete")
+        self.assertIsNotNone(parameter["dimensional_derivative"])
+        self.assertEqual(result["candidate_execution"][0]["assumption_acknowledgements_used"], [acknowledgement])
+        self.assertEqual(result["assumptions_used"], [acknowledgement])
+        self.assertEqual(
+            problem["candidates"][0]["materials"][2]["thermal_properties"][0]["thermal_conductivity"],
+            original_envelope,
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            case = Path(temporary) / problem["case_id"]
+            epr_dir = case / "engineering" / "problems"
+            epr_dir.mkdir(parents=True)
+            (epr_dir / "EPR-001.json").write_bytes(canonical_json_bytes(problem))
+            bound = bind_evaluation_plan(case, EvaluationPlan.from_dict(plan))
+            eer = build_strict_1d_engineering_evaluation_result(bound, "EER-001").to_dict()
+            self.assertEqual(eer["assumptions_used"], [acknowledgement])
+            self.assertEqual(len(eer["prediction_outputs"]), 3)
+
+    def test_oat_only_evidence_required_warns_only_affected_scenarios(self) -> None:
+        problem = add_unused_oat_property(baseline_problem(), "evidence_required")
+        plan = oat_plan(problem, "total_thermal_resistance", [
+            oat_parameter(
+                OAT_ONLY_PROPERTY,
+                QuantityKind.THERMAL_CONDUCTIVITY,
+                "1000",
+                "1400",
+                "W/(m*K)",
+            ),
+        ])
+        result = run(problem, plan)
+        candidate = first_candidate(result)
+        core = candidate["core_scenarios"][0]
+        parameter = candidate["oat_result"]["parameters"][0]
+        self.assertEqual(core["disposition"], "evaluated")
+        self.assertEqual(core["applicability_status"], "applicable")
+        self.assertNotIn("I4-BIND-EVIDENCE-REQUIRED", ids(core["execution_findings"]))
+        for scenario in (parameter["minus_scenario"], parameter["plus_scenario"]):
+            self.assertEqual(scenario["disposition"], "evaluated")
+            self.assertEqual(scenario["applicability_status"], "applicable_with_warnings")
+            self.assertIn("I4-BIND-EVIDENCE-REQUIRED", ids(scenario["execution_findings"]))
+            self.assertEqual(scenario["assumption_acknowledgements_used"], [])
+        self.assertEqual(parameter["disposition"], "complete")
+        self.assertIsNotNone(parameter["dimensional_derivative"])
+        self.assertEqual(result["candidate_execution"][0]["execution_status"], "evaluated")
+        self.assertEqual(result["candidate_execution"][0]["applicability_status"], "applicable_with_warnings")
+        self.assertEqual(result["assumptions_used"], [])
+        self.assertIn("I4-BIND-EVIDENCE-REQUIRED", ids(candidate["warnings"]))
+
+    def test_oat_only_provided_executes_and_missing_cannot_be_repaired_by_points(self) -> None:
+        provided = add_unused_oat_property(baseline_problem(), "provided")
+        provided_plan = oat_plan(provided, "total_thermal_resistance", [
+            oat_parameter(
+                OAT_ONLY_PROPERTY,
+                QuantityKind.THERMAL_CONDUCTIVITY,
+                "1000",
+                "1400",
+                "W/(m*K)",
+            ),
+        ])
+        provided_result = run(provided, provided_plan)
+        provided_parameter = first_candidate(provided_result)["oat_result"]["parameters"][0]
+        self.assertEqual(provided_parameter["disposition"], "complete")
+        self.assertTrue(all(
+            scenario["disposition"] == "evaluated"
+            for scenario in (provided_parameter["minus_scenario"], provided_parameter["plus_scenario"])
+        ))
+        self.assertEqual(provided_result["candidate_execution"][0]["applicability_status"], "applicable")
+
+        missing = add_unused_oat_property(baseline_problem(), "provided")
+        missing["candidates"][0]["materials"][2]["thermal_properties"][0]["thermal_conductivity"] = (
+            missing_envelope(QuantityKind.THERMAL_CONDUCTIVITY, "W/(m*K)")
+        )
+        missing["compilation"]["outcome"] = "HOLD_FOR_INPUT"
+        _restamp(missing)
+        missing_plan = oat_plan(missing, "total_thermal_resistance", [
+            oat_parameter(
+                OAT_ONLY_PROPERTY,
+                QuantityKind.THERMAL_CONDUCTIVITY,
+                "1000",
+                "1400",
+                "W/(m*K)",
+            ),
+        ])
+        with tempfile.TemporaryDirectory() as temporary:
+            case = Path(temporary) / missing["case_id"]
+            epr_dir = case / "engineering" / "problems"
+            epr_dir.mkdir(parents=True)
+            (epr_dir / "EPR-001.json").write_bytes(canonical_json_bytes(missing))
+            with self.assertRaisesRegex(ValueError, "non-null numeric physical value"):
+                bind_evaluation_plan(case, EvaluationPlan.from_dict(missing_plan))
 
 
 class OutputIdentityTests(unittest.TestCase):

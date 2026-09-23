@@ -578,6 +578,8 @@ class _CandidateBinding:
     numeric_candidate_paths: frozenset[str]
     numeric_global_paths: frozenset[str]
     required_acknowledgements: tuple[Mapping[str, Any], ...]
+    supplied_candidate_acknowledgements: tuple[Mapping[str, Any], ...]
+    scenario_additional_numeric_paths: frozenset[str]
     binding_findings: tuple[Mapping[str, Any], ...]
     evidence_warnings: tuple[Mapping[str, Any], ...]
 
@@ -616,6 +618,7 @@ def _bind_strict_1d_inputs(
     *,
     allow_parameter_sweeps: bool,
     include_machine_constraint_thresholds: bool,
+    scenario_additional_numeric_paths: Mapping[str, Sequence[str]] | None = None,
 ) -> Strict1DBoundEvaluation:
     """Internal binding mode shared by I4A baseline and I4B orchestration."""
     if not isinstance(engineering_problem, EngineeringProblem):
@@ -644,6 +647,18 @@ def _bind_strict_1d_inputs(
     parents = {candidates[candidate_id]["parent_requirement_id"] for candidate_id in plan["selected_candidate_ids"]}
     if len(parents) != 1:
         _fail("/selected_candidate_ids", "selected candidates must share one parent requirement")
+    additional_paths = {
+        candidate_id: tuple(sorted(set((scenario_additional_numeric_paths or {}).get(candidate_id, ()))))
+        for candidate_id in plan["selected_candidate_ids"]
+    }
+    unknown_additional_candidates = sorted(
+        set(scenario_additional_numeric_paths or {}) - set(plan["selected_candidate_ids"])
+    )
+    if unknown_additional_candidates:
+        _fail(
+            "/scenario_additional_numeric_paths",
+            f"contains unselected candidate IDs: {unknown_additional_candidates!r}",
+        )
     objective = plan["objective"]
     if objective["metric"] == "temperature_margin":
         requirement = next(
@@ -719,6 +734,14 @@ def _bind_strict_1d_inputs(
             elif status in {"missing", "conflicting"} or _scenario_envelope_value(envelope) is None:
                 missing_paths.append(pointer)
         required.sort(key=_ack_key)
+        additional_required: dict[bytes, dict[str, Any]] = {}
+        for pointer in additional_paths[candidate_id]:
+            envelope = _resolve_pointer(candidate, pointer)
+            if not isinstance(envelope, Mapping):
+                _fail(pointer, "scenario-local numeric path does not resolve to a quantity envelope")
+            if envelope.get("status") == "assumed" and _scenario_envelope_value(envelope) is not None:
+                acknowledgement = _consumed("candidate", candidate_id, pointer)
+                additional_required[canonical_json_bytes(acknowledgement)] = acknowledgement
         pending[candidate_id] = (
             candidate,
             consumed_paths,
@@ -727,6 +750,7 @@ def _bind_strict_1d_inputs(
             required,
             evidence_warnings,
             missing_paths,
+            additional_required,
         )
 
     extra_global = sorted(
@@ -755,6 +779,7 @@ def _bind_strict_1d_inputs(
             required,
             evidence_warnings,
             missing_paths,
+            additional_required,
         ) = state
         required_candidate = {
             canonical_json_bytes(item): item for item in required if item["scope"] == "candidate"
@@ -770,7 +795,7 @@ def _bind_strict_1d_inputs(
         extra_candidate = [
             item
             for encoded, item in supplied_candidate[candidate_id].items()
-            if encoded not in required_candidate
+            if encoded not in required_candidate and encoded not in additional_required
         ]
         findings: list[dict[str, Any]] = []
         if missing_paths:
@@ -799,6 +824,11 @@ def _bind_strict_1d_inputs(
             numeric_candidate_paths=frozenset(numeric_candidate),
             numeric_global_paths=frozenset(numeric_global),
             required_acknowledgements=tuple(_freeze(item) for item in required),
+            supplied_candidate_acknowledgements=tuple(
+                _freeze(item)
+                for item in sorted(supplied_candidate[candidate_id].values(), key=_ack_key)
+            ),
+            scenario_additional_numeric_paths=frozenset(additional_paths[candidate_id]),
             binding_findings=tuple(_freeze(item) for item in _deduplicate_diagnostics(findings)),
             evidence_warnings=tuple(
                 _freeze(item) for item in _deduplicate_diagnostics(evidence_warnings)
@@ -1368,6 +1398,7 @@ def _evaluate_strict_1d_scenario(
     sweep_coordinates: Sequence[Mapping[str, Any]] = (),
     input_overrides: Sequence[Mapping[str, Any]] = (),
     invalid_override_paths: Sequence[str] = (),
+    additional_consumed_numeric_paths: Sequence[str] = (),
 ) -> Strict1DScenarioResult:
     """Execute one detached scenario through the single I4A physics primitive."""
     if not isinstance(bound_evaluation, Strict1DBoundEvaluation):
@@ -1381,6 +1412,15 @@ def _evaluate_strict_1d_scenario(
     )
     binding = bound_evaluation._candidate_bindings[candidate_id]
     candidate_view = _thaw(binding.candidate) if candidate is None else copy.deepcopy(dict(candidate))
+    additional_paths = sorted(set(additional_consumed_numeric_paths))
+    unsupported_additional = sorted(
+        set(additional_paths) - binding.scenario_additional_numeric_paths
+    )
+    if unsupported_additional:
+        _fail(
+            "/additional_consumed_numeric_paths",
+            f"contains paths not authorized during binding: {unsupported_additional!r}",
+        )
     applicability_findings = _applicability_findings(problem_view, candidate_view)
     binding_findings = [
         _thaw(item)
@@ -1388,6 +1428,54 @@ def _evaluate_strict_1d_scenario(
     ]
     numerical_findings = _numeric_precondition_findings(problem_view, candidate_view)
     warnings = [_thaw(item) for item in binding.evidence_warnings]
+    scenario_required_acknowledgements: list[dict[str, Any]] = []
+    scenario_consumed_paths: list[dict[str, Any]] = []
+    supplied_candidate = {
+        canonical_json_bytes(item): _thaw(item)
+        for item in binding.supplied_candidate_acknowledgements
+    }
+    for pointer in additional_paths:
+        if pointer in binding.numeric_candidate_paths:
+            continue
+        envelope = _resolve_pointer(candidate_view, pointer)
+        if not isinstance(envelope, Mapping):
+            _fail(pointer, "scenario-local numeric path does not resolve to a quantity envelope")
+        scenario_consumed_paths.append(_consumed("candidate", candidate_id, pointer))
+        status = envelope.get("status")
+        if status == "assumed" and _scenario_envelope_value(envelope) is not None:
+            acknowledgement = _consumed("candidate", candidate_id, pointer)
+            if canonical_json_bytes(acknowledgement) in supplied_candidate:
+                scenario_required_acknowledgements.append(acknowledgement)
+            else:
+                binding_findings.append(
+                    _diagnostic(
+                        "I4-BIND-ACKNOWLEDGEMENT-CLOSURE",
+                        "MODEL_INPUT_BINDING",
+                        [pointer],
+                        "The scenario's supplied acknowledgement set does not exactly close its additional consumed assumed inputs.",
+                        "Supply the exact candidate acknowledgement for every scenario-local assumed input.",
+                    )
+                )
+        elif status == "evidence_required" and _scenario_envelope_value(envelope) is not None:
+            warnings.append(
+                _diagnostic(
+                    "I4-BIND-EVIDENCE-REQUIRED",
+                    "MODEL_INPUT_BINDING",
+                    [pointer],
+                    "A consumed value is executable but remains evidence-required.",
+                    "Obtain applicable evidence before relying on the calculation beyond screening use.",
+                )
+            )
+        elif status in {"missing", "conflicting"} or _scenario_envelope_value(envelope) is None:
+            binding_findings.append(
+                _diagnostic(
+                    "I4-BIND-MISSING-INPUT",
+                    "MODEL_INPUT_BINDING",
+                    [pointer],
+                    "A required strict-1D input is missing, conflicting, or null.",
+                    "Supply one usable provenance-bearing value for every required input.",
+                )
+            )
 
     if invalid_override_paths:
         disposition = "invalid"
@@ -1440,7 +1528,9 @@ def _evaluate_strict_1d_scenario(
             applicability_status = "applicable_with_warnings" if warnings else "applicable"
             execution_findings = _deduplicate_diagnostics(warnings)
             acknowledgements_used = sorted(
-                [_thaw(item) for item in binding.required_acknowledgements], key=_ack_key
+                [_thaw(item) for item in binding.required_acknowledgements]
+                + scenario_required_acknowledgements,
+                key=_ack_key,
             )
 
     content = {
@@ -1453,9 +1543,10 @@ def _evaluate_strict_1d_scenario(
         "disposition": disposition,
         "applicability_status": applicability_status,
         "reused_core_scenario_id": None,
-        "consumed_input_paths": [
-            _thaw(item) for item in binding.consumed_input_paths
-        ],
+        "consumed_input_paths": sorted(
+            [_thaw(item) for item in binding.consumed_input_paths] + scenario_consumed_paths,
+            key=_path_key,
+        ),
         "assumption_acknowledgements_used": acknowledgements_used,
         "applicability_findings": applicability_findings,
         "execution_findings": execution_findings,
