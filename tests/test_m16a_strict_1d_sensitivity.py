@@ -608,6 +608,85 @@ class OATAcceptanceTests(unittest.TestCase):
                     ).to_dict()
                     self.assertEqual(len(eer["prediction_outputs"]), 3)
 
+    def test_ideal_zero_positive_oat_and_sweep_points_are_invalid(self) -> None:
+        problem = baseline_problem()
+        interface = problem["candidates"][0]["interfaces"][0]
+        interface["representation_type"] = "ideal_zero"
+        interface["value"] = envelope(
+            QuantityKind.AREA_THERMAL_RESISTANCE, "0", "m^2*K/W"
+        )
+        _restamp(problem)
+
+        plan = oat_plan(problem, "total_thermal_resistance", [
+            oat_parameter(
+                "/interfaces/0/value",
+                QuantityKind.AREA_THERMAL_RESISTANCE,
+                "0",
+                "1e-9",
+                "m^2*K/W",
+            ),
+        ])
+        result = run(problem, plan)
+        candidate = first_candidate(result)
+        core = candidate["core_scenarios"][0]
+        parameter = candidate["oat_result"]["parameters"][0]
+        minus = parameter["minus_scenario"]
+        plus = parameter["plus_scenario"]
+
+        self.assertEqual(core["disposition"], "evaluated")
+        self.assertEqual(
+            core["numerical_result"]["interface_resistance_contributions"][0]["resistance"]["value"],
+            "0",
+        )
+        self.assertEqual(minus["disposition"], "evaluated")
+        self.assertEqual(plus["disposition"], "invalid")
+        self.assertIsNone(plus["numerical_result"])
+        self.assertIn("I4-SCENARIO-INVALID-OVERRIDE", ids(plus["execution_findings"]))
+        self.assertEqual(plus["input_overrides"][0]["field_path"], "/interfaces/0/value")
+        self.assertEqual(plus["input_overrides"][0]["value"]["value"], "0.000000001")
+        self.assertIn(
+            "/interfaces/0/value",
+            [item["field_path"] for item in plus["consumed_input_paths"]],
+        )
+        self.assertEqual(parameter["disposition"], "incomplete")
+        self.assertIsNone(parameter["dimensional_derivative"])
+        self.assertIsNone(parameter["normalized_sensitivity"])
+        self.assertEqual(parameter["finding_ids"], ["I4-OAT-INCOMPLETE"])
+        self.assertEqual(
+            (
+                result["candidate_execution"][0]["execution_status"],
+                result["candidate_execution"][0]["result_presence"],
+                result["candidate_execution"][0]["applicability_status"],
+            ),
+            ("evaluated", True, "applicable_with_warnings"),
+        )
+        self.assertIn("I4-OAT-INCOMPLETE", ids(result["warnings"]))
+        self.assertIn("I4-SCENARIO-PARTIAL-COVERAGE", ids(result["warnings"]))
+
+        sweep = grid(
+            "SWP-001",
+            "CND-001",
+            "/interfaces/0/value",
+            QuantityKind.AREA_THERMAL_RESISTANCE,
+            ["1e-9"],
+            "m^2*K/W",
+        )
+        sweep_scenario = first_candidate(
+            run(problem, make_plan(problem, sweeps=[sweep]))
+        )["core_scenarios"][0]
+        self.assertEqual(sweep_scenario["disposition"], "invalid")
+        self.assertIsNone(sweep_scenario["numerical_result"])
+        self.assertIn(
+            "I4-SCENARIO-INVALID-OVERRIDE",
+            ids(sweep_scenario["execution_findings"]),
+        )
+        self.assertEqual(
+            sweep_scenario["input_overrides"][0]["field_path"], "/interfaces/0/value"
+        )
+        self.assertEqual(
+            sweep_scenario["input_overrides"][0]["value"]["value"], "0.000000001"
+        )
+
 
 class OutputIdentityTests(unittest.TestCase):
     def test_output_order_pointers_and_determinism(self) -> None:

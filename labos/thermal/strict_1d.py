@@ -1063,8 +1063,10 @@ def _candidate_numeric_preconditions(
             )
     for index, interface in enumerate(candidate["interfaces"]):
         add(f"/interfaces/{index}/effective_area", interface["effective_area"], "positive")
-        if interface["representation_type"] in {"area_normalized_resistance", "ideal_zero"}:
+        if interface["representation_type"] == "area_normalized_resistance":
             add(f"/interfaces/{index}/value", interface["value"], "nonnegative")
+        elif interface["representation_type"] == "ideal_zero":
+            add(f"/interfaces/{index}/value", interface["value"], "exact_zero")
     downstream = candidate["boundary_conditions"]["downstream"]
     representation = downstream["representation_type"]
     if representation == "fixed_temperature":
@@ -1119,6 +1121,11 @@ def _numeric_precondition_findings(
     def nonnegative(envelope: Mapping[str, Any], path: str) -> None:
         value = _decimal_from_envelope(envelope, path)
         if value is not None and value < 0:
+            failures.append(path)
+
+    def exact_zero(envelope: Mapping[str, Any], path: str) -> None:
+        value = _decimal_from_envelope(envelope, path)
+        if value is not None and value != 0:
             failures.append(path)
 
     source = problem["heat_sources"][0] if len(problem["heat_sources"]) == 1 else None
@@ -1181,8 +1188,12 @@ def _numeric_precondition_findings(
         envelope, domain = condition
         if domain == "positive":
             positive(envelope, path)
-        else:
+        elif domain == "nonnegative":
             nonnegative(envelope, path)
+        elif domain == "exact_zero":
+            exact_zero(envelope, path)
+        else:
+            raise AssertionError(f"unsupported strict-1D numerical domain: {domain}")
     if not failures:
         return []
     return [
