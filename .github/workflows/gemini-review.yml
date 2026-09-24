@@ -1,0 +1,67 @@
+name: Gemini PR Code Review
+
+# 当有人发起 Pull Request (合并请求) 时自动触发
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  gemini-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      # 1. 拉取仓库代码
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. 配置 Python 环境
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3. 安装依赖库
+      - name: Install dependencies
+        run: |
+          pip install google-genai PyGithub
+
+      # 4. 调用 Gemini 进行代码审查并自动写下评论
+      - name: Run Gemini Review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -c "
+          import os, json
+          from google import genai
+          from github import Github
+
+          # 初始化 Gemini 与 GitHub 客户端
+          ai = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+          gh = Github(os.environ['GITHUB_TOKEN'])
+
+          # 读取 GitHub 传入的事件数据
+          with open(os.environ['GITHUB_EVENT_PATH']) as f:
+              event = json.load(f)
+
+          repo_name = event['repository']['full_name']
+          pr_num = event['pull_request']['number']
+
+          repo = gh.get_repo(repo_name)
+          pr = repo.get_pull(pr_num)
+
+          # 获取本次变动的文件名列表
+          files_changed = [f.filename for f in pr.get_files()]
+
+          prompt = f'你是一个专业的高级代码审查员。请对以下 PR 进行审查并给出改进建议：修改的文件包括：{files_changed}。请指出潜在风险并用中文简要总结。'
+          response = ai.models.generate_content(
+              model='gemini-2.5-flash',
+              contents=prompt
+          )
+
+          # 在 PR 评论区自动发表 Gemini 的审查意见
+          pr.create_issue_comment(f'🤖 **Gemini 自动代码审查建议：**\n\n{response.text}')
+          "
