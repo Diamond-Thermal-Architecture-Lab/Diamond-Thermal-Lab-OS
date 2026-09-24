@@ -50,7 +50,9 @@ python scripts/labos_case.py new-prediction-reality-record cases/example-case/ -
 python scripts/labos_case.py evidence-summary cases/example-case/ --json
 ```
 
-Implemented today: deterministic templates, structural validation, controlled references, exact-unit comparison, and read-only summaries. Future targets include Gold Cases, solver and experiment adapters, an Engineering Problem Compiler, and evidence-graph capabilities; they are not implemented here.
+Implemented today: deterministic templates, structural validation, controlled references, exact-unit comparison, read-only summaries, and the M16A EPR/Evaluation Plan/EER quantitative chain through strict constant-area 1D evaluation and prediction-reality projection. M16A implementation is merged through [PR #53](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/53); formal freeze/governance closeout remains separate. Calculation does not establish engineering validation or approval. Gold certification, higher-fidelity solver and experiment adapters, and evidence-graph capabilities remain future work.
+
+The proposed [M16B Literature-derived Engineering Case Framework](docs/M16B_LITERATURE_CASE_FRAMEWORK.md) adds a reviewed literature-to-case preparation path and manual pilot. It is a documentation proposal; literature-derived data do not automatically become engineering truth or certified Gold Cases.
 
 ## Reality-Calibrated Thermomechanical Triage
 
@@ -150,6 +152,8 @@ CI runs local no-API repository checks on pull requests to `main` and pushes to 
 
 - [Lab OS](LAB_OS.md)
 - [Roadmap](ROADMAP.md)
+- [Proposed M16B LECF architecture and pilot](docs/M16B_LITERATURE_CASE_FRAMEWORK.md)
+- [Proposed M16B LECF schemas and interfaces](docs/M16B_LECF_SCHEMA_PROPOSAL.md)
 - [Contributing](CONTRIBUTING.md)
 - [MVP Execution Plan](docs/MVP_EXECUTION_PLAN.md)
 - [Case Workflow](docs/CASE_WORKFLOW.md)
