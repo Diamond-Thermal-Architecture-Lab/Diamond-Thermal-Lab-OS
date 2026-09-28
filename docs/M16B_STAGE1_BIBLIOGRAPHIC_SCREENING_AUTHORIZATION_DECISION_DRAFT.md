@@ -70,10 +70,10 @@ The activities below are proposed, not presently permitted.
 | ID | Candidate activity | Named responsibility | Required record |
 | --- | --- | --- | --- |
 | A1 | Freeze approved search questions, strings, filters, date/language bounds and interface allow-list before the first query | Daniel approves scope; Shuo registers it | Versioned search-boundary entry |
-| A2 | Manually submit frozen queries only to approved interfaces that expose public bibliographic metadata under reviewed access terms | Shuo performs; Daniel owns scope compliance | Query, interface, timestamp, filters and result count |
+| A2 | Manually submit frozen queries only to approved interfaces that expose public bibliographic metadata under reviewed access terms; record an interface-reported result count or, if unavailable, a clearly labelled manual metadata-row count | Shuo performs; Daniel owns scope compliance | Query, interface, timestamp, filters, count method and result count |
 | A3 | Record only approved minimal metadata for each returned hit | Shuo | Hit ID, query ID, rank/page, allowed fields and capture timestamp |
 | A4 | Apply only the four Stage 1 states defined in Section 3, with a concise metadata-level reason | Shuo; Daniel resolves scope ambiguity | State, reason and actor/date |
-| A5 | Mark exact-identifier duplicates and retain unresolved identity conflicts without inferring dataset-family sameness | Shuo | Compared identifiers and `exact_duplicate` or `unresolved_duplicate` |
+| A5 | Compare exact literal bibliographic identifiers, mark exact-identifier duplicates and retain every non-exact identity conflict as unresolved without fuzzy matching or dataset-family inference | Shuo | Compared identifiers, comparison method and `exact_duplicate` or `unresolved_duplicate` |
 | A6 | Preserve zero-result queries, inaccessible results, conflicting metadata, exclusions and holds as negative or incomplete search evidence | Shuo | Outcome and reason; no source-content substitute |
 | A7 | Stop the affected activity immediately when a Section 8 condition occurs and notify the project lead | Shuo stops and reports; Daniel owns disposition | Stop-event entry and follow-up status |
 | A8 | Perform project-lead review of log completeness and continued scope fitness without converting hits into selected sources | Daniel | Dated review note and any narrower boundary |
@@ -97,7 +97,7 @@ No Stage 1 independence conclusion has been made. Shuo is both the proposed inde
 
 Choose and document one of these models:
 
-- **I1 — recommended:** Shuo remains registrar; a different named human performs the independent authorization review and any later independent log review.
+- **I1:** Shuo remains registrar; a different named human performs the independent authorization review and any later independent log review.
 - **I2:** Shuo remains the independent authorization reviewer; a different named human becomes registrar before authorization.
 - **I3:** Shuo performs a pre-start scope review and later acts as registrar, but the decision does not claim Shuo is operationally independent; a different named human gives the final authorization and reviews Stage 1 records.
 
@@ -116,7 +116,7 @@ Daniel is accountable for keeping these activities outside the decision scope. S
 | P5 | Making source/dataset-family lineage assertions beyond exact bibliographic-identifier duplicate flags | Daniel prevents; Shuo records identity as unresolved |
 | P6 | Reconstructing a study, model, geometry, boundary condition, parameter set or engineering question | Daniel prevents; Shuo does not proceed |
 | P7 | Creating or modifying a case, EPR, Plan, Manifest, EER, LECF extraction/reconstruction record or validation record | Daniel prevents; Shuo does not proceed |
-| P8 | Running a kernel, solver, script, calculation, comparison, simulation, validation execution or measurement | Daniel prevents; Shuo does not proceed |
+| P8 | Running a kernel, solver or script for source-content or engineering calculation; performing a technical comparison, simulation, validation execution or measurement. This does not prohibit the interface-reported or clearly labelled manual metadata counts in A2 or the exact literal identifier equality check in A5; any automated tooling, scraping or API use remains subject to P12 | Daniel prevents; Shuo does not proceed beyond A2/A5 metadata administration |
 | P9 | Establishing or claiming blindness, outcome independence, dataset independence or validation independence | Daniel prevents; Shuo makes no such claim |
 | P10 | Creating, nominating, reviewing or certifying Gold; promoting claims or engineering memory | Daniel prevents; Shuo does not proceed |
 | P11 | Producing customer-facing conclusions, performance claims, specifications or release decisions | Daniel prevents; Shuo does not proceed |
@@ -139,6 +139,7 @@ The following fields remain `pending`; therefore Stage 1 remains not authorized.
 | Document types | `pending` | Included/excluded publication types at metadata level |
 | Minimal metadata allow-list | `pending` | Exact fields; default excludes abstracts and keywords |
 | Duplicate rule | `pending` | Exact identifiers only; non-exact relationships remain unresolved |
+| Query-batch definition | `pending` | Exact grouping unit and closure rule used for cadence option C1; it must make the first, second and later batches unambiguous before authorization |
 | Search stopping rule | `pending` | Query/run/time or saturation rule that is not a source-selection quota |
 | Operational log path | `pending` | Exact approved location; no source bytes or content |
 | Log format and required columns | `pending` | Append-only, reviewable and versioned representation |
@@ -170,19 +171,19 @@ On stop: cease new queries and metadata classification, preserve the approved lo
 
 ## 9. Choices Required From the Owner
 
-The recommended choices are designed to keep Stage 1 narrow. No choice is made merely by appearing in this draft.
+These choices are presented for human decision. No option is selected, approved or made effective merely by appearing in this draft.
 
-| Topic | Options | Recommendation |
+| Topic | Options | Draft status or constraint |
 | --- | --- | --- |
-| Independence model | I1, I2 or I3 from Section 5 | **I1**: Shuo as registrar; different independent reviewer |
-| Interface scope | S1: exact allow-list of public/no-account bibliographic interfaces; S2: S1 plus named licensed indexes after terms review; S3: named custom set | **S1** for the first authorization |
-| Metadata scope | M1: title/authors/venue/year/type/language/ID/result URL only; M2: M1 plus abstract/keywords after separate terms review; M3: custom allow-list | **M1**; M2 would require revising the current content exclusion |
-| Route scope | R1: neutral diamond and non-diamond terms; R2: GaN-on-diamond only with documented bias limitation; R3: custom bounded comparison | **R1** |
-| Date range | D1: no lower bound through the effective date; D2: fixed recent-year window; D3: custom dates | **D1**, with result-volume stop rule |
-| Language scope | L1: English metadata only; L2: named additional languages with a qualified registrar; L3: all returned languages but untranslated items held | **L1** unless named capability supports L2 |
-| Log storage | G1: version-controlled public-safe repository log; G2: approved access-controlled external log with repository hash/summary; G3: dual record with defined authority | **G1** if all fields are public-safe; otherwise **G2** |
-| Post-expiry handling | E1: freeze read-only for a defined retention period; E2: archive in approved storage; E3: reviewed deletion with a tombstone record | **E1**, retention period `pending` |
-| Review cadence | C1: review after every query batch; C2: weekly; C3: fixed hit-count intervals | **C1** for the first two batches, then reassess |
+| Independence model | I1, I2 or I3 from Section 5 | `pending`; no reviewer/registrar arrangement is selected |
+| Interface scope | S1: exact allow-list of public/no-account bibliographic interfaces; S2: S1 plus named licensed indexes after terms review; S3: named custom set | `pending`; no interface or access method is selected |
+| Metadata scope | M1: title/authors/venue/year/type/language/ID/result URL only; M2: M1 plus abstract/keywords after separate terms review; M3: custom allow-list | `pending`; M2 would require revising the current content exclusion |
+| Route scope | R1: neutral diamond and non-diamond terms; R2: GaN-on-diamond only with documented bias limitation; R3: custom bounded comparison | `pending` |
+| Date range | D1: no lower bound through the effective date; D2: fixed recent-year window; D3: custom dates | `pending`; no date range is selected |
+| Language scope | L1: English metadata only; L2: named additional languages with a qualified registrar; L3: all returned languages but untranslated items held | `pending` |
+| Log storage | G1: version-controlled public-safe repository log; G2: approved access-controlled external log with repository hash/summary; G3: dual record with defined authority | `pending`; no storage location is selected |
+| Post-expiry handling | E1: freeze read-only for a defined retention period; E2: archive in approved storage; E3: reviewed deletion with a tombstone record | `pending` |
+| Review cadence | C1: review after each query batch; C2: weekly; C3: fixed hit-count intervals | `pending`. If humans select C1, each of the first two batches must be reviewed before the next begins; after the second batch, the default remains review after every batch unless an exact human-approved cadence amendment is effective before the next batch |
 
 ## 10. Preconditions for a Later Authorization Record
 
