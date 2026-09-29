@@ -21,17 +21,17 @@ This draft is stacked on the exact reviewed head of PR #56. It does not update, 
 | PR #56 human review account | Account and review activity verified; person/account linkage remains user-provided and awaits direct confirmation | [`@shuo9917Dang`, review `5336867319`](https://github.com/Diamond-Thermal-Architecture-Lab/Diamond-Thermal-Lab-OS/pull/56#pullrequestreview-5336867319), submitted 2026-09-28 against the fixed head |
 | PR #56 proposal disposition | Verified | **ACCEPT PROPOSAL** |
 | PR #56 actual-activity disposition | Verified | **NOT AUTHORIZED** |
-| Proposed project lead | User-provided name; the named person's role acceptance, organizational decision authority and final signing evidence are `pending` | Daniel momond |
-| Stage 1 registrar | User-reported role acceptance; account existence and PR #56 review activity are verified, while the named person's direct confirmation and person/account identity check are `pending` | Shuo; user identifies the existing review account as `@shuo9917Dang` |
-| Proposed independence arrangement | User-provided proposal only; not selected, approved or effective | I1: Shuo as registrar and a different named human as independent authorization reviewer |
-| Proposed independent authorization reviewer | User-provided name and account; personal role acceptance, exact-revision independence and conflict statement are `pending` | Ashlly Cole; user-provided account `@AshllyCole1001`. A public read-only GitHub API check on 2026-09-29 returned `404 Not Found`, so the account remains unverified here |
-| Proposed rights/access owner | User-provided name; role acceptance, actual authority and executable access plan are `pending` | Joe Cole |
-| Proposed log custodian / storage administrator | User-provided name; role acceptance, actual permissions and executable storage plan are `pending` | Daisey Dan |
+| Proposed project lead | User reports the identity, appointment and decision permission confirmed and authorized; the named person's direct role acceptance, external organizational-authority evidence and final signing evidence are `pending` | Daniel momond |
+| Stage 1 registrar | User reports the identity, role acceptance and permission confirmed and authorized; account existence and PR #56 review activity are verified, while the named person's direct confirmation and person/account identity check are `pending` | Shuo; user identifies the existing review account as `@shuo9917Dang` |
+| Proposed independence arrangement | User-selected and owner-authorized arrangement; not an independent authorization or an effective operational permission | I1: Shuo as registrar and a different named human as independent authorization reviewer |
+| Proposed independent authorization reviewer | User reports the identity, appointment and permission confirmed and authorized; personal role acceptance, exact-revision independence and conflict statement are `pending` | Ashlly Cole; user identifies `@debpalash`. Account existence was verified by public read-only GitHub API on 2026-09-29; person/account linkage remains user-provided and awaits direct confirmation |
+| Proposed rights/access owner | User reports the identity, appointment and permission confirmed and authorized; direct role acceptance and evidence of actual authority plus an executable access plan are `pending` | Joe Cole |
+| Proposed log custodian / storage administrator | User reports the identity, appointment and permission confirmed and authorized; direct role acceptance and evidence of actual permissions plus an executable storage plan are `pending` | Daisey Dan |
 | Proposed authorization duration | User reports a joint proposal by the user and Daniel momond; Daniel momond's own confirmation remains `pending` | Six calendar months in `Asia/Tokyo`; 2026-09-29 is the proposed earliest start date, not an authorization or actual start; exact `effective_at` and `expires_at` are `pending` |
 
 The PR #56 review accepted the task brief as a suitable proposal only. It expressly did not authorize pilot activity. Its independence statement concerned review of PR #56 and must not be treated as a prospective independence attestation for this draft or for Stage 1 operations.
 
-The named people, accounts, proposed I1 arrangement, duration and earliest start date supplied outside the repository are recorded only at their stated evidence level. This draft does not invent supporting evidence, signatures, organizational authority, account linkage or personal acceptance of appointment.
+On 2026-09-29, the user further reported that the other named identities and permissions are confirmed and authorized and accepted the recommended evidence-completion path. This is recorded as user-provided owner-level direction, not as the named people's personal attestations, external organizational-authority evidence, an independent exact-revision authorization or a start notice. The named people, accounts, I1 arrangement, duration and earliest start date supplied outside the repository remain recorded only at their stated evidence level. This draft does not invent supporting evidence, signatures, account linkage or personal acceptance of appointment.
 
 ## 2. Decision Requested and Current Disposition
 
@@ -87,18 +87,18 @@ No quantitative target is an acceptance threshold. The PR #56 planning estimate 
 
 | Role | Named person | Current status | Responsibility and limitation |
 | --- | --- | --- | --- |
-| Project lead | Daniel momond | User-provided proposed appointment; personal acceptance, organizational decision authority and final signing evidence `pending` | If validly appointed, owns scope, resources, stop disposition and expiry; cannot replace independent authorization review |
-| Stage 1 registrar | Shuo (`@shuo9917Dang`, account linkage user-provided) | User reports acceptance; direct personal confirmation and person/account identity check `pending` | If confirmed and authorized, runs approved metadata searches and maintains the append-only log; cannot independently adjudicate or audit their own registration work |
-| Independent authorization reviewer | Ashlly Cole (`@AshllyCole1001`, user-provided and unverified) | Proposed under I1 only; personal acceptance, exact-revision independence and conflict statement `pending` | May independently authorize only after eligibility and all attestations are recorded for the final PR #57 revision; no authorization is complete now |
-| Rights/access owner for search interfaces | Joe Cole | User-provided proposed appointment; personal acceptance, actual authority and executable access plan `pending` | If confirmed, verifies access terms and allowed metadata handling before an interface is used |
-| Log custodian / storage administrator | Daisey Dan | User-provided proposed appointment; personal acceptance, actual permissions and executable storage plan `pending` | If confirmed, implements approved storage, access, retention and expiry controls |
+| Project lead | Daniel momond | Identity, appointment and decision permission user-confirmed and owner-authorized; direct personal acceptance, external organizational-authority evidence and final signing evidence `pending` | If validly appointed, owns scope, resources, stop disposition and expiry; cannot replace independent authorization review |
+| Stage 1 registrar | Shuo (`@shuo9917Dang`, account linkage user-provided) | Identity, role acceptance and permission user-confirmed and owner-authorized; direct personal confirmation and person/account identity check `pending` | If confirmed and authorized, runs approved metadata searches and maintains the append-only log; cannot independently adjudicate or audit their own registration work |
+| Independent authorization reviewer | Ashlly Cole (`@debpalash`, account existence verified; linkage user-provided) | Identity, appointment and permission user-confirmed and owner-authorized under I1; personal acceptance, exact-revision independence and conflict statement `pending` | May independently authorize only after eligibility and all attestations are recorded for the final PR #57 revision; no authorization is complete now |
+| Rights/access owner for search interfaces | Joe Cole | Identity, appointment and permission user-confirmed and owner-authorized; direct personal acceptance, actual-authority evidence and executable access plan `pending` | If confirmed, verifies access terms and allowed metadata handling before an interface is used |
+| Log custodian / storage administrator | Daisey Dan | Identity, appointment and permission user-confirmed and owner-authorized; direct personal acceptance, actual-permission evidence and executable storage plan `pending` | If confirmed, implements approved storage, access, retention and expiry controls |
 | Drafting support | Codex | Non-accountable | Prepared this draft; cannot accept a role, attest independence, sign, approve or authorize activity |
 
 ### Independence statement
 
-No Stage 1 independence conclusion or authorization has been made. I1 is the proposed separation model: Shuo would serve as registrar, while Ashlly Cole would serve as the different independent authorization reviewer. Shuo must not independently adjudicate or audit Shuo's own registration work. The proposal is not effective unless Ashlly Cole personally accepts the role and states authorship, operational, financial, source-ownership and decision conflicts for the exact final PR #57 revision; silence, a third-party statement or the PR #56 attestation is insufficient.
+No Stage 1 independence conclusion or authorization has been made. I1 is the user-selected and owner-authorized separation model: Shuo would serve as registrar, while Ashlly Cole would serve as the different independent authorization reviewer. Shuo must not independently adjudicate or audit Shuo's own registration work. The arrangement is not operationally effective unless Ashlly Cole personally accepts the role and states authorship, operational, financial, source-ownership and decision conflicts for the exact final PR #57 revision; silence, a third-party statement or the PR #56 attestation is insufficient.
 
-The models remain defined as follows; I1 is proposed but not yet selected or approved in an authorization record:
+The models remain defined as follows; I1 is selected at the user/owner-direction level but is not yet independently authorized or operationally effective:
 
 - **I1:** Shuo remains registrar; a different named human performs the independent authorization review and any later independent log review.
 - **I2:** Shuo remains the independent authorization reviewer; a different named human becomes registrar before authorization.
@@ -176,11 +176,11 @@ On stop: cease new queries and metadata classification, preserve the approved lo
 
 ## 9. Choices Required From the Owner
 
-These choices are presented for human decision. No option is selected, approved or made effective merely by appearing in this draft.
+Except for the recorded user/owner-level I1 selection and the reported duration proposal, these choices remain presented for human decision. No entry is independently authorized or made operationally effective merely by appearing in this draft.
 
 | Topic | Options | Draft status or constraint |
 | --- | --- | --- |
-| Independence model | I1, I2 or I3 from Section 5 | I1 is the user-provided proposal: Shuo as registrar and Ashlly Cole as proposed independent authorization reviewer. It is not selected, approved or effective; required personal confirmations and exact-revision attestations remain `pending` |
+| Independence model | I1, I2 or I3 from Section 5 | I1 is user-selected and owner-authorized: Shuo as registrar and Ashlly Cole as proposed independent authorization reviewer. It is not an independent authorization or operationally effective; required personal confirmations and exact-revision attestations remain `pending` |
 | Authorization duration and time zone | Six calendar months in `Asia/Tokyo`; proposed earliest start date 2026-09-29 | User-reported joint proposal only; not approved or effective. Exact non-backdated `effective_at` and derived `expires_at` remain `pending` |
 | Interface scope | S1: exact allow-list of public/no-account bibliographic interfaces; S2: S1 plus named licensed indexes after terms review; S3: named custom set | `pending`; no interface or access method is selected |
 | Metadata scope | M1: title/authors/venue/year/type/language/ID/result URL only; M2: M1 plus abstract/keywords after separate terms review; M3: custom allow-list | `pending`; M2 would require revising the current content exclusion |
@@ -195,7 +195,7 @@ These choices are presented for human decision. No option is selected, approved 
 
 - [ ] Daniel momond's full identity, personal role acceptance, organizational decision authority and signing evidence are recorded.
 - [ ] Shuo personally confirms registrar acceptance and the person/account linkage to `@shuo9917Dang` is recorded.
-- [ ] I1 is validly selected and Ashlly Cole personally accepts the reviewer role and records exact-revision independence and conflict statements; the person/account linkage to the user-provided `@AshllyCole1001` is verified.
+- [ ] Ashlly Cole personally accepts the I1 reviewer role and records exact-revision independence and conflict statements; the person/account linkage to the user-provided `@debpalash` is verified.
 - [ ] Joe Cole personally accepts the rights/access-owner role, and actual authority plus an executable access plan are evidenced.
 - [ ] Daisey Dan personally accepts the log-custodian role, and actual permissions plus an executable storage plan are evidenced.
 - [ ] Every Section 7 field is resolved with evidence appropriate to the affected interface and storage system.
