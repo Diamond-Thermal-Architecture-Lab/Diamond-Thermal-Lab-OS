@@ -1,10 +1,10 @@
 # Draft Decision: M16B Stage 1 Public Bibliographic Metadata Search and Screening
 
-> **DRAFT — NOT AUTHORIZED — NO HUMAN ATTESTATION.** This document is a review draft, not a signed approval. It grants no permission to begin Stage 1 or any later stage. Every `pending` field is unresolved and blocks the affected activity.
+> **DRAFT — NOT AUTHORIZED — NO FINAL OPERATIONAL ATTESTATION.** The owner has signed an option selection for revising this draft only. That selection is not a Stage 1 operating authorization or start notice. Every unresolved `pending` gate blocks the affected activity.
 
 - Lab OS layer: L0 governance, limited to the proposed Stage 1 boundary of the M16B LECF workflow
 - Artifact type: authorization decision draft
-- Prepared / revised date: 2026-09-29
+- Prepared / revised date: 2026-09-30
 - Current decision: **NOT AUTHORIZED**
 - Pilot status: not started
 - Confidentiality level: public-safe draft; no specific literature source or source content is included
@@ -27,11 +27,12 @@ This draft is stacked on the exact reviewed head of PR #56. It does not update, 
 | Proposed independent authorization reviewer | User reports the identity, appointment and permission confirmed and authorized; personal role acceptance, exact-revision independence and conflict statement are `pending` | Ashlly Cole; user identifies `@debpalash`. Account existence was verified by public read-only GitHub API on 2026-09-29; person/account linkage remains user-provided and awaits direct confirmation |
 | Proposed rights/access owner | User reports the identity, appointment and permission confirmed and authorized; direct role acceptance and evidence of actual authority plus an executable access plan are `pending` | Joe Cole |
 | Proposed log custodian / storage administrator | User reports the identity, appointment and permission confirmed and authorized; direct role acceptance and evidence of actual permissions plus an executable storage plan are `pending` | Daisey Dan |
-| Proposed authorization duration | User reports a joint proposal by the user and Daniel momond; Daniel momond's own confirmation remains `pending` | Six calendar months in `Asia/Tokyo`; 2026-09-29 is the proposed earliest start date, not an authorization or actual start; exact `effective_at` and `expires_at` are `pending` |
+| Proposed authorization duration | User reports a joint proposal by the user and Daniel momond; Daniel momond's own confirmation remains `pending` | Six calendar months in `Asia/Tokyo`; the historical proposed earliest date 2026-09-29 cannot be used retroactively; exact `effective_at` and `expires_at` are `pending` |
+| Owner option selection for PR #57 draft | Owner-provided signed record received 2026-09-30, referring to prior head `93cecb758c7c173ce243d5bae0796107909cf1c5`; attribution is user-provided, not independently authenticated here | Approves the option bundle in Sections 7 and 9 for **draft revision only**; the signed record is held outside this public repository. It gives no operational authorization, independent review or start notice |
 
 The PR #56 review accepted the task brief as a suitable proposal only. It expressly did not authorize pilot activity. Its independence statement concerned review of PR #56 and must not be treated as a prospective independence attestation for this draft or for Stage 1 operations.
 
-On 2026-09-29, the user further reported that the other named identities and permissions are confirmed and authorized and accepted the recommended evidence-completion path. This is recorded as user-provided owner-level direction, not as the named people's personal attestations, external organizational-authority evidence, an independent exact-revision authorization or a start notice. The named people, accounts, I1 arrangement, duration and earliest start date supplied outside the repository remain recorded only at their stated evidence level. This draft does not invent supporting evidence, signatures, account linkage or personal acceptance of appointment.
+On 2026-09-29, the user further reported that the other named identities and permissions are confirmed and authorized and accepted the recommended evidence-completion path. This is recorded as user-provided owner-level direction, not as the named people's personal attestations, external organizational-authority evidence, an independent exact-revision authorization or a start notice. The named people, accounts, I1 arrangement, duration and earliest start date supplied outside the repository remain recorded only at their stated evidence level. This draft does not invent supporting evidence, account linkage or personal acceptance of appointment. The owner-provided signed option-selection record is evidence of the user's direction to revise this draft only, not a final human authorization attestation.
 
 ## 2. Decision Requested and Current Disposition
 
@@ -62,7 +63,7 @@ Merge, review, comment, checkbox completion or passage of time does not by itsel
 | Selected specific source | An affirmative inclusion/registration decision that would trigger source-specific rights, access, storage and checking duties | **Excluded from Stage 1 and prohibited by this draft** |
 | Source content | Abstract text, full text, supplements, figures, tables, datasets, parameters or other substantive contents | **Excluded from Stage 1 and prohibited by this draft** |
 
-Titles, authors, venue, publication year, document type, language, persistent identifier and the search-interface result URL are treated as candidate minimal bibliographic metadata. Abstracts and author/publisher keywords are excluded under the current default even if a search interface displays them. The exact metadata allow-list remains `pending` until the choice in Section 9 is made.
+Titles, authors, venue, publication year, document type, language, persistent identifier and the search-interface result URL are treated as candidate minimal bibliographic metadata. Abstracts and author/publisher keywords are excluded under the current default even if a search interface displays them. The owner has selected the M1 minimal metadata allow-list for this draft; interface terms and operational approval remain `pending`.
 
 No Stage 1 label may use `selected`, `included`, `accepted source`, `registered source`, `evidence source` or equivalent wording. Permitted states are limited to `metadata_hit`, `metadata_excluded`, `hold_for_later_selection` and `unresolved_duplicate`, subject to final review.
 
@@ -129,28 +130,30 @@ If validly appointed and authorized later, Daniel momond would be accountable fo
 
 ## 7. Search Boundary and Log Storage
 
-The following fields remain `pending`; therefore Stage 1 remains not authorized.
+The owner selected the following bounded proposal for this draft. Selection resolves the choice of options, but the operational prerequisites in the right column remain unresolved. No query or log may begin under this draft.
 
-| Required field | Current state | Minimum resolution |
+| Required field | Owner-selected draft boundary | Remaining operational gate |
 | --- | --- | --- |
-| Engineering search question | `pending` | Neutral, bounded question that does not presume diamond superiority |
-| Route coverage | `pending` | Diamond and plausible non-diamond routes, or a documented narrower reason |
-| Search-interface allow-list | `pending` | Exact interface names, access method, terms basis and credential rule |
-| Query set and change control | `pending` | Frozen initial strings; Daniel momond approval and append-only rationale for changes |
-| Publication date range | `pending` | Explicit inclusive dates or a documented no-lower-bound rule |
-| Language scope | `pending` | Included languages and treatment of untranslated metadata |
-| Document types | `pending` | Included/excluded publication types at metadata level |
-| Minimal metadata allow-list | `pending` | Exact fields; default excludes abstracts and keywords |
-| Duplicate rule | `pending` | Exact identifiers only; non-exact relationships remain unresolved |
-| Query-batch definition | `pending` | Exact grouping unit and closure rule used for cadence option C1; it must make the first, second and later batches unambiguous before authorization |
-| Search stopping rule | `pending` | Query/run/time or saturation rule that is not a source-selection quota |
-| Operational log path | `pending` | Exact approved location; no source bytes or content |
-| Log format and required columns | `pending` | Append-only, reviewable and versioned representation |
-| Log access control | `pending` | Named writers/readers and public-safe review rule |
-| Retention and expiry handling | `pending` | Read-only retention, deletion or archive rule after authority expires |
-| Incident/stop notification channel | `pending` | Exact channel and expected response owner |
+| Engineering search question | What public bibliographic metadata exists for GaN thermal management and heat spreading across diamond and non-diamond routes? No performance ranking is inferred. | Daniel's exact-revision scope approval and independent authorization `pending` |
+| Route coverage | R1: diamond and non-diamond route-neutral coverage | No source-level suitability or performance judgment |
+| Search-interface allow-list | S1: **Crossref Metadata Search**, manually through the publicly accessible, no-account webpage only; no API, scraping, paid action, automation or bulk export | Joe to verify the exact page/URL, current terms, permitted access and metadata handling before final authorization; if unavailable, stop and seek a new decision |
+| Query set and change control | Batch 1: `gallium nitride thermal management`; `GaN heat spreader`. Batch 2: `GaN diamond thermal`; `GaN SiC thermal`; `GaN copper heat spreader`; `GaN aluminum nitride thermal`. Use these exact literal interface queries. | Freeze exact strings and any UI filters/sort in a versioned plan before execution; any extra/replaced query requires a new human decision |
+| Publication date range | D1: no lower publication-date bound | Exact inclusive upper cutoff date `pending`; record displayed filters and sort. If the UI cannot apply an approved bound, log that limitation and use only displayed metadata for any manual classification; do not silently change scope |
+| Language scope | L3: all languages returned by the interface; log the displayed language; hold items whose untranslated metadata cannot be classified | No translation or source-content inspection under Stage 1 |
+| Document types | Journal articles and conference papers when the displayed type establishes that category; missing/ambiguous type is held | Daniel's exact-revision scope approval `pending` |
+| Minimal metadata allow-list | M1: title, authors, venue, publication year, document type, language, bibliographic identifier and result URL only, plus administrative query/rank/time/state fields | Joe's interface terms review `pending`; no abstracts, keywords or source content |
+| Duplicate rule | Exact literal equality of the same displayed bibliographic identifier type only; any absent, different or conflicting identifier remains unresolved | No fuzzy match, inferred family identity or source selection |
+| Query-batch definition | Batch 1 is its two frozen queries; Batch 2 is its four frozen queries. For each query, capture at most the first 10 displayed hits in the approved interface order, including zero-result outcomes. Close a batch only after all its queries have recorded outcomes and a read-only snapshot plus Daniel and Ashlly reviews are recorded. Batch 1 must close before Batch 2 begins. | Actual authorized start and reviewer role evidence `pending`; no replacement hits, paging beyond the cap or later batches under this decision |
+| Search stopping rule | Stop after Batch 2 regardless of hit count; stop earlier on Section 8 conditions. Additional queries or batches require a new decision. | No study quota or saturation-based expansion |
+| Operational log path | G2: an existing organization-controlled, access-controlled, versioned folder; no personal drive and no public PR log | Daisey to identify exact location, verify actual access controls and retention capability before final authorization; otherwise blocked |
+| Log format and required columns | One manually maintained workbook with `Queries`, `Hits`, `Events` and `Batch Reviews` sheets; preserve prior rows and versions, enter corrections as new dated events, and keep a read-only snapshot at batch close. `Queries`: batch/query IDs, literal query, UI/filters/sort, timestamp, displayed count or labelled manual-row count, outcome. `Hits`: query ID, rank, allowed M1 fields, state/reason, capture time. `Events`: actor/time, change, stop or correction and prior-record reference. `Batch Reviews`: snapshot identity, Daniel and Ashlly dispositions/time. | Daisey to confirm that the folder supports version history, snapshots and readable export; no operational workbook may be created yet |
+| Log access control | Shuo is proposed writer; Daisey custodian; Daniel and Ashlly readers/reviewers. Signed role records remain separately controlled. | Daisey to evidence named permissions and least-privilege configuration; personal role and independent-review gates remain `pending` |
+| Retention and expiry handling | E1: proposed read-only retention for 12 months after actual operational authority expires, followed by a recorded human archive/disposal decision | Daisey/Joe to verify that storage terms and rights permit this period; exact authorized times remain `pending` |
+| Incident/stop notification channel | Affected work stops immediately; Shuo reports to Daniel and Ashlly and records the event | Exact channel, recipient reachability and response rule `pending` |
 
-Until the storage field is resolved, no operational search log may be created. This governance draft is not the operational log.
+C1 applies to both batches: Daniel and Ashlly review each closed batch before the next begins; the second batch is final and receives a closing review. Their signatures/records are operational evidence only after a separate Stage 1 authorization. The plan has no implicit extension beyond Batch 2.
+
+Until all access and storage gates are resolved, no operational search or log may be created. This governance draft is not the operational log.
 
 ## 8. Validity and Stop Conditions
 
@@ -174,22 +177,25 @@ If later authorized, new Stage 1 activity must stop at the earliest of the expir
 
 On stop: cease new queries and metadata classification, preserve the approved log read-only, record the reason and time, notify Daniel momond through the approved channel, and do not resume without a new or amended human authorization bound to an exact revision. Stopping does not authorize investigation using source content.
 
-## 9. Choices Required From the Owner
+## 9. Owner-Selected Draft Options
 
-Except for the recorded user/owner-level I1 selection and the reported duration proposal, these choices remain presented for human decision. No entry is independently authorized or made operationally effective merely by appearing in this draft.
+The owner-provided signed selection, received 2026-09-30 and tied to prior head `93cecb758c7c173ce243d5bae0796107909cf1c5`, approves the following bundle for **revision of this draft only**. It does not sign the revised Git head, attest independent eligibility, approve the interface's terms or authorize Stage 1 activity. Options not listed as selected remain unchosen.
 
-| Topic | Options | Draft status or constraint |
+| Topic | Owner-selected draft option | Outstanding evidence or decision |
 | --- | --- | --- |
-| Independence model | I1, I2 or I3 from Section 5 | I1 is user-selected and owner-authorized: Shuo as registrar and Ashlly Cole as proposed independent authorization reviewer. It is not an independent authorization or operationally effective; required personal confirmations and exact-revision attestations remain `pending` |
-| Authorization duration and time zone | Six calendar months in `Asia/Tokyo`; proposed earliest start date 2026-09-29 | User-reported joint proposal only; not approved or effective. Exact non-backdated `effective_at` and derived `expires_at` remain `pending` |
-| Interface scope | S1: exact allow-list of public/no-account bibliographic interfaces; S2: S1 plus named licensed indexes after terms review; S3: named custom set | `pending`; no interface or access method is selected |
-| Metadata scope | M1: title/authors/venue/year/type/language/ID/result URL only; M2: M1 plus abstract/keywords after separate terms review; M3: custom allow-list | `pending`; M2 would require revising the current content exclusion |
-| Route scope | R1: neutral diamond and non-diamond terms; R2: GaN-on-diamond only with documented bias limitation; R3: custom bounded comparison | `pending` |
-| Date range | D1: no lower bound through the effective date; D2: fixed recent-year window; D3: custom dates | `pending`; no date range is selected |
-| Language scope | L1: English metadata only; L2: named additional languages with a qualified registrar; L3: all returned languages but untranslated items held | `pending` |
-| Log storage | G1: version-controlled public-safe repository log; G2: approved access-controlled external log with repository hash/summary; G3: dual record with defined authority | `pending`; no storage location is selected |
-| Post-expiry handling | E1: freeze read-only for a defined retention period; E2: archive in approved storage; E3: reviewed deletion with a tombstone record | `pending` |
-| Review cadence | C1: review after each query batch; C2: weekly; C3: fixed hit-count intervals | `pending`. If humans select C1, each of the first two batches must be reviewed before the next begins; after the second batch, the default remains review after every batch unless an exact human-approved cadence amendment is effective before the next batch |
+| Independence | I1: Shuo registrar; Ashlly Cole separate independent authorization reviewer | Personal acceptance, account linkage, exact-revision independence/conflict statement and final disposition `pending` |
+| Duration | Six calendar months in `Asia/Tokyo` from a later valid non-backdated start | Actual `effective_at`, derived `expires_at` and separate start notice `pending` |
+| Interface | S1, limited to the Crossref Metadata Search no-account webpage and manual interaction | Joe's exact interface, current access/terms and handling confirmation `pending` |
+| Metadata | M1 only, without abstracts or keywords | Joe's rights/terms review `pending` |
+| Route | R1, neutral diamond and non-diamond coverage for GaN thermal management | Daniel's exact-revision scope approval `pending` |
+| Date | D1, no lower bound; upper cutoff to be fixed before execution | Inclusive upper cutoff `pending` |
+| Language | L3, all returned languages; untranslated ambiguity held | Registrar and reviewer application after valid authorization |
+| Log storage | G2, existing controlled versioned folder outside a public PR and personal drive | Exact folder, access, versioning and retention proof from Daisey `pending` |
+| Post-expiry | E1, proposed 12-month read-only period, then recorded human archive/disposal decision | Storage/rights verification `pending` |
+| Cadence | C1, close and review Batch 1 before Batch 2; review Batch 2 at closure; stop | Final reviewer eligibility and actual recorded reviews `pending` |
+| Bounds | Two frozen batches, six literal queries in Section 7; first 10 displayed hits per query | No extra query, paging, batch or change without a new human decision |
+
+The owner selection applies only to this draft's content. A later authorization must cite the precise revised head and expressly choose `AUTHORIZED FOR STAGE 1 PUBLIC BIBLIOGRAPHIC METADATA SEARCH AND SCREENING ONLY` or `NOT AUTHORIZED`.
 
 ## 10. Preconditions for a Later Authorization Record
 
@@ -198,7 +204,7 @@ Except for the recorded user/owner-level I1 selection and the reported duration 
 - [ ] Ashlly Cole personally accepts the I1 reviewer role and records exact-revision independence and conflict statements; the person/account linkage to the user-provided `@debpalash` is verified.
 - [ ] Joe Cole personally accepts the rights/access-owner role, and actual authority plus an executable access plan are evidenced.
 - [ ] Daisey Dan personally accepts the log-custodian role, and actual permissions plus an executable storage plan are evidenced.
-- [ ] Every Section 7 field is resolved with evidence appropriate to the affected interface and storage system.
+- [ ] Every remaining Section 7 operational gate is resolved, including Joe's current interface terms, the inclusive upper publication cutoff, Daisey's exact controlled folder and permissions, and the stop-notification channel.
 - [ ] A non-backdated `effective_at` after valid authorization and the required start notice, plus an `expires_at` exactly six calendar months later at the same `Asia/Tokyo` local time with an explicit expiry boundary, are recorded.
 - [ ] The final record states Stage 1 only and reproduces P1–P14 without weakening them.
 - [ ] Daniel momond and the eligible independent reviewer record explicit human dispositions for the exact Git revision.
@@ -215,11 +221,12 @@ Pilot start: **prohibited**
 ## 11. Confidentiality and Claim Safety
 
 - No specific source was selected, named, acquired or inspected for this draft.
+- The owner-provided signed option selection is kept outside the public repository. Its attribution is user-provided and its scope is draft revision only; this file contains no signature image or final operational authorization attestation.
 - No source content, proprietary process detail, customer/supplier information, restricted parameter, internal measurement or performance metric is included.
 - No API or paid action was used for engineering-source discovery; GitHub CLI/API use was limited to governance PR metadata and proposed-account verification plus preparation of the draft PR workflow.
 - No extraction, reconstruction, case/EPR/EER, calculation, blindness or Gold activity is authorized or represented as completed.
-- Unknown facts remain `pending`; this file contains no signature image, digital signature, human attestation or apparent approval.
+- Unknown operational facts remain `pending`; this file contains no signature image, digital signature or final human authorization attestation.
 
 ## 12. Required Next Human Decision
 
-Daniel momond should personally confirm or reject the reported project-lead appointment and proposed duration, then validly select the remaining Section 9 options and provide the missing Section 7 facts. Shuo, Ashlly Cole, Joe Cole and Daisey Dan should each provide the personal confirmations and evidence required for their proposed roles. An eligible independent reviewer should then review an exact revised Git head and record either **NOT AUTHORIZED** or **AUTHORIZED FOR STAGE 1 PUBLIC BIBLIOGRAPHIC METADATA SEARCH AND SCREENING ONLY**. Any broader wording requires a new scope and is outside this draft.
+The owner has selected the Section 9 options for revising this draft. Daniel momond should personally confirm or reject the reported project-lead appointment and duration, resolve the remaining Section 7 gates and record an explicit exact-revision decision. Shuo, Ashlly Cole, Joe Cole and Daisey Dan should each provide the personal confirmations and evidence required for their proposed roles. An eligible independent reviewer should then review an exact revised Git head and record either **NOT AUTHORIZED** or **AUTHORIZED FOR STAGE 1 PUBLIC BIBLIOGRAPHIC METADATA SEARCH AND SCREENING ONLY**. Any broader wording requires a new scope and is outside this draft.
